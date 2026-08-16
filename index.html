@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Root & Relay — Tower Defense</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title">Root <span>&</span> Relay</div>
+    <div class="subtitle">dikey mod — dokunmatik öncelikli</div>
+  </header>
+
+  <div class="level-picker" id="levelPicker"></div>
+
+  <div class="stage">
+    <div class="frame" id="frame">
+      <canvas id="game"></canvas>
+
+      <div class="top-hud">
+        <div class="hud-left">
+          <div class="hud-chip"><span class="ic">❤️</span><b id="livesVal">10</b></div>
+          <div class="hud-chip"><span class="ic">🪙</span><b id="goldVal">170</b></div>
+        </div>
+        <div class="hud-right">
+          <div class="hud-chip"><span class="ic">💀</span>Dalga <b id="waveVal">0</b>/<b id="waveMax">8</b></div>
+          <div class="hud-icon-row">
+            <div class="pauseIcon" id="pauseBtn" title="Duraklat">⏸</div>
+            <div class="resetIcon" id="resetBtn" title="Sıfırla">↺</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="overlay">
+        <h2 id="overlayTitle">Röle Düştü</h2>
+        <p id="overlayText">Dalga 0'da yenildin</p>
+        <button class="btn ghost" id="overlayBtn" style="margin-top:6px;">Tekrar Dene</button>
+      </div>
+
+      <div class="overlay pause-overlay" id="pauseOverlay">
+        <h2>⏸ Duraklatıldı</h2>
+        <p>Oyun beklemede — devam etmek için dokun</p>
+        <button class="btn ghost" id="resumeBtn" style="margin-top:6px;">Devam Et</button>
+      </div>
+
+      <div class="bottom-dock">
+        <div class="tower-dock" id="towerDock"></div>
+        <button class="wave-btn" id="waveBtn">Dalga<br>Başlat</button>
+      </div>
+    </div>
+
+    <div class="next-wave-preview" id="wavePreview"></div>
+    <div class="footer-row"></div>
+  </div>
+</div>
+
+<!-- Sıra önemli: config -> engine -> render -> ui -> main -->
+<script src="js/config.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/render.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
