@@ -166,7 +166,7 @@ function update(dt){
     let pending=false;
     spawnTimeline.forEach(entry=>{
       if(!entry.spawned){
-        if(entry.t<=waveElapsed){ entry.spawned=true; enemies.push({...entry, dist:0, flashT:0, bounce:Math.random()*10}); }
+        if(entry.t<=waveElapsed){ entry.spawned=true; enemies.push({...entry, dist:0, flashT:0, bounce:Math.random()*10, slowT:0, slowFactor:1}); }
         else pending=true;
       }
     });
@@ -178,13 +178,15 @@ function update(dt){
   }
 
   enemies.forEach(e=>{
-    e.dist += e.speed*dt*60;
+    const slowMult = e.slowT>0 ? e.slowFactor : 1;
+    e.dist += e.speed*slowMult*dt*60;
     const p = pointAtDistance(level.path, pathTotalLen, e.dist);
     const p2 = pointAtDistance(level.path, pathTotalLen, e.dist+2);
     e.x=p.x; e.y=p.y;
     e.angle = Math.atan2(p2.y-p.y, p2.x-p.x);
-    e.bounce += dt*e.speed*9;
+    e.bounce += dt*e.speed*slowMult*9;
     if(e.flashT>0) e.flashT -= dt*3;
+    if(e.slowT>0) e.slowT -= dt;
   });
 
   const reached = enemies.filter(e=>e.dist>=pathTotalLen);
@@ -206,7 +208,7 @@ function update(dt){
       });
       if(target){
         const dist0 = Math.hypot(target.x-t.x, target.y-t.y);
-        projectiles.push({x:t.x,y:t.y-20,target,dmg:t.def.dmg,splash:t.def.splash,kind:t.def.kind,speed:t.def.kind==='mortar'?4.2:7,travel:dist0});
+        projectiles.push({x:t.x,y:t.y-20,target,dmg:t.def.dmg,splash:t.def.splash,kind:t.def.kind,speed:t.def.kind==='mortar'?4.2:7,travel:dist0,slow:t.def.slowFactor,slowDuration:t.def.slowDuration});
         t.cooldown = t.def.rate;
         t.pulse = 1;
         t.angle = Math.atan2(target.y-t.y, target.x-t.x);
@@ -232,8 +234,9 @@ function update(dt){
         for(let i=0;i<16;i++) particles.push({x:ix,y:iy,vx:(Math.random()-0.5)*160,vy:(Math.random()-0.5)*160,life:0.4,color:'#e8a94a'});
       } else {
         p.target.hp -= p.dmg; p.target.flashT=1;
-        floatTexts.push({x:p.x,y:p.y,text:'-'+p.dmg,life:0.6,vy:-30,color:p.kind==='mage'?'#b6f0e0':'#ffe3c2'});
-        for(let i=0;i<5;i++) particles.push({x:p.x,y:p.y,vx:(Math.random()-0.5)*90,vy:(Math.random()-0.5)*90,life:0.35,color:p.kind==='mage'?'#8fe3cc':'#c9a56a'});
+        if(p.slow){ p.target.slowT = p.slowDuration; p.target.slowFactor = p.slow; }
+        floatTexts.push({x:p.x,y:p.y,text:'-'+p.dmg,life:0.6,vy:-30,color:p.kind==='mage'?'#b6f0e0':(p.kind==='ice'?'#cdf3ff':'#ffe3c2')});
+        for(let i=0;i<5;i++) particles.push({x:p.x,y:p.y,vx:(Math.random()-0.5)*90,vy:(Math.random()-0.5)*90,life:0.35,color:p.kind==='mage'?'#8fe3cc':(p.kind==='ice'?'#bfeeff':'#c9a56a')});
       }
       p.dead=true;
     } else {

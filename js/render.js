@@ -90,6 +90,35 @@ function drawMageTower(t){
   ctx.restore();
 }
 
+function drawIceTower(t){
+  const {x,y}=t, pulse=1+(t.pulse||0)*0.25;
+  ctx.save();
+  drawBasePlinth(x,y,t.pulse);
+  ctx.fillStyle='#6fa8b8'; ctx.strokeStyle='#1c3540'; ctx.lineWidth=2.5;
+  roundedRect(x-9,y-14,18,20,5); ctx.fill(); ctx.stroke();
+  ctx.save(); ctx.translate(x,y-14); ctx.scale(pulse,pulse);
+  const shards=[[0,-28,8],[-9,-10,6],[9,-11,6],[0,-10,5]];
+  shards.forEach(([dx,dy,s])=>{
+    ctx.beginPath();
+    ctx.moveTo(dx,dy-s); ctx.lineTo(dx-s*0.55,dy+s*0.5); ctx.lineTo(dx+s*0.55,dy+s*0.5); ctx.closePath();
+    const g=ctx.createLinearGradient(dx,dy-s,dx,dy+s*0.5);
+    g.addColorStop(0,'#ffffff'); g.addColorStop(1,'#8fd9f0');
+    ctx.fillStyle=g; ctx.fill(); ctx.lineWidth=1.6; ctx.strokeStyle='#2c5866'; ctx.stroke();
+  });
+  ctx.restore();
+  // buz sisi
+  const t0 = performance.now()/1000;
+  for(let i=0;i<3;i++){
+    const ang = t0*0.6 + i*(Math.PI*2/3);
+    const mx = x+Math.cos(ang)*14, my = y-4+Math.sin(ang)*6;
+    ctx.beginPath(); ctx.arc(mx,my,3,0,Math.PI*2);
+    ctx.fillStyle='rgba(220,248,255,0.5)'; ctx.fill();
+  }
+  ctx.beginPath(); ctx.arc(x,y-22,3.5+((t.pulse||0)*2.5),0,Math.PI*2);
+  ctx.fillStyle='#eafcff'; ctx.shadowColor='#8fd9f0'; ctx.shadowBlur=12; ctx.fill();
+  ctx.restore();
+}
+
 function drawMortarTower(t){
   const {x,y}=t;
   ctx.save();
@@ -120,6 +149,7 @@ function drawTower(t){
   ctx.restore();
   if(t.def.kind==='archer') drawArcherTower(t);
   else if(t.def.kind==='mage') drawMageTower(t);
+  else if(t.def.kind==='ice') drawIceTower(t);
   else drawMortarTower(t);
 }
 
@@ -146,6 +176,19 @@ function drawEnemy(e){
   grad.addColorStop(0,'#fff'); grad.addColorStop(0.15,bodyColor); grad.addColorStop(1,e.body2);
   ctx.beginPath(); ctx.arc(0,0,e.radius,0,Math.PI*2);
   ctx.fillStyle=grad; ctx.lineWidth=2.5; ctx.strokeStyle='#241a10'; ctx.fill(); ctx.stroke();
+
+  if(e.slowT>0){
+    ctx.beginPath(); ctx.arc(0,0,e.radius+2,0,Math.PI*2);
+    ctx.fillStyle='rgba(180,235,255,0.35)'; ctx.fill();
+    ctx.strokeStyle='rgba(230,250,255,0.8)'; ctx.lineWidth=1.5;
+    for(let i=0;i<3;i++){
+      const ang=i*(Math.PI*2/3)+e.bounce;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(ang)*e.radius*0.3,Math.sin(ang)*e.radius*0.3);
+      ctx.lineTo(Math.cos(ang)*e.radius*0.9,Math.sin(ang)*e.radius*0.9);
+      ctx.stroke();
+    }
+  }
 
   const legPhase = Math.sin(e.bounce*1.4)*4;
   ctx.fillStyle=e.body2;
@@ -190,6 +233,14 @@ function drawProjectile(p){
   } else if(p.kind==='mage'){
     ctx.beginPath(); ctx.arc(p.x,p.y,4.5,0,Math.PI*2);
     ctx.fillStyle='#bdf5e4'; ctx.shadowColor='#4fc3a1'; ctx.shadowBlur=14; ctx.fill();
+  } else if(p.kind==='ice'){
+    const ang = Math.atan2(p.target.y-p.y, p.target.x-p.x);
+    ctx.translate(p.x,p.y); ctx.rotate(ang);
+    ctx.beginPath();
+    ctx.moveTo(6,0); ctx.lineTo(-3,-3); ctx.lineTo(-6,0); ctx.lineTo(-3,3); ctx.closePath();
+    const g=ctx.createLinearGradient(-6,0,6,0);
+    g.addColorStop(0,'#8fd9f0'); g.addColorStop(1,'#ffffff');
+    ctx.fillStyle=g; ctx.shadowColor='#8fd9f0'; ctx.shadowBlur=10; ctx.fill();
   } else {
     const ang = Math.atan2(p.target.y-p.y, p.target.x-p.x);
     ctx.translate(p.x,p.y); ctx.rotate(ang);
