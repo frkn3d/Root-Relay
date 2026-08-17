@@ -144,9 +144,21 @@ function drawMortarTower(t){
 
 function drawTower(t){
   const st = getTowerStats(t);
+  const isSelected = towerPanelOpen && selectedTower===t;
   ctx.save();
-  ctx.beginPath(); ctx.arc(t.x,t.y,st.range,0,Math.PI*2);
-  ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=1; ctx.stroke();
+  if(isSelected){
+    ctx.beginPath(); ctx.arc(t.x,t.y,st.range,0,Math.PI*2);
+    ctx.fillStyle = t.def.color+'22';
+    ctx.fill();
+    ctx.strokeStyle = t.def.color;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6,5]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  } else {
+    ctx.beginPath(); ctx.arc(t.x,t.y,st.range,0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=1; ctx.stroke();
+  }
   ctx.restore();
   if(t.def.kind==='archer') drawArcherTower(t);
   else if(t.def.kind==='mage') drawMageTower(t);
@@ -165,7 +177,7 @@ function drawTower(t){
     ctx.restore();
   }
 
-  if(towerPanelOpen && selectedTower===t){
+  if(isSelected){
     ctx.save();
     const pulse = 2+Math.sin(performance.now()/200)*1.5;
     ctx.beginPath(); ctx.arc(t.x,t.y,26+pulse,0,Math.PI*2);
