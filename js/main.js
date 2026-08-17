@@ -21,6 +21,19 @@ canvas.addEventListener('pointerup',(e)=>{
     return;
   }
   const {x:mx,y:my} = pointerToLogical(e.clientX,e.clientY);
+
+  let tappedTower=null, bestDT=Infinity;
+  towers.forEach(t=>{
+    const d=Math.hypot(mx-t.x,my-t.y);
+    if(d<26 && d<bestDT){bestDT=d; tappedTower=t;}
+  });
+  if(tappedTower){
+    if(selectedTower===tappedTower && towerPanelOpen) closeTowerPanel();
+    else openTowerPanel(tappedTower);
+    return;
+  }
+  if(towerPanelOpen){ closeTowerPanel(); return; }
+
   let closest=null,bestD=Infinity;
   spots.forEach(s=>{
     if(s.occ) return;
@@ -32,7 +45,7 @@ canvas.addEventListener('pointerup',(e)=>{
   if(gold<def.cost) return;
   gold-=def.cost;
   document.getElementById('goldVal').textContent=gold;
-  const t={x:closest.x,y:closest.y,def,cooldown:0,pulse:0};
+  const t={x:closest.x,y:closest.y,def,cooldown:0,pulse:0,level:0,totalSpent:def.cost};
   towers.push(t); closest.occ=t;
 });
 
@@ -43,6 +56,11 @@ document.getElementById('pauseBtn').addEventListener('pointerup', togglePause);
 document.getElementById('resumeBtn').addEventListener('pointerup', togglePause);
 document.getElementById('speedBtn').addEventListener('pointerup', toggleSpeed);
 document.getElementById('towerSelectBtn').addEventListener('pointerup', toggleTowerDrawer);
+document.getElementById('tpUpgradeBtn').addEventListener('pointerup', doUpgradeTower);
+document.getElementById('tpSellBtn').addEventListener('pointerup', requestSellTower);
+document.getElementById('tpSellCancel').addEventListener('pointerup', cancelSellTower);
+document.getElementById('tpSellYes').addEventListener('pointerup', confirmSellTower);
+document.getElementById('tpCloseBtn').addEventListener('pointerup', closeTowerPanel);
 
 renderTowerSelectBtn();
 renderTowerDrawer();

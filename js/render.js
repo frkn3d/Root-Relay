@@ -143,14 +143,36 @@ function drawMortarTower(t){
 }
 
 function drawTower(t){
+  const st = getTowerStats(t);
   ctx.save();
-  ctx.beginPath(); ctx.arc(t.x,t.y,t.def.range,0,Math.PI*2);
+  ctx.beginPath(); ctx.arc(t.x,t.y,st.range,0,Math.PI*2);
   ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=1; ctx.stroke();
   ctx.restore();
   if(t.def.kind==='archer') drawArcherTower(t);
   else if(t.def.kind==='mage') drawMageTower(t);
   else if(t.def.kind==='ice') drawIceTower(t);
   else drawMortarTower(t);
+
+  const lvl = t.level||0;
+  if(lvl>0){
+    ctx.save();
+    for(let i=0;i<3;i++){
+      ctx.beginPath(); ctx.arc(t.x-8+i*8, t.y+24, 2.6, 0, Math.PI*2);
+      ctx.fillStyle = i<lvl ? '#f4c04a' : 'rgba(255,255,255,0.15)';
+      ctx.fill();
+      ctx.strokeStyle='#0d1a10'; ctx.lineWidth=1; ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  if(towerPanelOpen && selectedTower===t){
+    ctx.save();
+    const pulse = 2+Math.sin(performance.now()/200)*1.5;
+    ctx.beginPath(); ctx.arc(t.x,t.y,26+pulse,0,Math.PI*2);
+    ctx.strokeStyle='#f4c04a'; ctx.lineWidth=2; ctx.setLineDash([4,4]);
+    ctx.stroke(); ctx.setLineDash([]);
+    ctx.restore();
+  }
 }
 
 function drawEnemy(e){

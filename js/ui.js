@@ -47,6 +47,54 @@ function closeTowerDrawer(){
   document.getElementById('towerSelectBtn').classList.remove('open');
 }
 
+function renderTowerPanel(){
+  const t = selectedTower;
+  const panel = document.getElementById('towerPanel');
+  if(!t){ panel.classList.remove('show'); return; }
+  panel.classList.add('show');
+
+  const lvl = t.level||0;
+  const st = getTowerStats(t);
+
+  document.getElementById('tpIcon').textContent = t.def.icon;
+  document.getElementById('tpName').textContent = t.def.name;
+  document.getElementById('tpLevel').textContent = `Yükseltme: ${lvl}/3`;
+
+  let statsHtml = `
+    <div class="tp-stat-row"><span>💥 Hasar</span><b>${Math.round(st.dmg)}</b></div>
+    <div class="tp-stat-row"><span>🎯 Menzil</span><b>${Math.round(st.range)}</b></div>
+    <div class="tp-stat-row"><span>⚡ Atış Hızı</span><b>${(1/st.rate).toFixed(1)}/sn</b></div>
+  `;
+  if(t.def.splash>0){
+    statsHtml += `<div class="tp-stat-row"><span>💫 Alan Yarıçapı</span><b>${Math.round(st.splash)}</b></div>`;
+  }
+  document.getElementById('tpStats').innerHTML = statsHtml;
+
+  const cost = upgradeCost(t);
+  const upBtn = document.getElementById('tpUpgradeBtn');
+  if(cost===null){
+    upBtn.textContent = 'Maksimum Seviye';
+    upBtn.disabled = true;
+  } else {
+    upBtn.textContent = `Yükselt · 🪙${cost}`;
+    upBtn.disabled = gold < cost;
+  }
+
+  const sellValue = Math.floor(t.totalSpent/2);
+  document.getElementById('tpSellBtn').textContent = `Sat · +🪙${sellValue}`;
+
+  const confirmRow = document.getElementById('tpSellConfirm');
+  const mainActions = document.getElementById('tpMainActions');
+  if(sellConfirmPending){
+    confirmRow.classList.add('show');
+    mainActions.style.display='none';
+    document.getElementById('tpSellConfirmText').textContent = `Bu kuleyi satmak istediğine emin misin? +${sellValue} altın alacaksın.`;
+  } else {
+    confirmRow.classList.remove('show');
+    mainActions.style.display='flex';
+  }
+}
+
 function renderWavePreview(){
   const el = document.getElementById('wavePreview');
   const nextIdx = waveIndex+1;

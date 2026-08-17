@@ -89,6 +89,56 @@ let selectedType = 'archer';
 let seenEnemyTypes = new Set();
 let paused = false;
 let gameSpeed = 1;
+let selectedTower = null;
+let towerPanelOpen = false;
+let sellConfirmPending = false;
+
+const UPGRADE_COST_MULT = [0.6, 0.9, 1.3]; // level0->1, level1->2, level2->3
+
+function upgradeCost(t){
+  const lvl = t.level||0;
+  if(lvl>=3) return null;
+  return Math.round(t.def.cost * UPGRADE_COST_MULT[lvl]);
+}
+function getTowerStats(t){
+  const lvl = t.level||0;
+  return {
+    dmg: t.def.dmg * (1+lvl*0.28),
+    range: t.def.range * (1+lvl*0.10),
+    rate: t.def.rate * (1-lvl*0.15),
+    splash: t.def.splash ? t.def.splash*(1+lvl*0.10) : 0,
+  };
+}
+function openTowerPanel(t){
+  selectedTower = t; towerPanelOpen = true; sellConfirmPending = false;
+  renderTowerPanel(); // ui.js
+}
+function closeTowerPanel(){
+  towerPanelOpen = false; selectedTower = null; sellConfirmPending = false;
+  const panel = document.getElementById('towerPanel');
+  if(panel) panel.classList.remove('show');
+}
+function doUpgradeTower(){
+  if(!selectedTower) return;
+  const cost = upgradeCost(selectedTower);
+  if(cost===null || gold<cost) return;
+  gold -= cost;
+  selectedTower.totalSpent += cost;
+  selectedTower.level = (selectedTower.level||0)+1;
+  document.getElementById('goldVal').textContent = gold;
+  renderTowerPanel();
+}
+function requestSellTower(){ sellConfirmPending=true; renderTowerPanel(); }
+function cancelSellTower(){ sellConfirmPending=false; renderTowerPanel(); }
+function confirmSellTower(){
+  if(!selectedTower) return;
+  const refund = Math.floor(selectedTower.totalSpent/2);
+  gold += refund;
+  towers = towers.filter(t=>t!==selectedTower);
+  spots.forEach(s=>{ if(s.occ===selectedTower) s.occ=null; });
+  document.getElementById('goldVal').textContent = gold;
+  closeTowerPanel();
+}
 
 function toggleSpeed(){
   gameSpeed = gameSpeed===1 ? 2 : 1;
@@ -116,6 +166,7 @@ function loadLevel(idx){
   document.getElementById('waveVal').textContent = waveIndex;
   document.getElementById('waveMax').textContent = level.waveCount;
   document.getElementById('overlay').classList.remove('show');
+  closeTowerPanel();
   if(typeof closeTowerDrawer === 'function') closeTowerDrawer();
   renderLevelPicker();   // ui.js
   renderWavePreview();   // ui.js
@@ -208,17 +259,18 @@ function update(dt){
   }
 
   towers.forEach(t=>{
+    const st = getTowerStats(t);
     t.cooldown = Math.max(0, t.cooldown-dt);
     if(t.cooldown<=0){
       let target=null,bestD=Infinity;
       enemies.forEach(e=>{
         const d=Math.hypot(e.x-t.x,e.y-t.y);
-        if(d<=t.def.range && d<bestD){bestD=d; target=e;}
+        if(d<=st.range && d<bestD){bestD=d; target=e;}
       });
       if(target){
         const dist0 = Math.hypot(target.x-t.x, target.y-t.y);
-        projectiles.push({x:t.x,y:t.y-20,target,dmg:t.def.dmg,splash:t.def.splash,kind:t.def.kind,speed:t.def.kind==='mortar'?4.2:7,travel:dist0,slow:t.def.slowFactor,slowDuration:t.def.slowDuration});
-        t.cooldown = t.def.rate;
+        projectiles.push({x:t.x,y:t.y-20,target,dmg:st.dmg,splash:st.splash,kind:t.def.kind,speed:t.def.kind==='mortar'?4.2:7,travel:dist0,slow:t.def.slowFactor,slowDuration:t.def.slowDuration});
+        t.cooldown = st.rate;
         t.pulse = 1;
         t.angle = Math.atan2(target.y-t.y, target.x-t.x);
       }
