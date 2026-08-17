@@ -16,6 +16,10 @@ function pointerToLogical(clientX, clientY){
 }
 canvas.addEventListener('pointerup',(e)=>{
   if(gameOver||gameWon||paused) return;
+  if(document.getElementById('towerDrawer').classList.contains('show')){
+    closeTowerDrawer();
+    return;
+  }
   const {x:mx,y:my} = pointerToLogical(e.clientX,e.clientY);
   let closest=null,bestD=Infinity;
   spots.forEach(s=>{
@@ -38,7 +42,9 @@ document.getElementById('overlayBtn').addEventListener('pointerup', ()=>loadLeve
 document.getElementById('pauseBtn').addEventListener('pointerup', togglePause);
 document.getElementById('resumeBtn').addEventListener('pointerup', togglePause);
 document.getElementById('speedBtn').addEventListener('pointerup', toggleSpeed);
+document.getElementById('towerSelectBtn').addEventListener('pointerup', toggleTowerDrawer);
 
-renderTowerDock();
+renderTowerSelectBtn();
+renderTowerDrawer();
 loadLevel(0);
 requestAnimationFrame(loop);

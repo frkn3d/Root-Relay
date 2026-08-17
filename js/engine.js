@@ -116,6 +116,7 @@ function loadLevel(idx){
   document.getElementById('waveVal').textContent = waveIndex;
   document.getElementById('waveMax').textContent = level.waveCount;
   document.getElementById('overlay').classList.remove('show');
+  if(typeof closeTowerDrawer === 'function') closeTowerDrawer();
   renderLevelPicker();   // ui.js
   renderWavePreview();   // ui.js
 }

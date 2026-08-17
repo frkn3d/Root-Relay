@@ -14,19 +14,37 @@ function renderLevelPicker(){
   });
 }
 
-function renderTowerDock(){
-  const el = document.getElementById('towerDock');
+function renderTowerSelectBtn(){
+  const btn = document.getElementById('towerSelectBtn');
+  const def = TOWER_TYPES[selectedType];
+  btn.innerHTML = `<span class="ts-icon">${def.icon}</span><span class="ts-cost">🪙${def.cost}</span>`;
+}
+
+function renderTowerDrawer(){
+  const el = document.getElementById('towerDrawer');
   el.innerHTML='';
   Object.values(TOWER_TYPES).forEach(def=>{
     const card=document.createElement('div');
     card.className='tower-card'+(def.id===selectedType?' active':'');
-    card.innerHTML = `<div class="icon" style="display:flex;align-items:center;justify-content:center;font-size:22px;">${def.icon}</div><div class="cost">🪙${def.cost}</div>`;
+    card.innerHTML = `<div class="icon">${def.icon}</div><div class="name">${def.name}</div><div class="cost">🪙${def.cost}</div>`;
     card.addEventListener('pointerup', ()=>{
       selectedType = def.id;
-      renderTowerDock();
+      renderTowerSelectBtn();
+      renderTowerDrawer();
+      closeTowerDrawer();
     });
     el.appendChild(card);
   });
+}
+
+function toggleTowerDrawer(){
+  const el = document.getElementById('towerDrawer');
+  const isOpen = el.classList.toggle('show');
+  document.getElementById('towerSelectBtn').classList.toggle('open', isOpen);
+}
+function closeTowerDrawer(){
+  document.getElementById('towerDrawer').classList.remove('show');
+  document.getElementById('towerSelectBtn').classList.remove('open');
 }
 
 function renderWavePreview(){
