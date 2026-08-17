@@ -88,6 +88,14 @@ let spots = [];
 let selectedType = 'archer';
 let seenEnemyTypes = new Set();
 let paused = false;
+let gameSpeed = 1;
+
+function toggleSpeed(){
+  gameSpeed = gameSpeed===1 ? 2 : 1;
+  const btn = document.getElementById('speedBtn');
+  btn.textContent = gameSpeed+'×';
+  btn.classList.toggle('active', gameSpeed===2);
+}
 
 function loadLevel(idx){
   currentLevelIdx = idx;

@@ -3,7 +3,7 @@
    Diğer tüm dosyalar yüklendikten sonra çalışır.
    ============================================================ */
 function loop(now){
-  const dt = Math.min((now-lastTime)/1000, 0.05);
+  const dt = Math.min((now-lastTime)/1000, 0.05) * gameSpeed;
   lastTime = now;
   if(!paused) update(dt);
   render();
@@ -37,6 +37,7 @@ document.getElementById('resetBtn').addEventListener('pointerup', ()=>loadLevel(
 document.getElementById('overlayBtn').addEventListener('pointerup', ()=>loadLevel(currentLevelIdx));
 document.getElementById('pauseBtn').addEventListener('pointerup', togglePause);
 document.getElementById('resumeBtn').addEventListener('pointerup', togglePause);
+document.getElementById('speedBtn').addEventListener('pointerup', toggleSpeed);
 
 renderTowerDock();
 loadLevel(0);

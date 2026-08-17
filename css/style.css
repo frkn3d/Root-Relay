@@ -151,9 +151,14 @@ canvas{
   display:flex; flex-direction:column; gap:5px;
 }
 .dock-row{ display:flex; align-items:flex-end; gap:6px; }
-.tower-dock{ display:flex; gap:6px; flex:1; }
+.tower-dock{
+  display:flex; gap:6px; flex:1; min-width:0;
+  overflow-x:auto; -webkit-overflow-scrolling:touch;
+  padding-bottom:1px;
+}
+.tower-dock::-webkit-scrollbar{ height:0; }
 .tower-card{
-  flex:1;
+  flex:0 0 auto; width:56px;
   background:linear-gradient(180deg, #24361f, #172417);
   border:2px solid var(--line);
   border-radius:12px;
@@ -170,6 +175,27 @@ canvas{
   display:flex; align-items:center; gap:2px;
 }
 .tower-card.disabled{ opacity:0.45; }
+
+.speed-btn{
+  flex:0 0 auto;
+  background:linear-gradient(180deg, #2c1c10, #1a1109);
+  color:var(--cream-dim);
+  border:2px solid #0a0704;
+  border-radius:12px;
+  width:44px; height:56px;
+  font-family:'Baloo 2', sans-serif;
+  font-weight:800;
+  font-size:14px;
+  cursor:pointer; touch-action:manipulation;
+  box-shadow:0 3px 0 rgba(0,0,0,0.4);
+}
+.speed-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,0.4); }
+.speed-btn.active{
+  background:linear-gradient(180deg, #4fc3a1, #206a54);
+  color:#08211a;
+  border-color:#08211a;
+  box-shadow:0 3px 0 #0e3d31;
+}
 
 .wave-btn{
   background:linear-gradient(180deg, #f4c04a, #b9832a);
