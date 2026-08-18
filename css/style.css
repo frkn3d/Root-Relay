@@ -29,7 +29,7 @@ body{
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   min-height:100%;
   min-height:100dvh;
-  padding:max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  padding:max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
   background:
     radial-gradient(ellipse at 50% -10%, rgba(244,192,74,0.08), transparent 55%),
     var(--bg-deep);
@@ -60,14 +60,9 @@ canvas{
   display:block;
   aspect-ratio: 3 / 5;
   touch-action:none;
-  /* Yükseklik, üst bar + alt bar + kenar boşlukları düşüldükten sonra
-     kalan alana göre sınırlanır; genişlik orana göre kendi ayarlanır.
-     Böylece hiçbir ekranda alt bar görüntü dışına taşmaz. */
-  height: min(
-    calc(100dvh - 230px),
-    calc((100vw - 30px) * 5 / 3),
-    calc(460px * 5 / 3)
-  );
+  /* Yükseklik JS tarafından ölçülen gerçek boş alana göre ayarlanır
+     (--game-h). JS çalışmazsa makul bir yedek değer kullanılır. */
+  height: var(--game-h, min(calc(100dvh - 200px), calc((100vw - 24px) * 5 / 3)));
   width:auto;
   max-width:100%;
 }
