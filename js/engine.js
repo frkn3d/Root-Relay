@@ -132,6 +132,17 @@ function doUpgradeTower(){
   selectedTower.totalSpent += cost;
   selectedTower.level = (selectedTower.level||0)+1;
   document.getElementById('goldVal').textContent = gold;
+  // Yükseltme anını görünür kıl: altın parçacık patlaması + yükselen yazı
+  const t = selectedTower;
+  for(let i=0;i<20;i++){
+    const ang = (i/20)*Math.PI*2;
+    particles.push({
+      x:t.x, y:t.y-6,
+      vx:Math.cos(ang)*90, vy:Math.sin(ang)*90-30,
+      life:0.55, color:'#f4c04a'
+    });
+  }
+  floatTexts.push({x:t.x, y:t.y-26, text:'SEVİYE '+t.level, life:0.9, vy:-28, color:'#f4c04a'});
   playPlace();
   renderTowerPanel();
 }
