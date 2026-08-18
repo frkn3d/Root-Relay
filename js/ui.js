@@ -61,15 +61,17 @@ function openStartScreen(){
   showMenuPage('menuMain');
   document.body.classList.add('in-menu');
   document.getElementById('startScreen').classList.remove('hide');
+  if(typeof invalidateFit === 'function') invalidateFit();
   if(typeof fitGameToViewport === 'function') fitGameToViewport();
 }
 function closeStartScreen(){
   document.body.classList.remove('in-menu');
   document.getElementById('startScreen').classList.add('hide');
   // Barlar yeniden göründü; oyun sahasını kalan alana göre yeniden ölç.
+  if(typeof invalidateFit === 'function') invalidateFit();
   if(typeof fitGameToViewport === 'function'){
     fitGameToViewport();
-    setTimeout(fitGameToViewport, 60);
+    setTimeout(()=>{ invalidateFit(); fitGameToViewport(); }, 60);
   }
 }
 

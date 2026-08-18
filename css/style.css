@@ -55,16 +55,19 @@ body{
   box-shadow: 0 18px 50px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(0,0,0,0.25);
   background:#0f1a12;
   max-width:100%;
+  /* Satır-içi boşluk kaynaklı 1-4px'lik alt boşluğu engeller */
+  display:flex;
+  line-height:0;
+  font-size:0;
 }
 canvas{
   display:block;
-  aspect-ratio: 3 / 5;
   touch-action:none;
-  /* Yükseklik JS tarafından ölçülen gerçek boş alana göre ayarlanır
-     (--game-h). JS çalışmazsa makul bir yedek değer kullanılır. */
-  height: var(--game-h, min(calc(100dvh - 200px), calc((100vw - 24px) * 5 / 3)));
-  width:auto;
-  max-width:100%;
+  /* Genişlik ve yükseklik JS tarafından TAM SAYI olarak verilir.
+     aspect-ratio kullanılmaz; böylece tarayıcının ondalık yuvarlaması
+     çerçeve ile canvas arasında boşluk bırakmaz. */
+  width: var(--game-w, 300px);
+  height: var(--game-h, 500px);
 }
 
 .top-bar{
@@ -240,7 +243,7 @@ canvas{
 .pause-menu-btn.primary:active{ transform:translateY(2px); box-shadow:0 1px 0 #7a5518; }
 
 .bottom-dock{
-  position:static;
+  position:relative;
   width:auto;
   margin:6px 0 0;
   background:linear-gradient(180deg, #1a281a, #101c11);
@@ -275,13 +278,18 @@ canvas{
 .tower-select-btn .ts-cost{ font-family:'JetBrains Mono', monospace; font-size:8px; color:var(--gold); }
 
 .tower-drawer{
+  /* Alt barın ÜSTÜNDE açılır. Düzeni itmediği için oyun sahası
+     yeniden boyutlanmaz — en-boy oranı sabit kalır. */
+  position:absolute;
+  left:7px; right:7px; bottom:calc(100% + 6px);
+  z-index:9;
   display:none; flex-wrap:nowrap; gap:5px;
-  background:rgba(12,20,12,0.96);
-  border:2px solid var(--line);
+  background:rgba(12,20,12,0.97);
+  border:2px solid var(--wood);
   border-radius:10px;
   padding:6px;
-  width:fit-content; max-width:100%;
   overflow-x:auto; -webkit-overflow-scrolling:touch;
+  box-shadow:0 8px 20px rgba(0,0,0,0.5);
 }
 .tower-drawer::-webkit-scrollbar{ height:0; }
 .tower-drawer.show{ display:flex; }
@@ -519,4 +527,38 @@ body.in-menu .frame{ border-color:transparent; box-shadow:none; }
 .about-line{
   font-family:'JetBrains Mono', monospace; font-size:12px;
   color:var(--cream); letter-spacing:0.04em;
+}
+
+/* --- Yatay mod uyarısı ---
+   Oyun dikey tasarlandığı için kısa-geniş ekranlarda saha oynanamayacak
+   kadar küçülür. Bu durumda oyunu gizleyip döndürme uyarısı gösterilir. */
+.rotate-hint{
+  display:none;
+  position:fixed; inset:0; z-index:100;
+  flex-direction:column; align-items:center; justify-content:center; gap:8px;
+  background:linear-gradient(180deg, #16261a, #0c1610 70%);
+  text-align:center; padding:20px;
+}
+.rotate-ic{
+  font-size:44px;
+  animation:rotate-nudge 2s ease-in-out infinite;
+}
+@keyframes rotate-nudge{
+  0%, 60%, 100%{ transform:rotate(0deg); }
+  75%{ transform:rotate(-90deg); }
+  90%{ transform:rotate(-90deg); }
+}
+.rotate-title{
+  font-family:'Baloo 2', sans-serif; font-weight:800;
+  font-size:20px; color:var(--gold);
+}
+.rotate-sub{
+  font-family:'JetBrains Mono', monospace; font-size:11.5px;
+  color:var(--cream-dim); line-height:1.5; max-width:280px;
+}
+
+/* Kısa ve geniş ekran (yatay telefon): oyunu gizle, uyarıyı göster */
+@media (orientation:landscape) and (max-height:480px){
+  .rotate-hint{ display:flex; }
+  .wrap{ display:none; }
 }

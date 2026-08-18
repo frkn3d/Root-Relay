@@ -4,8 +4,10 @@
    ============================================================ */
 
 /* Oyun sahasını, üst/alt barların GERÇEK yüksekliğini ölçerek
-   kalan alana tam oturtur. Sabit tahmin yerine ölçüm kullanmak
-   her cihazda boşluk kalmamasını sağlar. */
+   kalan alana tam oturtur. Genişlik ve yükseklik TAM SAYI olarak
+   verilir; aksi halde ondalık yuvarlama çerçevede boşluk bırakır. */
+let lastFitKey = '';
+function invalidateFit(){ lastFitKey = ''; }
 function fitGameToViewport(){
   const wrap = document.querySelector('.wrap');
   const topBar = document.querySelector('.top-bar');
@@ -26,20 +28,40 @@ function fitGameToViewport(){
   const availH = Math.max(240, viewportH - padY - barsH);
   const availW = Math.max(200, viewportW - padX - 8);
 
-  // 3:5 oranını koruyarak hem genişliğe hem yüksekliğe sığdır
-  const h = Math.min(availH, availW * 5 / 3);
+  // 3:5 oranını koruyarak hem genişliğe hem yüksekliğe sığdır.
+  // Önce genişliği tam sayıya yuvarla, yüksekliği ondan türet:
+  // böylece oran hatası hiç birikmez ve çerçeve tam oturur.
+  const maxH = Math.min(availH, availW * 5 / 3);
+  const w = Math.floor(maxH * 3 / 5);
+  const h = Math.round(w * 5 / 3);
+
+  // Aynı ölçüde ise DOM'a hiç dokunma (gereksiz reflow/titremeyi önler)
+  const key = w + 'x' + h;
+  if(key === lastFitKey) return;
+  lastFitKey = key;
+
+  document.documentElement.style.setProperty('--game-w', w + 'px');
   document.documentElement.style.setProperty('--game-h', h + 'px');
 }
 
-window.addEventListener('resize', fitGameToViewport);
+/* Art arda gelen boyut olaylarını tek bir kareye topla */
+let fitScheduled = false;
+function scheduleFit(){
+  if(fitScheduled) return;
+  fitScheduled = true;
+  requestAnimationFrame(()=>{ fitScheduled = false; fitGameToViewport(); });
+}
+
+window.addEventListener('resize', scheduleFit);
 window.addEventListener('orientationchange', ()=>setTimeout(fitGameToViewport, 250));
 if(window.visualViewport){
-  window.visualViewport.addEventListener('resize', fitGameToViewport);
+  window.visualViewport.addEventListener('resize', scheduleFit);
 }
-// Kule menüsü açılıp kapanınca veya dalga önizlemesi değişince
-// barların yüksekliği değişir — sahayı otomatik yeniden ölç.
+// Barların yüksekliği değişirse (yazı tipi yüklenmesi, HUD içeriği vb.)
+// sahayı yeniden ölç. Kule menüsü artık düzeni itmediği için burayı
+// tetiklemez; oyun sahası menü açılırken sabit kalır.
 if(window.ResizeObserver){
-  const ro = new ResizeObserver(()=>fitGameToViewport());
+  const ro = new ResizeObserver(scheduleFit);
   const observeBars = ()=>{
     const tb = document.querySelector('.top-bar');
     const bd = document.querySelector('.bottom-dock');
