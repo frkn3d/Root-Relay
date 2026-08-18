@@ -354,6 +354,11 @@ canvas{
 }
 .start-screen.hide{ opacity:0; visibility:hidden; pointer-events:none; transition:opacity .3s ease, visibility 0s linear .3s; }
 
+/* Ana menü açıkken oyun barları görünmez — menü tam ekranı kaplar. */
+body.in-menu .top-bar,
+body.in-menu .bottom-dock{ display:none; }
+body.in-menu .frame{ border-color:transparent; box-shadow:none; }
+
 /* --- Menü sayfaları: aynı anda yalnızca biri görünür --- */
 .menu-page{
   display:none;

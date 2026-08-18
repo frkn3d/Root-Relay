@@ -19,8 +19,9 @@ function fitGameToViewport(){
   const viewportH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
   const viewportW = window.visualViewport ? window.visualViewport.width : window.innerWidth;
 
-  // Barların dış yüksekliği + aralarındaki dikey boşluklar + çerçeve kenarlığı
-  const barsH = topBar.offsetHeight + dock.offsetHeight + 12 + 8;
+  // Menüdeyken barlar gizli (offsetHeight = 0), saha tüm alanı kullanır.
+  const inMenu = document.body.classList.contains('in-menu');
+  const barsH = inMenu ? 0 : (topBar.offsetHeight + dock.offsetHeight + 12 + 8);
 
   const availH = Math.max(240, viewportH - padY - barsH);
   const availW = Math.max(200, viewportW - padX - 8);
