@@ -12,6 +12,18 @@
 <body>
 <div class="wrap">
   <div class="stage">
+
+    <div class="top-bar">
+      <div class="tb-group">
+        <div class="hud-chip"><span class="ic">❤️</span><b id="livesVal">10</b></div>
+        <div class="hud-chip" id="goldChip"><span class="ic">🪙</span><b id="goldVal">170</b></div>
+      </div>
+      <div class="tb-group">
+        <div class="hud-chip"><span class="ic">💀</span><b id="waveVal">0</b>/<b id="waveMax">8</b></div>
+        <div class="pauseIcon" id="pauseBtn" title="Duraklat">⏸</div>
+      </div>
+    </div>
+
     <div class="frame" id="frame">
       <canvas id="game"></canvas>
 
@@ -21,19 +33,6 @@
         <div class="ss-sub">biyolüminesan ormanda kule savunması</div>
         <div class="ss-levels" id="ssLevelList"></div>
         <button class="ss-sound sound-toggle-btn" id="soundBtn">🔊 Ses</button>
-      </div>
-
-      <div class="top-hud">
-        <div class="hud-left">
-          <div class="hud-chip"><span class="ic">❤️</span><b id="livesVal">10</b></div>
-          <div class="hud-chip" id="goldChip"><span class="ic">🪙</span><b id="goldVal">170</b></div>
-        </div>
-        <div class="hud-right">
-          <div class="hud-chip"><span class="ic">💀</span>Dalga <b id="waveVal">0</b>/<b id="waveMax">8</b></div>
-          <div class="hud-icon-row">
-            <div class="pauseIcon" id="pauseBtn" title="Duraklat">⏸</div>
-          </div>
-        </div>
       </div>
 
       <div class="overlay" id="overlay">

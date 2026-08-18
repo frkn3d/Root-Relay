@@ -376,6 +376,19 @@ function drawTower(t){
     ctx.stroke(); ctx.setLineDash([]);
     ctx.restore();
   }
+
+  if(pressProgressTower===t){
+    const p = Math.min((performance.now()-pressProgressStart)/LONG_PRESS_MS, 1);
+    if(p>0.12){
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, 28, -Math.PI/2, -Math.PI/2 + p*Math.PI*2);
+      ctx.strokeStyle='#f4c04a'; ctx.lineWidth=3.5; ctx.lineCap='round';
+      ctx.shadowColor='#f4c04a'; ctx.shadowBlur=10;
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
 }
 
 function drawEnemy(e){

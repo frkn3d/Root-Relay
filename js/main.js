@@ -15,7 +15,6 @@ function pointerToLogical(clientX, clientY){
   return { x:(clientX-rect.left)*(LW/rect.width), y:(clientY-rect.top)*(LH/rect.height) };
 }
 
-const LONG_PRESS_MS = 420;
 const MOVE_CANCEL_PX = 12;
 let pressTimer = null;
 let pressStartPos = null;
@@ -45,9 +44,12 @@ canvas.addEventListener('pointerdown',(e)=>{
   longPressFired = false;
   pressTower = findTowerAt(mx,my);
   if(pressTower){
+    pressProgressTower = pressTower;
+    pressProgressStart = performance.now();
     clearTimeout(pressTimer);
     pressTimer = setTimeout(()=>{
       longPressFired = true;
+      pressProgressTower = null;
       openTowerPanel(pressTower);
       if(navigator.vibrate) { try{ navigator.vibrate(15); }catch(e){} }
     }, LONG_PRESS_MS);
@@ -59,18 +61,21 @@ canvas.addEventListener('pointermove',(e)=>{
   const {x:mx,y:my} = pointerToLogical(e.clientX,e.clientY);
   if(Math.hypot(mx-pressStartPos.x,my-pressStartPos.y) > MOVE_CANCEL_PX){
     clearTimeout(pressTimer); pressTimer=null;
+    pressProgressTower = null;
   }
 });
 
 function cancelPress(){
   clearTimeout(pressTimer); pressTimer=null;
   pressStartPos=null; pressTower=null; longPressFired=false;
+  pressProgressTower=null;
 }
 canvas.addEventListener('pointercancel', cancelPress);
-canvas.addEventListener('pointerleave', ()=>{ clearTimeout(pressTimer); pressTimer=null; });
+canvas.addEventListener('pointerleave', ()=>{ clearTimeout(pressTimer); pressTimer=null; pressProgressTower=null; });
 
 canvas.addEventListener('pointerup',(e)=>{
   clearTimeout(pressTimer); pressTimer=null;
+  pressProgressTower=null;
   if(canvasInputBlocked()){ cancelPress(); return; }
   if(document.getElementById('towerDrawer').classList.contains('show')){
     closeTowerDrawer();

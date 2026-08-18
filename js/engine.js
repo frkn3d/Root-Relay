@@ -92,6 +92,9 @@ let gameSpeed = 1;
 let selectedTower = null;
 let towerPanelOpen = false;
 let activeTowerRing = null; // tek tıkla menzil önizlemesi (panel açmadan)
+let pressProgressTower = null;  // basılı tutulan kule (ilerleme halkası için)
+let pressProgressStart = 0;     // basılı tutmanın başladığı zaman damgası
+const LONG_PRESS_MS = 1000;     // yükseltme panelini açmak için gereken basılı tutma süresi
 let sellConfirmPending = false;
 
 const UPGRADE_COST_MULT = [0.6, 0.9, 1.3]; // level0->1, level1->2, level2->3
