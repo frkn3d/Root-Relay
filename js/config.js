@@ -36,7 +36,7 @@ const LEVELS = [
     ],
     difficulty:{ hpGrowth:0.16, speedGrowth:0.025, speedCap:1.5, countBase:7, countGrowth:1.85 },
     waveOverrides:{
-      8:[ {type:'brute', count:4, interval:1.1}, {type:'husk', count:3, interval:0.9}, {type:'sprinter', count:6, interval:0.25} ]
+      8:[ {type:'swarm', count:14, interval:0.3}, {type:'sprinter', count:14, interval:0.35}, {type:'husk', count:8, interval:1.0}, {type:'brute', count:7, interval:1.5} ]
     }
   },
   {
@@ -57,34 +57,51 @@ const LEVELS = [
     ],
     difficulty:{ hpGrowth:0.21, speedGrowth:0.03, speedCap:1.65, countBase:8, countGrowth:2.15 },
     waveOverrides:{
-      10:[ {type:'brute', count:6, interval:0.9}, {type:'husk', count:5, interval:0.7}, {type:'sprinter', count:10, interval:0.2}, {type:'spore', count:8, interval:0.3} ]
+      10:[ {type:'swarm', count:20, interval:0.28}, {type:'sprinter', count:20, interval:0.3}, {type:'spore', count:16, interval:0.4}, {type:'husk', count:12, interval:0.9}, {type:'brute', count:10, interval:1.3} ]
     }
   },
 ];
 
 // Zorluk formülü: dalga index'inden düşman kompozisyonu üretir.
 // 4 kademe: erken sürü -> hızlılar katılır -> zırhlılar katılır -> ağır tehditler.
+/* Dalga bazlı düşman sayısı çarpanı:
+   1. dalga normal, 2. dalga +%50, 3. dalga +%100, 4+ dalga +%150 */
+function waveCountMultiplier(waveIndex){
+  if(waveIndex <= 1) return 1.0;
+  if(waveIndex === 2) return 1.5;
+  if(waveIndex === 3) return 2.0;
+  return 2.5;
+}
+
+/* Spawn aralıkları: düşman sayısı arttıkça dalganın tek seferde
+   üstüne yığılmaması ve oyunun daha uzun sürmesi için araları açılır. */
+const SPAWN_GAP = 1.6;   // grup türü aralık çarpanı
+const GROUP_GAP = 1.1;   // gruplar arası ek bekleme (saniye)
+
 function generateWave(level, waveIndex){
   if(level.waveOverrides && level.waveOverrides[waveIndex]) return level.waveOverrides[waveIndex];
   const p = level.difficulty;
-  const count = p.countBase + Math.floor(waveIndex * p.countGrowth);
+  const mult = waveCountMultiplier(waveIndex);
+  const count = Math.round((p.countBase + Math.floor(waveIndex * p.countGrowth)) * mult);
   const groups = [];
   if(waveIndex < 2){
-    groups.push({type:'spore', count:Math.ceil(count*0.7), interval:0.5});
-    groups.push({type:'swarm', count:Math.ceil(count*0.5), interval:0.22});
+    groups.push({type:'spore', count:Math.ceil(count*0.7), interval:0.5*SPAWN_GAP});
+    groups.push({type:'swarm', count:Math.ceil(count*0.5), interval:0.22*SPAWN_GAP});
   } else if(waveIndex < 4){
-    groups.push({type:'spore', count:Math.ceil(count*0.5), interval:0.45});
-    groups.push({type:'swarm', count:Math.ceil(count*0.4), interval:0.2});
-    groups.push({type:'sprinter', count:Math.ceil(count*0.3), interval:0.3});
+    groups.push({type:'spore', count:Math.ceil(count*0.5), interval:0.45*SPAWN_GAP});
+    groups.push({type:'swarm', count:Math.ceil(count*0.4), interval:0.2*SPAWN_GAP});
+    groups.push({type:'sprinter', count:Math.ceil(count*0.3), interval:0.3*SPAWN_GAP});
   } else if(waveIndex < 7){
-    groups.push({type:'spore', count:Math.ceil(count*0.4), interval:0.4});
-    groups.push({type:'sprinter', count:Math.ceil(count*0.35), interval:0.28});
-    groups.push({type:'husk', count:Math.max(1,Math.floor(waveIndex/2)), interval:0.8});
+    groups.push({type:'spore', count:Math.ceil(count*0.5), interval:0.4*SPAWN_GAP});
+    groups.push({type:'swarm', count:Math.ceil(count*0.3), interval:0.2*SPAWN_GAP});
+    groups.push({type:'sprinter', count:Math.ceil(count*0.4), interval:0.28*SPAWN_GAP});
+    groups.push({type:'husk', count:Math.max(1,Math.floor(waveIndex/2)), interval:0.8*SPAWN_GAP});
   } else {
-    groups.push({type:'spore', count:Math.ceil(count*0.35), interval:0.4});
-    groups.push({type:'sprinter', count:Math.ceil(count*0.3), interval:0.26});
-    groups.push({type:'husk', count:Math.max(1,Math.floor(waveIndex/2.5)), interval:0.7});
-    groups.push({type:'brute', count:Math.max(1,Math.floor(waveIndex/3)), interval:1.0});
+    groups.push({type:'spore', count:Math.ceil(count*0.45), interval:0.4*SPAWN_GAP});
+    groups.push({type:'swarm', count:Math.ceil(count*0.3), interval:0.2*SPAWN_GAP});
+    groups.push({type:'sprinter', count:Math.ceil(count*0.4), interval:0.26*SPAWN_GAP});
+    groups.push({type:'husk', count:Math.max(2,Math.floor(waveIndex/2)), interval:0.7*SPAWN_GAP});
+    groups.push({type:'brute', count:Math.max(1,Math.floor(waveIndex/3)), interval:1.0*SPAWN_GAP});
   }
   return groups;
 }

@@ -236,7 +236,7 @@ function startWave(){
       });
       t += g.interval;
     }
-    t += 0.5;
+    t += GROUP_GAP; // config.js — gruplar arası nefes payı
   });
   waveElapsed=0; waveActive=true;
   setWaveBtnReady(false); // ui.js
