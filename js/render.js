@@ -470,27 +470,33 @@ function drawBuildProgress(t){
   ctx.restore();
 }
 
-function drawTower(t){
-  const st = getTowerStats(t);
+/* Menzil halkası — düşmanlardan ÖNCE (zeminin üstüne) çizilir ki
+   yarı saydam dolgu düşmanların üstünü kapatmasın. */
+function drawTowerRange(t){
   const isSelected = towerPanelOpen && selectedTower===t;
   const showRing = isSelected || activeTowerRing===t;
-  if(showRing){
-    ctx.save();
-    ctx.beginPath(); ctx.arc(t.x,t.y,st.range,0,Math.PI*2);
-    ctx.fillStyle = t.def.color+'30';
-    ctx.fill();
-    ctx.shadowColor = t.def.color; ctx.shadowBlur = 16;
-    ctx.strokeStyle = t.def.color;
-    ctx.lineWidth = 3;
-    ctx.setLineDash([8,6]);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.shadowBlur = 0;
-    ctx.beginPath(); ctx.arc(t.x,t.y,st.range,0,Math.PI*2);
-    ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=1;
-    ctx.stroke();
-    ctx.restore();
-  }
+  if(!showRing) return;
+  const st = getTowerStats(t);
+  ctx.save();
+  ctx.beginPath(); ctx.arc(t.x,t.y,st.range,0,Math.PI*2);
+  ctx.fillStyle = t.def.color+'30';
+  ctx.fill();
+  ctx.shadowColor = t.def.color; ctx.shadowBlur = 16;
+  ctx.strokeStyle = t.def.color;
+  ctx.lineWidth = 3;
+  ctx.setLineDash([8,6]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.shadowBlur = 0;
+  ctx.beginPath(); ctx.arc(t.x,t.y,st.range,0,Math.PI*2);
+  ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=1;
+  ctx.stroke();
+  ctx.restore();
+}
+
+/* Kule gövdesi — düşmanlardan SONRA çizilir, böylece kuleler
+   her zaman düşmanların önünde görünür. */
+function drawTower(t){
   ctx.save();
   // İnşa halindeyken kule yarı saydam çizilir (henüz aktif değil)
   const building = t.buildLeft > 0;
@@ -519,7 +525,7 @@ function drawTower(t){
     ctx.restore();
   }
 
-  if(isSelected){
+  if(towerPanelOpen && selectedTower===t){
     ctx.save();
     const pulse = 2+Math.sin(performance.now()/200)*1.5;
     ctx.beginPath(); ctx.arc(t.x,t.y,26+pulse,0,Math.PI*2);
@@ -671,8 +677,11 @@ function render(){
   ctx.clearRect(-20,-20,LW+40,LH+40);
   ctx.drawImage(bgCanvas,0,0);
   drawPath(); drawSpots();
-  towers.forEach(drawTower);
+  // Katman sırası: menzil halkaları zeminde, sonra düşmanlar,
+  // en üstte kuleler — böylece kuleler düşmanların arkasında kalmaz.
+  towers.forEach(drawTowerRange);
   enemies.forEach(drawEnemy);
+  towers.forEach(drawTower);
   projectiles.forEach(drawProjectile);
   drawExplosions();
   drawParticles();
