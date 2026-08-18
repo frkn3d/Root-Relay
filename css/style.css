@@ -55,10 +55,10 @@ body{
   box-shadow: 0 18px 50px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(0,0,0,0.25);
   background:#0f1a12;
   max-width:100%;
-  /* Satır-içi boşluk kaynaklı 1-4px'lik alt boşluğu engeller */
+  /* display:flex, canvas'ın altındaki satır-içi boşluğu zaten giderir.
+     Buraya line-height/font-size sıfırlaması EKLENMEMELİ — çerçevenin
+     içindeki menü ekranına miras kalıp metinleri üst üste bindirir. */
   display:flex;
-  line-height:0;
-  font-size:0;
 }
 canvas{
   display:block;
@@ -122,6 +122,7 @@ canvas{
 
 .tower-panel{
   position:absolute; left:8px; right:8px; top:8px;
+  line-height:1.35;
   display:none;
   background:rgba(15,25,17,0.5);
   backdrop-filter:blur(9px);
@@ -179,6 +180,7 @@ canvas{
 /* --- Dalga tamamlandı bildirimi --- */
 .wave-toast{
   position:absolute; left:50%; top:38%;
+  line-height:1.3;
   transform:translate(-50%,-50%) scale(0.85);
   z-index:7; pointer-events:none;
   opacity:0;
@@ -207,6 +209,7 @@ canvas{
 
 .overlay{
   position:absolute; inset:0; z-index:8;
+  line-height:1.35; font-size:14px;
   display:flex; align-items:center; justify-content:center; flex-direction:column;
   background:rgba(10,18,14,0.88);
   backdrop-filter:blur(3px);
@@ -395,6 +398,7 @@ canvas{
 .start-screen{
   position:absolute; inset:0; z-index:20;
   display:flex; align-items:center; justify-content:center;
+  line-height:1.35; font-size:14px;
   background:
     radial-gradient(ellipse at 50% 20%, rgba(244,192,74,0.12), transparent 55%),
     linear-gradient(180deg, #16261a, #0c1610 70%);
@@ -487,10 +491,10 @@ body.in-menu .frame{ border-color:transparent; box-shadow:none; }
 }
 .ss-level-card:active{ transform:scale(0.98); }
 .ss-level-card:hover{ border-color:rgba(244,192,74,0.5); }
-.ss-level-info{ flex:1; }
-.ss-level-name{ font-family:'Baloo 2', sans-serif; font-weight:700; font-size:15px; color:var(--cream); }
-.ss-level-stars{ font-size:11px; letter-spacing:2px; margin-top:2px; }
-.ss-level-best{ font-size:10px; color:var(--cream-dim); font-family:'JetBrains Mono', monospace; margin-top:2px; }
+.ss-level-info{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+.ss-level-name{ font-family:'Baloo 2', sans-serif; font-weight:700; font-size:15px; line-height:1.2; color:var(--cream); }
+.ss-level-stars{ font-size:11px; line-height:1.2; letter-spacing:2px; }
+.ss-level-best{ font-size:10px; line-height:1.2; color:var(--cream-dim); font-family:'JetBrains Mono', monospace; }
 .ss-level-play{
   flex-shrink:0; width:34px; height:34px; border-radius:50%;
   background:linear-gradient(180deg, #f4c04a, #b9832a);
