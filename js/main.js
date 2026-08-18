@@ -57,8 +57,8 @@ canvas.addEventListener('pointerup',(e)=>{
 });
 
 document.getElementById('waveBtn').addEventListener('pointerup', startWave);
-document.getElementById('resetBtn').addEventListener('pointerup', ()=>{ playMenuTap(); loadLevel(currentLevelIdx); });
 document.getElementById('overlayBtn').addEventListener('pointerup', ()=>{ playMenuTap(); loadLevel(currentLevelIdx); });
+document.getElementById('restartBtnPause').addEventListener('pointerup', ()=>{ playMenuTap(); loadLevel(currentLevelIdx); });
 document.getElementById('pauseBtn').addEventListener('pointerup', togglePause);
 document.getElementById('resumeBtn').addEventListener('pointerup', togglePause);
 document.getElementById('speedBtn').addEventListener('pointerup', toggleSpeed);

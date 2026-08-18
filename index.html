@@ -32,7 +32,6 @@
           <div class="hud-chip"><span class="ic">💀</span>Dalga <b id="waveVal">0</b>/<b id="waveMax">8</b></div>
           <div class="hud-icon-row">
             <div class="pauseIcon" id="pauseBtn" title="Duraklat">⏸</div>
-            <div class="resetIcon" id="resetBtn" title="Sıfırla">↺</div>
           </div>
         </div>
       </div>
@@ -49,12 +48,12 @@
 
       <div class="overlay pause-overlay" id="pauseOverlay">
         <h2>⏸ Duraklatıldı</h2>
-        <p>Oyun beklemede — devam etmek için dokun</p>
-        <div class="pause-actions">
-          <button class="btn ghost sound-toggle-btn" id="soundBtnPause">🔊 Ses</button>
-          <button class="btn ghost" id="mainMenuBtnPause">🏠 Ana Menü</button>
+        <div class="pause-menu-list">
+          <button class="btn pause-menu-btn primary" id="resumeBtn">▶ Devam Et</button>
+          <button class="btn pause-menu-btn" id="restartBtnPause">🔄 Yeniden Başlat</button>
+          <button class="btn pause-menu-btn sound-toggle-btn" id="soundBtnPause">🔊 Ses</button>
+          <button class="btn pause-menu-btn" id="mainMenuBtnPause">🏠 Ana Menü</button>
         </div>
-        <button class="btn ghost" id="resumeBtn" style="margin-top:6px;">Devam Et</button>
       </div>
 
       <div class="tower-panel" id="towerPanel">
