@@ -7,7 +7,7 @@ const ENEMY_TYPES = {
   swarm:    { hp:10, speed:1.1,  radius:9,  gold:3,  dmgToLives:1, label:'Sürü',    shape:'blob',   body:'#c9e07a', body2:'#7a9c3a', eyes:1 },
   sprinter: { hp:16, speed:1.6,  radius:12, gold:4,  dmgToLives:1, label:'Koşucu',  shape:'runner', body:'#ffbf6b', body2:'#d98a2e', eyes:2 },
   husk:     { hp:50, speed:0.62, radius:17, gold:9,  dmgToLives:1, label:'Kabuklu', shape:'brute',  body:'#c9b483', body2:'#8a6f42', eyes:2 },
-  brute:    { hp:82, speed:0.48, radius:21, gold:13, dmgToLives:2, label:'Ur',      shape:'brute',  body:'#b25bc9', body2:'#6f2f88', eyes:2 },
+  brute:    { hp:148, speed:0.48, radius:21, gold:13, dmgToLives:2, label:'Ur',      shape:'brute',  body:'#b25bc9', body2:'#6f2f88', eyes:2 },
 };
 
 const TOWER_TYPES = {
@@ -36,7 +36,7 @@ const LEVELS = [
     ],
     difficulty:{ hpGrowth:0.16, speedGrowth:0.025, speedCap:1.5, countBase:7, countGrowth:1.85 },
     waveOverrides:{
-      8:[ {type:'swarm', count:14, interval:0.3}, {type:'sprinter', count:14, interval:0.35}, {type:'husk', count:8, interval:1.0}, {type:'brute', count:7, interval:1.5} ]
+      8:[ {type:'swarm', count:24, interval:0.32}, {type:'sprinter', count:24, interval:0.38}, {type:'husk', count:14, interval:1.05}, {type:'brute', count:12, interval:1.6} ]
     }
   },
   {
@@ -57,7 +57,7 @@ const LEVELS = [
     ],
     difficulty:{ hpGrowth:0.21, speedGrowth:0.03, speedCap:1.65, countBase:8, countGrowth:2.15 },
     waveOverrides:{
-      10:[ {type:'swarm', count:20, interval:0.28}, {type:'sprinter', count:20, interval:0.3}, {type:'spore', count:16, interval:0.4}, {type:'husk', count:12, interval:0.9}, {type:'brute', count:10, interval:1.3} ]
+      10:[ {type:'swarm', count:34, interval:0.3}, {type:'sprinter', count:34, interval:0.32}, {type:'spore', count:27, interval:0.42}, {type:'husk', count:20, interval:0.95}, {type:'brute', count:17, interval:1.4} ]
     }
   },
 ];
@@ -65,12 +65,14 @@ const LEVELS = [
 // Zorluk formülü: dalga index'inden düşman kompozisyonu üretir.
 // 4 kademe: erken sürü -> hızlılar katılır -> zırhlılar katılır -> ağır tehditler.
 /* Dalga bazlı düşman sayısı çarpanı:
-   1. dalga normal, 2. dalga +%50, 3. dalga +%100, 4+ dalga +%150 */
+   1. dalga normal, 2. dalga +%50, 3. dalga +%100, 4-6. dalga +%150,
+   7. ve sonrası ayrıca +%70 (geç oyun sertliği) */
 function waveCountMultiplier(waveIndex){
   if(waveIndex <= 1) return 1.0;
   if(waveIndex === 2) return 1.5;
   if(waveIndex === 3) return 2.0;
-  return 2.5;
+  if(waveIndex <= 6) return 2.5;
+  return 2.5 * 1.7;  // 7. dalgadan itibaren: 4.25
 }
 
 /* Spawn aralıkları: düşman sayısı arttıkça dalganın tek seferde

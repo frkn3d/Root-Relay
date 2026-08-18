@@ -224,11 +224,12 @@ canvas{
   transition:opacity .18s ease;
 }
 .overlay.show{ opacity:1; visibility:visible; pointer-events:auto; }
-.overlay-stars{ font-size:28px; letter-spacing:6px; }
-.overlay h2{ font-family:'Baloo 2', sans-serif; font-weight:800; font-size:clamp(22px,7vw,30px); margin:0; }
+.overlay > *{ flex:0 0 auto; }
+.overlay-stars{ font-size:28px; line-height:1.2; letter-spacing:6px; }
+.overlay h2{ font-family:'Baloo 2', sans-serif; font-weight:800; font-size:clamp(22px,7vw,30px); line-height:1.25; margin:0; }
 .overlay h2.win{ color:#7fe3b4; }
 .overlay h2.lose{ color:var(--red); }
-.overlay p{ margin:0; color:var(--cream-dim); font-family:'JetBrains Mono', monospace; font-size:12.5px;}
+.overlay p{ margin:0; line-height:1.4; color:var(--cream-dim); font-family:'JetBrains Mono', monospace; font-size:12.5px;}
 .overlay-actions{
   display:flex; gap:8px; margin-top:6px; width:100%; max-width:260px;
 }
