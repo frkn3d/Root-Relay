@@ -530,7 +530,7 @@ function drawTower(t){
 
   if(pressProgressTower===t){
     const p = Math.min((performance.now()-pressProgressStart)/LONG_PRESS_MS, 1);
-    if(p>0.12){
+    if(p>0.06){
       ctx.save();
       ctx.beginPath();
       ctx.arc(t.x, t.y, 28, -Math.PI/2, -Math.PI/2 + p*Math.PI*2);
