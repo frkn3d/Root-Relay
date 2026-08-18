@@ -26,6 +26,7 @@ function fitGameToViewport(){
   const barsH = inMenu ? 0 : (topBar.offsetHeight + dock.offsetHeight + 12 + 8);
 
   const availH = Math.max(240, viewportH - padY - barsH);
+  // Çerçeve kenarlığı (2×4px) da genişliğe dahil olduğu için düşülür
   const availW = Math.max(200, viewportW - padX - 8);
 
   // 3:5 oranını koruyarak hem genişliğe hem yüksekliğe sığdır.

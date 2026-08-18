@@ -43,18 +43,21 @@ body{
 #goldChip.shake{ animation:shake-x 0.35s ease; border-color:var(--red); }
 
 .stage{
-  width:fit-content; max-width:100%;
+  /* Genişlik doğrudan canvas'a kilitlenir: --game-w + çerçeve kenarlığı (2×4px).
+     Böylece üst bar, oyun çerçevesi ve alt bar HER ZAMAN aynı genişlikte olur. */
+  width: calc(var(--game-w, 300px) + 8px);
+  max-width:100%;
   display:flex; flex-direction:column; align-items:stretch;
 }
 
 .frame{
   position:relative;
+  width:100%;
   border-radius:20px;
   overflow:hidden;
   border:4px solid var(--wood);
   box-shadow: 0 18px 50px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(0,0,0,0.25);
   background:#0f1a12;
-  max-width:100%;
   /* display:flex, canvas'ın altındaki satır-içi boşluğu zaten giderir.
      Buraya line-height/font-size sıfırlaması EKLENMEMELİ — çerçevenin
      içindeki menü ekranına miras kalıp metinleri üst üste bindirir. */
@@ -68,10 +71,12 @@ canvas{
      çerçeve ile canvas arasında boşluk bırakmaz. */
   width: var(--game-w, 300px);
   height: var(--game-h, 500px);
+  flex:0 0 auto;
 }
 
 .top-bar{
-  width:auto;
+  width:100%;
+  min-width:0;
   margin:0 0 6px;
   background:linear-gradient(180deg, #1a281a, #101c11);
   border:3px solid var(--wood);
@@ -94,7 +99,8 @@ canvas{
   color:var(--cream);
   box-shadow:0 2px 0 rgba(0,0,0,0.4);
   white-space:nowrap;
-  flex-shrink:0;
+  min-width:0;
+  overflow:hidden;
 }
 .hud-chip .ic{ font-size:13px; line-height:1;}
 .pauseIcon{
@@ -247,7 +253,8 @@ canvas{
 
 .bottom-dock{
   position:relative;
-  width:auto;
+  width:100%;
+  min-width:0;
   margin:6px 0 0;
   background:linear-gradient(180deg, #1a281a, #101c11);
   border:3px solid var(--wood);
@@ -256,7 +263,7 @@ canvas{
   padding:5px 7px;
   display:flex; flex-direction:column; gap:4px;
 }
-.dock-row{ display:flex; align-items:flex-end; gap:5px; }
+.dock-row{ display:flex; align-items:flex-end; gap:5px; min-width:0; }
 
 .tower-select-btn{
   flex:0 0 auto;
@@ -337,11 +344,12 @@ canvas{
 }
 
 .wave-btn{
+  flex:1 1 auto; min-width:0;
   background:linear-gradient(180deg, #f4c04a, #b9832a);
   color:#2a1c08;
   border:2px solid #0a0704;
   border-radius:10px;
-  padding:0 12px;
+  padding:0 10px;
   height:44px;
   font-family:'Baloo 2', sans-serif;
   font-weight:800;
@@ -350,6 +358,7 @@ canvas{
   box-shadow:0 2px 0 #7a5518;
   white-space:nowrap;
   line-height:1.15;
+  overflow:hidden;
 }
 .wave-btn:active{ transform:translateY(1px); box-shadow:0 1px 0 #7a5518;}
 .wave-btn:disabled{ opacity:0.4; }
