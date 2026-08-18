@@ -120,6 +120,32 @@ function getTowerStats(t){
     splash: t.def.splash ? t.def.splash*(1+lvl*0.10) : 0,
   };
 }
+/* Menzil içindeki düşmanlardan, kulenin hedefleme moduna göre birini seçer.
+   'first'     : yola en çok ilerlemiş (çıkışa en yakın) — varsayılan
+   'weakest'   : en az canı kalan
+   'strongest' : en çok canı kalan */
+function pickTarget(t, range){
+  let best=null, bestScore=-Infinity;
+  const mode = t.targetMode || 'first';
+  for(let i=0;i<enemies.length;i++){
+    const e = enemies[i];
+    if(Math.hypot(e.x-t.x, e.y-t.y) > range) continue;
+    let score;
+    if(mode==='weakest')        score = -e.hp;
+    else if(mode==='strongest') score = e.hp;
+    else                        score = e.dist; // yolda en ileri olan
+    if(score > bestScore){ bestScore = score; best = e; }
+  }
+  return best;
+}
+
+function setTargetMode(id){
+  if(!selectedTower) return;
+  selectedTower.targetMode = id;
+  playMenuTap();
+  renderTowerPanel();
+}
+
 function openTowerPanel(t){
   selectedTower = t; towerPanelOpen = true; sellConfirmPending = false;
   activeTowerRing = null;
@@ -355,11 +381,7 @@ function update(dt){
     const st = getTowerStats(t);
     t.cooldown = Math.max(0, t.cooldown-dt);
     if(t.cooldown<=0){
-      let target=null,bestD=Infinity;
-      enemies.forEach(e=>{
-        const d=Math.hypot(e.x-t.x,e.y-t.y);
-        if(d<=st.range && d<bestD){bestD=d; target=e;}
-      });
+      const target = pickTarget(t, st.range);
       if(target){
         const dist0 = Math.hypot(target.x-t.x, target.y-t.y);
         projectiles.push({x:t.x,y:t.y-20,target,dmg:st.dmg,splash:st.splash,kind:t.def.kind,speed:t.def.kind==='mortar'?4.2:7,travel:dist0,slow:t.def.slowFactor,slowDuration:t.def.slowDuration});
@@ -388,9 +410,15 @@ function update(dt){
         shake=Math.min(shake+4,10);
         for(let i=0;i<16;i++) particles.push({x:ix,y:iy,vx:(Math.random()-0.5)*160,vy:(Math.random()-0.5)*160,life:0.4,color:'#e8a94a'});
       } else {
-        p.target.hp -= p.dmg; p.target.flashT=1;
-        if(p.slow){ p.target.slowT = p.slowDuration; p.target.slowFactor = p.slow; }
-        floatTexts.push({x:p.x,y:p.y,text:'-'+p.dmg,life:0.6,vy:-30,color:p.kind==='mage'?'#b6f0e0':(p.kind==='ice'?'#cdf3ff':'#ffe3c2')});
+        if(p.dmg > 0){
+          p.target.hp -= p.dmg; p.target.flashT=1;
+          floatTexts.push({x:p.x,y:p.y,text:'-'+Math.round(p.dmg),life:0.6,vy:-30,color:p.kind==='mage'?'#b6f0e0':'#ffe3c2'});
+        }
+        if(p.slow){
+          p.target.slowT = p.slowDuration;
+          p.target.slowFactor = p.slow;
+          if(p.dmg <= 0) p.target.flashT = 0.6;
+        }
         for(let i=0;i<5;i++) particles.push({x:p.x,y:p.y,vx:(Math.random()-0.5)*90,vy:(Math.random()-0.5)*90,life:0.35,color:p.kind==='mage'?'#8fe3cc':(p.kind==='ice'?'#bfeeff':'#c9a56a')});
       }
       p.dead=true;

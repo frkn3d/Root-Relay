@@ -152,6 +152,34 @@ canvas{
   text-shadow:0 1px 2px rgba(0,0,0,0.6); white-space:nowrap;
 }
 .tp-stat-row b{ color:var(--cream); }
+.tp-target-label{
+  font-family:'JetBrains Mono', monospace; font-size:9px;
+  color:var(--cream-dim); text-align:left; margin-bottom:3px;
+  text-transform:uppercase; letter-spacing:0.06em;
+  text-shadow:0 1px 2px rgba(0,0,0,0.7);
+}
+.tp-targets{ display:flex; gap:4px; margin-bottom:8px; }
+.tp-target-btn{
+  flex:1; min-width:0;
+  background:rgba(0,0,0,0.3);
+  border:2px solid var(--line);
+  border-radius:8px;
+  padding:5px 3px;
+  display:flex; flex-direction:column; align-items:center; gap:1px;
+  cursor:pointer; touch-action:manipulation;
+  transition:border-color .12s ease, background .12s ease;
+}
+.tp-target-btn .tt-ic{ font-size:14px; line-height:1.1; }
+.tp-target-btn .tt-lb{
+  font-family:'JetBrains Mono', monospace; font-size:8.5px; line-height:1.1;
+  color:var(--cream-dim); white-space:nowrap;
+}
+.tp-target-btn.active{
+  border-color:var(--gold);
+  background:rgba(244,192,74,0.15);
+}
+.tp-target-btn.active .tt-lb{ color:var(--gold); }
+
 .tp-actions{ display:flex; gap:6px; }
 .upgrade-btn{
   flex:1; background:linear-gradient(180deg,#7fb377,#3f6b47); color:#0d1a0f;

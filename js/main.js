@@ -194,6 +194,7 @@ canvas.addEventListener('pointerup',(e)=>{
   const t={
     x:closest.x, y:closest.y, def, cooldown:0, pulse:0,
     level:0, totalSpent:def.cost,
+    targetMode:'first',
     buildDuration: buildDurationFor(0),
     buildLeft: buildDurationFor(0),
     pendingLevel: null,

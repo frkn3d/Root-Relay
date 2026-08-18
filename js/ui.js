@@ -154,8 +154,15 @@ function renderTowerPanel(){
   document.getElementById('tpName').textContent = t.def.name;
   document.getElementById('tpLevel').textContent = `Yükseltme: ${lvl}/3`;
 
-  let statsHtml = `
-    <div class="tp-stat-row"><span>💥 Hasar</span><b>${Math.round(st.dmg)}</b></div>
+  let statsHtml = '';
+  if(t.def.slowFactor){
+    const slowPct = Math.round((1 - t.def.slowFactor) * 100);
+    statsHtml += `<div class="tp-stat-row"><span>🐌 Yavaşlatma</span><b>%${slowPct}</b></div>`;
+    statsHtml += `<div class="tp-stat-row"><span>⏳ Süre</span><b>${t.def.slowDuration.toFixed(1)}sn</b></div>`;
+  } else {
+    statsHtml += `<div class="tp-stat-row"><span>💥 Hasar</span><b>${Math.round(st.dmg)}</b></div>`;
+  }
+  statsHtml += `
     <div class="tp-stat-row"><span>🎯 Menzil</span><b>${Math.round(st.range)}</b></div>
     <div class="tp-stat-row"><span>⚡ Atış Hızı</span><b>${(1/st.rate).toFixed(1)}/sn</b></div>
   `;
@@ -163,6 +170,19 @@ function renderTowerPanel(){
     statsHtml += `<div class="tp-stat-row"><span>💫 Alan Yarıçapı</span><b>${Math.round(st.splash)}</b></div>`;
   }
   document.getElementById('tpStats').innerHTML = statsHtml;
+
+  // Atış önceliği seçicisi
+  const curMode = t.targetMode || 'first';
+  const tgEl = document.getElementById('tpTargets');
+  tgEl.innerHTML = '';
+  TARGET_MODES.forEach(m=>{
+    const b = document.createElement('div');
+    b.className = 'tp-target-btn' + (m.id===curMode ? ' active' : '');
+    b.title = m.desc;
+    b.innerHTML = `<span class="tt-ic">${m.icon}</span><span class="tt-lb">${m.label}</span>`;
+    b.addEventListener('pointerup', (ev)=>{ ev.stopPropagation(); setTargetMode(m.id); });
+    tgEl.appendChild(b);
+  });
 
   const cost = upgradeCost(t);
   const upBtn = document.getElementById('tpUpgradeBtn');

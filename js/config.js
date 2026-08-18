@@ -2,23 +2,31 @@
    VERİ KATMANI
    Yeni düşman/kule/bölüm eklemek için sadece bu dosya değişir.
    ============================================================ */
+/* Not: Aşağıdaki hp değerleri, genel denge güncellemesiyle %20 artırılmıştır. */
 const ENEMY_TYPES = {
-  spore:    { hp:26, speed:0.85, radius:15, gold:6,  dmgToLives:1, label:'Spor',    shape:'blob',   body:'#ff8f78', body2:'#c94f42', eyes:1 },
-  swarm:    { hp:10, speed:1.1,  radius:9,  gold:3,  dmgToLives:1, label:'Sürü',    shape:'blob',   body:'#c9e07a', body2:'#7a9c3a', eyes:1 },
-  sprinter: { hp:16, speed:1.6,  radius:12, gold:4,  dmgToLives:1, label:'Koşucu',  shape:'runner', body:'#ffbf6b', body2:'#d98a2e', eyes:2 },
-  husk:     { hp:50, speed:0.62, radius:17, gold:9,  dmgToLives:1, label:'Kabuklu', shape:'brute',  body:'#c9b483', body2:'#8a6f42', eyes:2 },
-  brute:    { hp:148, speed:0.48, radius:21, gold:13, dmgToLives:2, label:'Ur',      shape:'brute',  body:'#b25bc9', body2:'#6f2f88', eyes:2 },
+  spore:    { hp:31,  speed:0.85, radius:15, gold:6,  dmgToLives:1, label:'Spor',    shape:'blob',   body:'#ff8f78', body2:'#c94f42', eyes:1 },
+  swarm:    { hp:12,  speed:1.1,  radius:9,  gold:3,  dmgToLives:1, label:'Sürü',    shape:'blob',   body:'#c9e07a', body2:'#7a9c3a', eyes:1 },
+  sprinter: { hp:19,  speed:1.6,  radius:12, gold:4,  dmgToLives:1, label:'Koşucu',  shape:'runner', body:'#ffbf6b', body2:'#d98a2e', eyes:2 },
+  husk:     { hp:60,  speed:0.62, radius:17, gold:9,  dmgToLives:1, label:'Kabuklu', shape:'brute',  body:'#c9b483', body2:'#8a6f42', eyes:2 },
+  brute:    { hp:178, speed:0.48, radius:21, gold:13, dmgToLives:2, label:'Ur',      shape:'brute',  body:'#b25bc9', body2:'#6f2f88', eyes:2 },
 };
 
 const TOWER_TYPES = {
   archer: { id:'archer', name:'Yosun Okçusu', cost:50,  range:150, rate:0.8,  dmg:9,  splash:0,  kind:'archer', color:'#7fb377', icon:'🏹' },
   mage:   { id:'mage',   name:'Işık Kulesi',  cost:90,  range:185, rate:0.85, dmg:15, splash:0,  kind:'mage',   color:'#4fc3a1', icon:'🔮' },
   mortar: { id:'mortar', name:'Mantar Havanı',cost:130, range:160, rate:1.7,  dmg:18, splash:58, kind:'mortar', color:'#c9793f', icon:'💥' },
-  ice:    { id:'ice',    name:'Don Peykesi',  cost:70,  range:140, rate:0.7,  dmg:4,  splash:0,  kind:'ice',    color:'#8fd9f0', icon:'❄️', slowFactor:0.42, slowDuration:1.4 },
+  ice:    { id:'ice',    name:'Don Peykesi',  cost:70,  range:140, rate:0.7,  dmg:0,  splash:0,  kind:'ice',    color:'#8fd9f0', icon:'❄️', slowFactor:0.42, slowDuration:2.8 },
 };
 
 // Yapı alanları: her segmentin orta noktası etrafında, birbirinden en az
 // ~80-140px uzaklıkta yerleştirildi ki kuleler görsel olarak üst üste binmesin.
+/* Kule hedefleme öncelikleri. 'first' varsayılan (çıkışa en yakın). */
+const TARGET_MODES = [
+  { id:'first',    label:'Öncü',   icon:'🎯', desc:'Çıkışa en yakın' },
+  { id:'weakest',  label:'Zayıf',  icon:'🩸', desc:'En az canlı' },
+  { id:'strongest',label:'Güçlü',  icon:'💪', desc:'En çok canlı' },
+];
+
 const LEVELS = [
   {
     id:'orman-girisi', name:'Orman Girişi', waveCount:8,
@@ -36,7 +44,7 @@ const LEVELS = [
     ],
     difficulty:{ hpGrowth:0.16, speedGrowth:0.025, speedCap:1.5, countBase:7, countGrowth:1.85 },
     waveOverrides:{
-      8:[ {type:'swarm', count:24, interval:0.32}, {type:'sprinter', count:24, interval:0.38}, {type:'husk', count:14, interval:1.05}, {type:'brute', count:12, interval:1.6} ]
+      8:[ {type:'swarm', count:31, interval:0.42}, {type:'sprinter', count:31, interval:0.5}, {type:'husk', count:18, interval:1.35}, {type:'brute', count:16, interval:2.0} ]
     }
   },
   {
@@ -57,7 +65,7 @@ const LEVELS = [
     ],
     difficulty:{ hpGrowth:0.21, speedGrowth:0.03, speedCap:1.65, countBase:8, countGrowth:2.15 },
     waveOverrides:{
-      10:[ {type:'swarm', count:34, interval:0.3}, {type:'sprinter', count:34, interval:0.32}, {type:'spore', count:27, interval:0.42}, {type:'husk', count:20, interval:0.95}, {type:'brute', count:17, interval:1.4} ]
+      10:[ {type:'swarm', count:44, interval:0.39}, {type:'sprinter', count:44, interval:0.42}, {type:'spore', count:35, interval:0.55}, {type:'husk', count:26, interval:1.25}, {type:'brute', count:22, interval:1.8} ]
     }
   },
 ];
@@ -66,19 +74,24 @@ const LEVELS = [
 // 4 kademe: erken sürü -> hızlılar katılır -> zırhlılar katılır -> ağır tehditler.
 /* Dalga bazlı düşman sayısı çarpanı:
    1. dalga normal, 2. dalga +%50, 3. dalga +%100, 4-6. dalga +%150,
-   7. ve sonrası ayrıca +%70 (geç oyun sertliği) */
+   7. ve sonrası ayrıca +%70. Üstüne tüm dalgalara genel +%30 uygulanır. */
+const GLOBAL_COUNT_BOOST = 1.30;
 function waveCountMultiplier(waveIndex){
-  if(waveIndex <= 1) return 1.0;
-  if(waveIndex === 2) return 1.5;
-  if(waveIndex === 3) return 2.0;
-  if(waveIndex <= 6) return 2.5;
-  return 2.5 * 1.7;  // 7. dalgadan itibaren: 4.25
+  let m;
+  if(waveIndex <= 1) m = 1.0;
+  else if(waveIndex === 2) m = 1.5;
+  else if(waveIndex === 3) m = 2.0;
+  else if(waveIndex <= 6) m = 2.5;
+  else m = 2.5 * 1.7;
+  return m * GLOBAL_COUNT_BOOST;
 }
 
 /* Spawn aralıkları: düşman sayısı arttıkça dalganın tek seferde
-   üstüne yığılmaması ve oyunun daha uzun sürmesi için araları açılır. */
-const SPAWN_GAP = 1.6;   // grup türü aralık çarpanı
-const GROUP_GAP = 1.1;   // gruplar arası ek bekleme (saniye)
+   üstüne yığılmaması ve oyunun daha uzun sürmesi için araları açılır.
+   Artan sayı aynı anda değil, akış halinde gelsin diye SPAWN_GAP
+   sayı artışıyla birlikte yükseltildi. */
+const SPAWN_GAP = 2.1;   // grup içi aralık çarpanı
+const GROUP_GAP = 1.3;   // gruplar arası ek bekleme (saniye)
 
 function generateWave(level, waveIndex){
   if(level.waveOverrides && level.waveOverrides[waveIndex]) return level.waveOverrides[waveIndex];
