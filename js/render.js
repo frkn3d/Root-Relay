@@ -2,6 +2,8 @@
    RENDER — sadece canvas çizim fonksiyonları.
    Oyun durumunu (engine.js) okur, değiştirmez.
    ============================================================ */
+const TOWER_VISUAL_SCALE = 0.78; // kulelerin görsel boyutu (menzil/mantık etkilenmez)
+
 function roundedRect(x,y,w,h,r){
   ctx.beginPath();
   ctx.moveTo(x+r,y);
@@ -343,10 +345,15 @@ function drawTower(t){
     ctx.stroke();
     ctx.restore();
   }
+  ctx.save();
+  ctx.translate(t.x, t.y);
+  ctx.scale(TOWER_VISUAL_SCALE, TOWER_VISUAL_SCALE);
+  ctx.translate(-t.x, -t.y);
   if(t.def.kind==='archer') drawArcherTower(t);
   else if(t.def.kind==='mage') drawMageTower(t);
   else if(t.def.kind==='ice') drawIceTower(t);
   else drawMortarTower(t);
+  ctx.restore();
 
   const lvl = t.level||0;
   if(lvl>0){

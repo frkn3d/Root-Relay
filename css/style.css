@@ -251,15 +251,18 @@ canvas{
 .tower-select-btn .ts-cost{ font-family:'JetBrains Mono', monospace; font-size:8px; color:var(--gold); }
 
 .tower-drawer{
-  display:none; flex-wrap:wrap; gap:5px;
+  display:none; flex-wrap:nowrap; gap:5px;
   background:rgba(12,20,12,0.96);
   border:2px solid var(--line);
   border-radius:10px;
   padding:6px;
+  width:fit-content; max-width:100%;
+  overflow-x:auto; -webkit-overflow-scrolling:touch;
 }
+.tower-drawer::-webkit-scrollbar{ height:0; }
 .tower-drawer.show{ display:flex; }
 .tower-drawer .tower-card{
-  flex:1 1 calc(25% - 4px); min-width:64px;
+  flex:0 0 auto; width:58px;
   background:linear-gradient(180deg, #24361f, #172417);
   border:2px solid var(--line);
   border-radius:8px;
@@ -268,13 +271,13 @@ canvas{
   cursor:pointer; touch-action:manipulation;
 }
 .tower-drawer .tower-card.active{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(244,192,74,0.25) inset; }
-.tower-drawer .tower-card .icon{ font-size:19px; line-height:1; }
+.tower-drawer .tower-card .icon{ font-size:18px; line-height:1; }
 .tower-drawer .tower-card .name{
-  font-size:8.5px; color:var(--cream-dim); text-align:center; line-height:1.15;
+  font-size:8px; color:var(--cream-dim); text-align:center; line-height:1.1;
 }
 .tower-drawer .tower-card .cost{
   font-family:'JetBrains Mono', monospace;
-  font-size:9px; color:var(--gold);
+  font-size:8.5px; color:var(--gold);
 }
 
 .speed-btn{
