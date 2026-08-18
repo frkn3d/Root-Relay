@@ -91,6 +91,7 @@ let paused = false;
 let gameSpeed = 1;
 let selectedTower = null;
 let towerPanelOpen = false;
+let activeTowerRing = null; // tek tıkla menzil önizlemesi (panel açmadan)
 let sellConfirmPending = false;
 
 const UPGRADE_COST_MULT = [0.6, 0.9, 1.3]; // level0->1, level1->2, level2->3
@@ -111,10 +112,12 @@ function getTowerStats(t){
 }
 function openTowerPanel(t){
   selectedTower = t; towerPanelOpen = true; sellConfirmPending = false;
+  activeTowerRing = null;
   renderTowerPanel(); // ui.js
 }
 function closeTowerPanel(){
   towerPanelOpen = false; selectedTower = null; sellConfirmPending = false;
+  activeTowerRing = null;
   const panel = document.getElementById('towerPanel');
   if(panel) panel.classList.remove('show');
 }

@@ -328,7 +328,8 @@ function drawMortarTower(t){
 function drawTower(t){
   const st = getTowerStats(t);
   const isSelected = towerPanelOpen && selectedTower===t;
-  if(isSelected){
+  const showRing = isSelected || activeTowerRing===t;
+  if(showRing){
     ctx.save();
     ctx.beginPath(); ctx.arc(t.x,t.y,st.range,0,Math.PI*2);
     ctx.fillStyle = t.def.color+'30';

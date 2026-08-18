@@ -14,26 +14,89 @@ function pointerToLogical(clientX, clientY){
   const rect = canvas.getBoundingClientRect();
   return { x:(clientX-rect.left)*(LW/rect.width), y:(clientY-rect.top)*(LH/rect.height) };
 }
-canvas.addEventListener('pointerup',(e)=>{
-  if(gameOver||gameWon||paused) return;
-  if(!document.getElementById('startScreen').classList.contains('hide')) return;
-  if(document.getElementById('towerDrawer').classList.contains('show')){
-    closeTowerDrawer();
-    return;
-  }
-  const {x:mx,y:my} = pointerToLogical(e.clientX,e.clientY);
 
-  let tappedTower=null, bestDT=Infinity;
+const LONG_PRESS_MS = 420;
+const MOVE_CANCEL_PX = 12;
+let pressTimer = null;
+let pressStartPos = null;
+let pressTower = null;
+let longPressFired = false;
+
+function findTowerAt(mx,my){
+  let found=null, bestD=Infinity;
   towers.forEach(t=>{
     const d=Math.hypot(mx-t.x,my-t.y);
-    if(d<26 && d<bestDT){bestDT=d; tappedTower=t;}
+    if(d<26 && d<bestD){bestD=d; found=t;}
   });
-  if(tappedTower){
-    if(selectedTower===tappedTower && towerPanelOpen) closeTowerPanel();
-    else openTowerPanel(tappedTower);
+  return found;
+}
+
+function canvasInputBlocked(){
+  if(gameOver||gameWon||paused) return true;
+  if(!document.getElementById('startScreen').classList.contains('hide')) return true;
+  return false;
+}
+
+canvas.addEventListener('pointerdown',(e)=>{
+  if(canvasInputBlocked()) return;
+  if(document.getElementById('towerDrawer').classList.contains('show')) return;
+  const {x:mx,y:my} = pointerToLogical(e.clientX,e.clientY);
+  pressStartPos = {x:mx,y:my};
+  longPressFired = false;
+  pressTower = findTowerAt(mx,my);
+  if(pressTower){
+    clearTimeout(pressTimer);
+    pressTimer = setTimeout(()=>{
+      longPressFired = true;
+      openTowerPanel(pressTower);
+      if(navigator.vibrate) { try{ navigator.vibrate(15); }catch(e){} }
+    }, LONG_PRESS_MS);
+  }
+});
+
+canvas.addEventListener('pointermove',(e)=>{
+  if(!pressStartPos) return;
+  const {x:mx,y:my} = pointerToLogical(e.clientX,e.clientY);
+  if(Math.hypot(mx-pressStartPos.x,my-pressStartPos.y) > MOVE_CANCEL_PX){
+    clearTimeout(pressTimer); pressTimer=null;
+  }
+});
+
+function cancelPress(){
+  clearTimeout(pressTimer); pressTimer=null;
+  pressStartPos=null; pressTower=null; longPressFired=false;
+}
+canvas.addEventListener('pointercancel', cancelPress);
+canvas.addEventListener('pointerleave', ()=>{ clearTimeout(pressTimer); pressTimer=null; });
+
+canvas.addEventListener('pointerup',(e)=>{
+  clearTimeout(pressTimer); pressTimer=null;
+  if(canvasInputBlocked()){ cancelPress(); return; }
+  if(document.getElementById('towerDrawer').classList.contains('show')){
+    closeTowerDrawer();
+    cancelPress();
     return;
   }
-  if(towerPanelOpen){ closeTowerPanel(); return; }
+  if(longPressFired){
+    // panel zaten basılı-tutma zamanlayıcısı tarafından açıldı
+    cancelPress();
+    return;
+  }
+
+  const {x:mx,y:my} = pointerToLogical(e.clientX,e.clientY);
+  const tappedTower = pressTower || findTowerAt(mx,my);
+
+  // Tek tık bir kulenin üzerindeyse: sadece menzil çemberini göster/gizle.
+  if(tappedTower){
+    if(towerPanelOpen) closeTowerPanel();
+    activeTowerRing = (activeTowerRing===tappedTower) ? null : tappedTower;
+    cancelPress();
+    return;
+  }
+
+  // Boş bir alana tıklandı: açık panel/halka varsa önce onu kapat.
+  if(towerPanelOpen){ closeTowerPanel(); cancelPress(); return; }
+  if(activeTowerRing){ activeTowerRing=null; cancelPress(); return; }
 
   let closest=null,bestD=Infinity;
   spots.forEach(s=>{
@@ -41,12 +104,13 @@ canvas.addEventListener('pointerup',(e)=>{
     const d=Math.hypot(mx-s.x,my-s.y);
     if(d<28 && d<bestD){bestD=d; closest=s;}
   });
-  if(!closest) return;
+  if(!closest){ cancelPress(); return; }
   const def=TOWER_TYPES[selectedType];
   if(gold<def.cost){
     playError();
     const chip=document.getElementById('goldChip');
     chip.classList.remove('shake'); void chip.offsetWidth; chip.classList.add('shake');
+    cancelPress();
     return;
   }
   gold-=def.cost;
@@ -54,6 +118,7 @@ canvas.addEventListener('pointerup',(e)=>{
   const t={x:closest.x,y:closest.y,def,cooldown:0,pulse:0,level:0,totalSpent:def.cost};
   towers.push(t); closest.occ=t;
   playPlace();
+  cancelPress();
 });
 
 document.getElementById('waveBtn').addEventListener('pointerup', startWave);
