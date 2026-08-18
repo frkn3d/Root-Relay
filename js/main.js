@@ -190,6 +190,53 @@ document.getElementById('mainMenuBtnOverlay').addEventListener('pointerup', goTo
 document.getElementById('soundBtn').addEventListener('pointerup', toggleSound);
 document.getElementById('soundBtnPause').addEventListener('pointerup', toggleSound);
 
+/* ---- Ana menü gezinme ---- */
+document.getElementById('mmLevels').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuLevels'); });
+document.getElementById('mmShop').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuShop'); });
+document.getElementById('mmSettings').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuSettings'); });
+document.getElementById('mmAbout').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuAbout'); });
+document.querySelectorAll('[data-back]').forEach(btn=>{
+  btn.addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuMain'); });
+});
+
+document.getElementById('mmContinue').addEventListener('pointerup', ()=>{
+  const btn = document.getElementById('mmContinue');
+  if(btn.disabled) return;
+  const r = getResume();
+  if(!r || !LEVELS[r.levelIdx]) return;
+  ensureAudioCtx();
+  playMenuTap();
+  loadLevel(r.levelIdx);
+  closeStartScreen();
+});
+
+document.getElementById('resetProgressBtn').addEventListener('pointerup', ()=>{
+  playMenuTap();
+  const btn = document.getElementById('resetProgressBtn');
+  if(btn.dataset.confirm==='1'){
+    try{
+      localStorage.removeItem('rr_progress_v1');
+      localStorage.removeItem('rr_gems_v1');
+      localStorage.removeItem('rr_resume_v1');
+    }catch(e){}
+    btn.dataset.confirm='';
+    btn.textContent='✅ Sıfırlandı';
+    setTimeout(()=>{ btn.textContent='🗑️ İlerlemeyi Sıfırla'; }, 1500);
+    refreshGemDisplay();
+    refreshContinueButton();
+    renderStartLevelList();
+  } else {
+    btn.dataset.confirm='1';
+    btn.textContent='⚠️ Emin misin? Tekrar bas';
+    setTimeout(()=>{
+      if(btn.dataset.confirm==='1'){
+        btn.dataset.confirm='';
+        btn.textContent='🗑️ İlerlemeyi Sıfırla';
+      }
+    }, 3000);
+  }
+});
+
 document.getElementById('fsBtn').addEventListener('pointerup', ()=>{
   playMenuTap();
   const el = document.documentElement;
@@ -212,6 +259,7 @@ syncSoundButtons();
 renderTowerSelectBtn();
 renderTowerDrawer();
 loadLevel(0);
+showMenuPage('menuMain');
 fitGameToViewport();
 // Yazı tipleri yüklenince bar yükseklikleri değişebilir; yeniden ölç.
 if(document.fonts && document.fonts.ready){

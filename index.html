@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#12261b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
 <title>Root & Relay — Tower Defense</title>
-<link rel="stylesheet" href="css/style.css?v=14">
+<link rel="stylesheet" href="css/style.css?v=15">
 </head>
 <body>
 <div class="wrap">
@@ -29,11 +29,57 @@
       <canvas id="game"></canvas>
 
       <div class="start-screen" id="startScreen">
-        <div class="ss-badge">🌿</div>
-        <div class="ss-title">Root <span>&</span> Relay</div>
-        <div class="ss-sub">biyolüminesan ormanda kule savunması</div>
-        <div class="ss-levels" id="ssLevelList"></div>
-        <button class="ss-sound sound-toggle-btn" id="soundBtn">🔊 Ses</button>
+
+        <div class="menu-page active" id="menuMain">
+          <div class="ss-badge">🌿</div>
+          <div class="ss-title">Root <span>&</span> Relay</div>
+          <div class="ss-sub">biyolüminesan ormanda kule savunması</div>
+          <div class="gem-bar"><span class="gem-ic">💎</span><b id="gemCount">0</b></div>
+          <div class="menu-list">
+            <button class="menu-btn primary" id="mmContinue">▶ Devam Et</button>
+            <button class="menu-btn" id="mmLevels">🗺️ Bölüm Seç</button>
+            <button class="menu-btn" id="mmShop">🛒 Market</button>
+            <button class="menu-btn" id="mmSettings">⚙️ Ayarlar</button>
+            <button class="menu-btn" id="mmAbout">ℹ️ Hakkında</button>
+          </div>
+        </div>
+
+        <div class="menu-page" id="menuLevels">
+          <div class="menu-head">Bölüm Seç</div>
+          <div class="ss-levels" id="ssLevelList"></div>
+          <button class="menu-btn back" data-back>← Geri</button>
+        </div>
+
+        <div class="menu-page" id="menuShop">
+          <div class="menu-head">Market</div>
+          <div class="gem-bar"><span class="gem-ic">💎</span><b id="gemCountShop">0</b></div>
+          <div class="shop-empty">
+            <div class="shop-empty-ic">🛒</div>
+            <div>Market yakında açılıyor.</div>
+            <div class="shop-empty-sub">Bölümleri tamamlayarak elmas biriktir — yakında kule takviyeleri ve görünümler burada satın alınabilecek.</div>
+          </div>
+          <button class="menu-btn back" data-back>← Geri</button>
+        </div>
+
+        <div class="menu-page" id="menuSettings">
+          <div class="menu-head">Ayarlar</div>
+          <div class="menu-list">
+            <button class="menu-btn sound-toggle-btn" id="soundBtn">🔊 Ses</button>
+            <button class="menu-btn danger" id="resetProgressBtn">🗑️ İlerlemeyi Sıfırla</button>
+          </div>
+          <button class="menu-btn back" data-back>← Geri</button>
+        </div>
+
+        <div class="menu-page" id="menuAbout">
+          <div class="menu-head">Hakkında</div>
+          <div class="about-box">
+            <div class="about-logo">🌿</div>
+            <div class="about-title">Root &amp; Relay</div>
+            <div class="about-line">Bu bir LOGSPACE oyunudur.</div>
+          </div>
+          <button class="menu-btn back" data-back>← Geri</button>
+        </div>
+
       </div>
 
       <div class="overlay" id="overlay">
@@ -93,12 +139,12 @@
 </div>
 
 <!-- Sıra önemli: config -> progress -> audio -> engine -> render -> ui -> main -->
-<script src="js/config.js?v=14"></script>
-<script src="js/progress.js?v=14"></script>
-<script src="js/audio.js?v=14"></script>
-<script src="js/engine.js?v=14"></script>
-<script src="js/render.js?v=14"></script>
-<script src="js/ui.js?v=14"></script>
-<script src="js/main.js?v=14"></script>
+<script src="js/config.js?v=15"></script>
+<script src="js/progress.js?v=15"></script>
+<script src="js/audio.js?v=15"></script>
+<script src="js/engine.js?v=15"></script>
+<script src="js/render.js?v=15"></script>
+<script src="js/ui.js?v=15"></script>
+<script src="js/main.js?v=15"></script>
 </body>
 </html>

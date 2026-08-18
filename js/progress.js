@@ -28,3 +28,33 @@ function updateLevelProgress(levelId, stars, waveReached){
   saveProgress(p);
   return p[levelId];
 }
+
+/* ---- Elmas (premium para birimi) ----
+   Şu an sadece kazanılıyor ve gösteriliyor; harcama Market ile gelecek. */
+const GEMS_KEY = 'rr_gems_v1';
+function getGems(){
+  try{ return parseInt(localStorage.getItem(GEMS_KEY)||'0', 10) || 0; }
+  catch(e){ return 0; }
+}
+function addGems(n){
+  const total = Math.max(0, getGems() + (n||0));
+  try{ localStorage.setItem(GEMS_KEY, String(total)); }catch(e){}
+  return total;
+}
+
+/* ---- Devam edilebilir oyun kaydı ----
+   Hangi bölümün yarıda bırakıldığını hatırlar. Tam bir oyun-durumu
+   kaydı değil; bölümü baştan başlatır ama "Devam Et" akışını mümkün kılar. */
+const RESUME_KEY = 'rr_resume_v1';
+function saveResume(levelIdx, waveIndex){
+  try{ localStorage.setItem(RESUME_KEY, JSON.stringify({levelIdx, waveIndex})); }catch(e){}
+}
+function getResume(){
+  try{
+    const raw = localStorage.getItem(RESUME_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function clearResume(){
+  try{ localStorage.removeItem(RESUME_KEY); }catch(e){}
+}

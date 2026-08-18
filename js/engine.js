@@ -177,7 +177,6 @@ function loadLevel(idx){
   document.getElementById('overlay').classList.remove('show');
   closeTowerPanel();
   if(typeof closeTowerDrawer === 'function') closeTowerDrawer();
-  renderStartLevelList(); // ui.js — yıldız/en-iyi bilgisini tazele
   renderWavePreview();    // ui.js
 }
 
@@ -198,8 +197,7 @@ function goToMainMenu(){
   document.getElementById('pauseBtn').textContent = '▶';
   closeTowerPanel();
   if(typeof closeTowerDrawer === 'function') closeTowerDrawer();
-  renderStartLevelList();
-  document.getElementById('startScreen').classList.remove('hide');
+  openStartScreen(); // ui.js
 }
 
 function startWave(){
@@ -225,6 +223,7 @@ function startWave(){
     t += 0.5;
   });
   waveElapsed=0; waveActive=true;
+  saveResume(currentLevelIdx, waveIndex);
   playWaveStart();
   renderWavePreview();   // ui.js
 }
@@ -239,9 +238,17 @@ function endGame(win){
   if(win){
     const frac = lives/level.startLives;
     const stars = frac>=0.8 ? 3 : (frac>=0.4 ? 2 : 1);
+    const prev = getLevelProgress(level.id);
     updateLevelProgress(level.id, stars, level.waveCount);
+    // Elmas ödülü: yalnızca yeni kazanılan yıldızlar için verilir,
+    // böylece aynı bölümü tekrar oynayıp sonsuz elmas kasılamaz.
+    const newStars = Math.max(0, stars - prev.bestStars);
+    if(newStars>0) addGems(newStars*5);
+    clearResume();
     h.textContent='Bölüm Tamamlandı'; h.className='win';
-    p.textContent=`${level.name} temizlendi — ${gold} altınla`;
+    p.textContent = newStars>0
+      ? `${level.name} temizlendi — +${newStars*5} 💎`
+      : `${level.name} temizlendi — ${gold} altınla`;
     starsEl.textContent = renderStars(stars);
     playVictory();
   } else {
@@ -252,7 +259,6 @@ function endGame(win){
     playDefeat();
   }
   overlay.classList.add('show');
-  renderStartLevelList(); // yıldız/en-iyi bilgisini tazele
 }
 
 /* ---- Update (delta-time tabanlı) ---- */

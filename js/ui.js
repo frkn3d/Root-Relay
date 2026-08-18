@@ -2,6 +2,45 @@
    UI — DOM'a dokunan tüm render fonksiyonları burada.
    engine.js durum değiştiğinde bu fonksiyonları çağırır.
    ============================================================ */
+/* ---- Menü sayfası gezinme ---- */
+function showMenuPage(id){
+  document.querySelectorAll('.menu-page').forEach(p=>{
+    p.classList.toggle('active', p.id===id);
+  });
+  if(id==='menuMain' || id==='menuShop') refreshGemDisplay();
+  if(id==='menuMain') refreshContinueButton();
+  if(id==='menuLevels') renderStartLevelList();
+}
+
+function refreshGemDisplay(){
+  const g = getGems();
+  const a = document.getElementById('gemCount');
+  const b = document.getElementById('gemCountShop');
+  if(a) a.textContent = g;
+  if(b) b.textContent = g;
+}
+
+function refreshContinueButton(){
+  const btn = document.getElementById('mmContinue');
+  if(!btn) return;
+  const r = getResume();
+  if(r && LEVELS[r.levelIdx]){
+    btn.disabled = false;
+    btn.textContent = `▶ Devam Et — ${LEVELS[r.levelIdx].name}`;
+  } else {
+    btn.disabled = true;
+    btn.textContent = '▶ Devam Et';
+  }
+}
+
+function openStartScreen(){
+  showMenuPage('menuMain');
+  document.getElementById('startScreen').classList.remove('hide');
+}
+function closeStartScreen(){
+  document.getElementById('startScreen').classList.add('hide');
+}
+
 function renderStars(n){
   let s='';
   for(let i=0;i<3;i++) s += i<n ? '⭐' : '☆';
@@ -27,7 +66,8 @@ function renderStartLevelList(){
     card.addEventListener('pointerup', ()=>{
       playMenuTap();
       loadLevel(i);
-      document.getElementById('startScreen').classList.add('hide');
+      saveResume(i, 0);
+      closeStartScreen();
     });
     el.appendChild(card);
   });
