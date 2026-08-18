@@ -121,14 +121,15 @@ function closeTowerPanel(){
 function doUpgradeTower(){
   if(!selectedTower) return;
   const cost = upgradeCost(selectedTower);
-  if(cost===null || gold<cost) return;
+  if(cost===null || gold<cost){ playError(); return; }
   gold -= cost;
   selectedTower.totalSpent += cost;
   selectedTower.level = (selectedTower.level||0)+1;
   document.getElementById('goldVal').textContent = gold;
+  playPlace();
   renderTowerPanel();
 }
-function requestSellTower(){ sellConfirmPending=true; renderTowerPanel(); }
+function requestSellTower(){ sellConfirmPending=true; playClick(); renderTowerPanel(); }
 function cancelSellTower(){ sellConfirmPending=false; renderTowerPanel(); }
 function confirmSellTower(){
   if(!selectedTower) return;
@@ -137,11 +138,13 @@ function confirmSellTower(){
   towers = towers.filter(t=>t!==selectedTower);
   spots.forEach(s=>{ if(s.occ===selectedTower) s.occ=null; });
   document.getElementById('goldVal').textContent = gold;
+  playCoin();
   closeTowerPanel();
 }
 
 function toggleSpeed(){
   gameSpeed = gameSpeed===1 ? 2 : 1;
+  playClick();
   const btn = document.getElementById('speedBtn');
   btn.textContent = gameSpeed+'×';
   btn.classList.toggle('active', gameSpeed===2);
@@ -170,11 +173,20 @@ function loadLevel(idx){
   if(typeof closeTowerDrawer === 'function') closeTowerDrawer();
   renderLevelPicker();   // ui.js
   renderWavePreview();   // ui.js
+
+  const ssBest = document.getElementById('ssBest');
+  if(ssBest){
+    const prog = getLevelProgress(level.id);
+    ssBest.textContent = prog.bestStars>0
+      ? `${level.name} — En iyi: ${renderStars(prog.bestStars)} (Dalga ${prog.bestWave}/${level.waveCount})`
+      : `${level.name} — henüz tamamlanmadı`;
+  }
 }
 
 function togglePause(){
   if(gameOver||gameWon) return;
   paused = !paused;
+  playClick();
   document.getElementById('pauseOverlay').classList.toggle('show', paused);
   document.getElementById('pauseBtn').textContent = paused ? '▶' : '⏸';
   if(!paused) lastTime = performance.now();
@@ -203,16 +215,34 @@ function startWave(){
     t += 0.5;
   });
   waveElapsed=0; waveActive=true;
+  playWaveStart();
   renderWavePreview();   // ui.js
 }
 
 function endGame(win){
   gameOver=!win; gameWon=win;
+  closeTowerPanel();
+  if(typeof closeTowerDrawer === 'function') closeTowerDrawer();
   const overlay=document.getElementById('overlay');
   const h=document.getElementById('overlayTitle'), p=document.getElementById('overlayText');
-  if(win){ h.textContent='Bölüm Tamamlandı'; h.className='win'; p.textContent=`${level.name} temizlendi — ${gold} altınla`; }
-  else { h.textContent='Röle Düştü'; h.className='lose'; p.textContent=`Dalga ${waveIndex}/${level.waveCount}'de yenildin`; }
+  const starsEl = document.getElementById('overlayStars');
+  if(win){
+    const frac = lives/level.startLives;
+    const stars = frac>=0.8 ? 3 : (frac>=0.4 ? 2 : 1);
+    updateLevelProgress(level.id, stars, level.waveCount);
+    h.textContent='Bölüm Tamamlandı'; h.className='win';
+    p.textContent=`${level.name} temizlendi — ${gold} altınla`;
+    starsEl.textContent = renderStars(stars);
+    playVictory();
+  } else {
+    updateLevelProgress(level.id, 0, waveIndex);
+    h.textContent='Röle Düştü'; h.className='lose';
+    p.textContent=`Dalga ${waveIndex}/${level.waveCount}'de yenildin`;
+    starsEl.textContent = '';
+    playDefeat();
+  }
   overlay.classList.add('show');
+  renderLevelPicker(); // yıldız/en-iyi bilgisini tazele
 }
 
 /* ---- Update (delta-time tabanlı) ---- */
@@ -273,6 +303,7 @@ function update(dt){
         t.cooldown = st.rate;
         t.pulse = 1;
         t.angle = Math.atan2(target.y-t.y, target.x-t.x);
+        playShoot(t.def.kind);
       }
     }
     if(t.pulse>0) t.pulse = Math.max(0,t.pulse-dt*2.5);
@@ -313,6 +344,7 @@ function update(dt){
   if(dead.length){
     dead.forEach(e=>{
       gold += e.gold;
+      playCoin();
       floatTexts.push({x:e.x,y:e.y-10,text:'+'+e.gold+'🪙',life:0.7,vy:-25,color:'#f4c04a'});
       for(let i=0;i<12;i++) particles.push({x:e.x,y:e.y,vx:(Math.random()-0.5)*120,vy:(Math.random()-0.5)*120,life:0.45,color:e.body});
     });

@@ -25,6 +25,22 @@ function drawPath(){
     ctx.fillStyle='rgba(120,80,40,0.35)'; ctx.fill();
   });
   ctx.restore();
+
+  // spawn işareti
+  const start = level.path[0], end = level.path[level.path.length-1];
+  ctx.save();
+  ctx.font='15px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.beginPath(); ctx.arc(start.x,start.y,13,0,Math.PI*2);
+  ctx.fillStyle='rgba(226,80,74,0.22)'; ctx.fill();
+  ctx.strokeStyle='rgba(226,80,74,0.7)'; ctx.lineWidth=2; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillText('💀', start.x, start.y+1);
+
+  // hedef/röle işareti
+  ctx.beginPath(); ctx.arc(end.x,end.y,13,0,Math.PI*2);
+  ctx.fillStyle='rgba(244,192,74,0.22)'; ctx.fill();
+  ctx.strokeStyle='rgba(244,192,74,0.75)'; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillText('🔮', end.x, end.y+1);
+  ctx.restore();
 }
 function drawSpots(){
   spots.forEach(s=>{

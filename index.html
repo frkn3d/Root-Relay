@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="description" content="Root & Relay — biyolüminesan ormanda geçen, dikey ve dokunmatik öncelikli bir kule savunma oyunu.">
+<meta name="theme-color" content="#12261b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
 <title>Root & Relay — Tower Defense</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -19,14 +22,24 @@
     <div class="frame" id="frame">
       <canvas id="game"></canvas>
 
+      <div class="start-screen" id="startScreen">
+        <div class="ss-badge">🌿</div>
+        <div class="ss-title">Root <span>&</span> Relay</div>
+        <div class="ss-sub">biyolüminesan ormanda kule savunması</div>
+        <div class="ss-best" id="ssBest"></div>
+        <button class="btn ss-play" id="ssPlayBtn">▶ Oyna</button>
+        <button class="ss-sound sound-toggle-btn" id="soundBtn">🔊 Ses</button>
+      </div>
+
       <div class="top-hud">
         <div class="hud-left">
           <div class="hud-chip"><span class="ic">❤️</span><b id="livesVal">10</b></div>
-          <div class="hud-chip"><span class="ic">🪙</span><b id="goldVal">170</b></div>
+          <div class="hud-chip" id="goldChip"><span class="ic">🪙</span><b id="goldVal">170</b></div>
         </div>
         <div class="hud-right">
           <div class="hud-chip"><span class="ic">💀</span>Dalga <b id="waveVal">0</b>/<b id="waveMax">8</b></div>
           <div class="hud-icon-row">
+            <div class="soundIcon sound-toggle-btn" id="soundBtnTop" title="Ses">🔊</div>
             <div class="pauseIcon" id="pauseBtn" title="Duraklat">⏸</div>
             <div class="resetIcon" id="resetBtn" title="Sıfırla">↺</div>
           </div>
@@ -35,6 +48,7 @@
 
       <div class="overlay" id="overlay">
         <h2 id="overlayTitle">Röle Düştü</h2>
+        <div class="overlay-stars" id="overlayStars"></div>
         <p id="overlayText">Dalga 0'da yenildin</p>
         <button class="btn ghost" id="overlayBtn" style="margin-top:6px;">Tekrar Dene</button>
       </div>
@@ -81,8 +95,10 @@
   </div>
 </div>
 
-<!-- Sıra önemli: config -> engine -> render -> ui -> main -->
+<!-- Sıra önemli: config -> progress -> audio -> engine -> render -> ui -> main -->
 <script src="js/config.js"></script>
+<script src="js/progress.js"></script>
+<script src="js/audio.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/render.js"></script>
 <script src="js/ui.js"></script>

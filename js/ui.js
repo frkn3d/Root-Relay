@@ -2,13 +2,20 @@
    UI — DOM'a dokunan tüm render fonksiyonları burada.
    engine.js durum değiştiğinde bu fonksiyonları çağırır.
    ============================================================ */
+function renderStars(n){
+  let s='';
+  for(let i=0;i<3;i++) s += i<n ? '⭐' : '☆';
+  return s;
+}
+
 function renderLevelPicker(){
   const el = document.getElementById('levelPicker');
   el.innerHTML='';
   LEVELS.forEach((lv,i)=>{
     const card=document.createElement('div');
     card.className='level-card'+(i===currentLevelIdx?' active':'');
-    card.textContent = lv.name;
+    const prog = getLevelProgress(lv.id);
+    card.innerHTML = `<div>${lv.name}</div><div class="lc-stars">${renderStars(prog.bestStars)}</div>`;
     card.addEventListener('pointerup', ()=>loadLevel(i));
     el.appendChild(card);
   });

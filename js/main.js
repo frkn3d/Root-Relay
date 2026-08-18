@@ -16,6 +16,7 @@ function pointerToLogical(clientX, clientY){
 }
 canvas.addEventListener('pointerup',(e)=>{
   if(gameOver||gameWon||paused) return;
+  if(!document.getElementById('startScreen').classList.contains('hide')) return;
   if(document.getElementById('towerDrawer').classList.contains('show')){
     closeTowerDrawer();
     return;
@@ -42,11 +43,17 @@ canvas.addEventListener('pointerup',(e)=>{
   });
   if(!closest) return;
   const def=TOWER_TYPES[selectedType];
-  if(gold<def.cost) return;
+  if(gold<def.cost){
+    playError();
+    const chip=document.getElementById('goldChip');
+    chip.classList.remove('shake'); void chip.offsetWidth; chip.classList.add('shake');
+    return;
+  }
   gold-=def.cost;
   document.getElementById('goldVal').textContent=gold;
   const t={x:closest.x,y:closest.y,def,cooldown:0,pulse:0,level:0,totalSpent:def.cost};
   towers.push(t); closest.occ=t;
+  playPlace();
 });
 
 document.getElementById('waveBtn').addEventListener('pointerup', startWave);
@@ -61,7 +68,15 @@ document.getElementById('tpSellBtn').addEventListener('pointerup', requestSellTo
 document.getElementById('tpSellCancel').addEventListener('pointerup', cancelSellTower);
 document.getElementById('tpSellYes').addEventListener('pointerup', confirmSellTower);
 document.getElementById('tpCloseBtn').addEventListener('pointerup', closeTowerPanel);
+document.getElementById('ssPlayBtn').addEventListener('pointerup', ()=>{
+  ensureAudioCtx();
+  playClick();
+  document.getElementById('startScreen').classList.add('hide');
+});
+document.getElementById('soundBtn').addEventListener('pointerup', toggleSound);
+document.getElementById('soundBtnTop').addEventListener('pointerup', toggleSound);
 
+syncSoundButtons();
 renderTowerSelectBtn();
 renderTowerDrawer();
 loadLevel(0);
