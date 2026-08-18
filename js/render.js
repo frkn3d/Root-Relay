@@ -433,6 +433,43 @@ function drawMortarTower(t){
   ctx.restore();
 }
 
+/* İnşa/yükseltme sırasında kulenin üzerinde dönen dairesel ilerleme
+   göstergesi + kalan süre. */
+function drawBuildProgress(t){
+  const dur = t.buildDuration || 1;
+  const p = Math.max(0, Math.min(1 - (t.buildLeft / dur), 1));
+  const R = 20;
+  ctx.save();
+
+  // arka halka
+  ctx.beginPath(); ctx.arc(t.x, t.y, R, 0, Math.PI*2);
+  ctx.strokeStyle='rgba(0,0,0,0.45)'; ctx.lineWidth=5; ctx.stroke();
+
+  // dolan yay
+  ctx.beginPath();
+  ctx.arc(t.x, t.y, R, -Math.PI/2, -Math.PI/2 + p*Math.PI*2);
+  ctx.strokeStyle = t.pendingLevel ? '#f4c04a' : '#7fe3b4';
+  ctx.lineWidth = 5; ctx.lineCap='round';
+  ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 8;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // dönen parlak uç
+  const tipAng = -Math.PI/2 + p*Math.PI*2;
+  ctx.beginPath();
+  ctx.arc(t.x+Math.cos(tipAng)*R, t.y+Math.sin(tipAng)*R, 3, 0, Math.PI*2);
+  ctx.fillStyle='#ffffff'; ctx.fill();
+
+  // kalan süre
+  const remain = Math.ceil(t.buildLeft);
+  ctx.font='700 13px "Baloo 2", sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='#ffffff';
+  ctx.shadowColor='rgba(0,0,0,0.8)'; ctx.shadowBlur=4;
+  ctx.fillText(remain+'s', t.x, t.y+1);
+  ctx.restore();
+}
+
 function drawTower(t){
   const st = getTowerStats(t);
   const isSelected = towerPanelOpen && selectedTower===t;
@@ -455,6 +492,9 @@ function drawTower(t){
     ctx.restore();
   }
   ctx.save();
+  // İnşa halindeyken kule yarı saydam çizilir (henüz aktif değil)
+  const building = t.buildLeft > 0;
+  if(building) ctx.globalAlpha = 0.45;
   ctx.translate(t.x, t.y);
   ctx.scale(TOWER_VISUAL_SCALE * towerLevelScale(t), TOWER_VISUAL_SCALE * towerLevelScale(t));
   ctx.translate(-t.x, -t.y);
@@ -464,7 +504,8 @@ function drawTower(t){
   else drawMortarTower(t);
   ctx.restore();
 
-  drawLevelAura(t);
+  if(building) drawBuildProgress(t);
+  else drawLevelAura(t);
 
   const lvl = t.level||0;
   if(lvl>0){

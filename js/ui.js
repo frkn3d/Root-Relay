@@ -2,6 +2,11 @@
    UI — DOM'a dokunan tüm render fonksiyonları burada.
    engine.js durum değiştiğinde bu fonksiyonları çağırır.
    ============================================================ */
+function setWaveBtnReady(on){
+  const btn = document.getElementById('waveBtn');
+  if(btn) btn.classList.toggle('ready', !!on);
+}
+
 /* ---- Dalga tamamlandı bildirimi (2 saniye) ---- */
 let waveToastTimer = null;
 function showWaveToast(text){
@@ -159,11 +164,15 @@ function renderTowerPanel(){
 
   const cost = upgradeCost(t);
   const upBtn = document.getElementById('tpUpgradeBtn');
-  if(cost===null){
+  if(t.buildLeft > 0){
+    upBtn.textContent = t.pendingLevel ? 'Yükseltiliyor…' : 'İnşa ediliyor…';
+    upBtn.disabled = true;
+  } else if(cost===null){
     upBtn.textContent = 'Maksimum Seviye';
     upBtn.disabled = true;
   } else {
-    upBtn.textContent = `Yükselt · 🪙${cost}`;
+    const secs = buildDurationFor((t.level||0)+1);
+    upBtn.textContent = `Yükselt · 🪙${cost} · ${secs}s`;
     upBtn.disabled = gold < cost;
   }
 

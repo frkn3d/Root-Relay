@@ -168,9 +168,15 @@ canvas.addEventListener('pointerup',(e)=>{
   }
   gold-=def.cost;
   document.getElementById('goldVal').textContent=gold;
-  const t={x:closest.x,y:closest.y,def,cooldown:0,pulse:0,level:0,totalSpent:def.cost};
+  const t={
+    x:closest.x, y:closest.y, def, cooldown:0, pulse:0,
+    level:0, totalSpent:def.cost,
+    buildDuration: buildDurationFor(0),
+    buildLeft: buildDurationFor(0),
+    pendingLevel: null,
+  };
   towers.push(t); closest.occ=t;
-  playPlace();
+  playMenuTap();
   cancelPress();
 });
 

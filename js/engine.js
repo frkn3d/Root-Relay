@@ -99,6 +99,13 @@ let sellConfirmPending = false;
 
 const UPGRADE_COST_MULT = [0.6, 0.9, 1.3]; // level0->1, level1->2, level2->3
 
+/* İnşa/yükseltme süreleri (saniye).
+   BUILD_TIMES[0] = ilk kurulum, [1] = 2. seviye, [2] = 3. seviye */
+const BUILD_TIMES = [1, 3, 5];
+function buildDurationFor(levelAfter){
+  return BUILD_TIMES[Math.max(0, Math.min(levelAfter, BUILD_TIMES.length-1))];
+}
+
 function upgradeCost(t){
   const lvl = t.level||0;
   if(lvl>=3) return null;
@@ -126,24 +133,19 @@ function closeTowerPanel(){
 }
 function doUpgradeTower(){
   if(!selectedTower) return;
-  const cost = upgradeCost(selectedTower);
+  const t = selectedTower;
+  if(t.buildLeft > 0){ playError(); return; } // zaten inşa halinde
+  const cost = upgradeCost(t);
   if(cost===null || gold<cost){ playError(); return; }
   gold -= cost;
-  selectedTower.totalSpent += cost;
-  selectedTower.level = (selectedTower.level||0)+1;
+  t.totalSpent += cost;
   document.getElementById('goldVal').textContent = gold;
-  // Yükseltme anını görünür kıl: altın parçacık patlaması + yükselen yazı
-  const t = selectedTower;
-  for(let i=0;i<20;i++){
-    const ang = (i/20)*Math.PI*2;
-    particles.push({
-      x:t.x, y:t.y-6,
-      vx:Math.cos(ang)*90, vy:Math.sin(ang)*90-30,
-      life:0.55, color:'#f4c04a'
-    });
-  }
-  floatTexts.push({x:t.x, y:t.y-26, text:'SEVİYE '+t.level, life:0.9, vy:-28, color:'#f4c04a'});
-  playPlace();
+  // Seviye hemen artmaz — inşa süresi dolunca uygulanır.
+  const nextLevel = (t.level||0)+1;
+  t.pendingLevel = nextLevel;
+  t.buildDuration = buildDurationFor(nextLevel);
+  t.buildLeft = t.buildDuration;
+  playMenuTap();
   renderTowerPanel();
 }
 function requestSellTower(){ sellConfirmPending=true; playClick(); renderTowerPanel(); }
@@ -180,6 +182,7 @@ function loadLevel(idx){
   seenEnemyTypes = new Set();
   paused = false;
   hideWaveToast(); // ui.js
+  setWaveBtnReady(true); // ui.js — ilk dalgaya davet
   document.getElementById('pauseOverlay').classList.remove('show');
   document.getElementById('pauseBtn').textContent = '⏸';
   document.getElementById('goldVal').textContent = gold;
@@ -236,6 +239,7 @@ function startWave(){
     t += 0.5;
   });
   waveElapsed=0; waveActive=true;
+  setWaveBtnReady(false); // ui.js
   saveResume(currentLevelIdx, waveIndex);
   playWaveStart();
   renderWavePreview();   // ui.js
@@ -244,6 +248,7 @@ function startWave(){
 function endGame(win){
   gameOver=!win; gameWon=win;
   hideWaveToast(); // ui.js
+  setWaveBtnReady(false); // ui.js
   closeTowerPanel();
   if(typeof closeTowerDrawer === 'function') closeTowerDrawer();
   const overlay=document.getElementById('overlay');
@@ -294,6 +299,7 @@ function update(dt){
       waveActive=false;
       if(waveIndex>=level.waveCount){ endGame(true); return; }
       showWaveToast(`Dalga ${waveIndex} Tamamlandı!`); // ui.js
+      setWaveBtnReady(true); // ui.js
       renderWavePreview();   // ui.js
     }
   }
@@ -320,6 +326,32 @@ function update(dt){
   }
 
   towers.forEach(t=>{
+    // İnşa/yükseltme sürüyorsa kule çalışmaz; süre dolunca devreye girer.
+    if(t.buildLeft > 0){
+      t.buildLeft -= dt;
+      if(t.buildLeft <= 0){
+        t.buildLeft = 0;
+        // Yükseltme tamamlandı: seviyeyi şimdi uygula ve kutla.
+        if(t.pendingLevel !== undefined && t.pendingLevel !== null){
+          t.level = t.pendingLevel;
+          t.pendingLevel = null;
+          for(let i=0;i<20;i++){
+            const ang = (i/20)*Math.PI*2;
+            particles.push({x:t.x,y:t.y-6,vx:Math.cos(ang)*90,vy:Math.sin(ang)*90-30,life:0.55,color:'#f4c04a'});
+          }
+          floatTexts.push({x:t.x,y:t.y-26,text:'SEVİYE '+t.level,life:0.9,vy:-28,color:'#f4c04a'});
+        } else {
+          for(let i=0;i<10;i++){
+            const ang=(i/10)*Math.PI*2;
+            particles.push({x:t.x,y:t.y+4,vx:Math.cos(ang)*60,vy:Math.sin(ang)*40-20,life:0.4,color:'#c9a463'});
+          }
+        }
+        playPlace();
+        if(towerPanelOpen && selectedTower===t) renderTowerPanel();
+      }
+      return; // inşa bitene kadar ateş etme
+    }
+
     const st = getTowerStats(t);
     t.cooldown = Math.max(0, t.cooldown-dt);
     if(t.cooldown<=0){

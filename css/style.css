@@ -343,6 +343,21 @@ canvas{
 .wave-btn:active{ transform:translateY(1px); box-shadow:0 1px 0 #7a5518;}
 .wave-btn:disabled{ opacity:0.4; }
 
+/* Dalga bittiğinde bir sonraki dalgayı başlatmaya davet eden vurgu */
+@keyframes wave-btn-ready{
+  0%, 100%{
+    transform:scale(1);
+    box-shadow:0 2px 0 #7a5518, 0 0 0 0 rgba(244,192,74,0.6);
+    filter:brightness(1);
+  }
+  50%{
+    transform:scale(1.07);
+    box-shadow:0 2px 0 #7a5518, 0 0 14px 5px rgba(244,192,74,0.45);
+    filter:brightness(1.18);
+  }
+}
+.wave-btn.ready{ animation:wave-btn-ready 1.1s ease-in-out infinite; }
+
 .next-wave-preview{
   width:100%;
   font-family:'JetBrains Mono', monospace; font-size:8.5px; color:var(--cream-dim);
