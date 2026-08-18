@@ -123,7 +123,7 @@ function generateWave(level, waveIndex){
   return groups;
 }
 /* Belirli dalgalara ek can çarpanı. Formülden gelen artışın üstüne biner. */
-const WAVE_EXTRA_HP = { 6: 1.20, 7: 1.30, 8: 1.40 };
+const WAVE_EXTRA_HP = { 4: 1.20, 5: 1.30, 6: 1.30, 7: 1.40, 8: 1.50 };
 
 function statMultipliers(level, waveIndex){
   const p = level.difficulty;
