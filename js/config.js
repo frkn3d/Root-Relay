@@ -122,10 +122,13 @@ function generateWave(level, waveIndex){
   }
   return groups;
 }
+/* Belirli dalgalara ek can çarpanı. Formülden gelen artışın üstüne biner. */
+const WAVE_EXTRA_HP = { 6: 1.20, 7: 1.30, 8: 1.40 };
+
 function statMultipliers(level, waveIndex){
   const p = level.difficulty;
   return {
-    hp: 1 + waveIndex*p.hpGrowth + Math.pow(waveIndex,1.3)*0.015,
+    hp: (1 + waveIndex*p.hpGrowth + Math.pow(waveIndex,1.3)*0.015) * (WAVE_EXTRA_HP[waveIndex] || 1),
     speed: Math.min(1 + waveIndex*p.speedGrowth, p.speedCap),
   };
 }
