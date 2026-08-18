@@ -44,7 +44,7 @@ const LEVELS = [
     ],
     difficulty:{ hpGrowth:0.16, speedGrowth:0.025, speedCap:1.5, countBase:7, countGrowth:1.85 },
     waveOverrides:{
-      8:[ {type:'swarm', count:31, interval:0.42}, {type:'sprinter', count:31, interval:0.5}, {type:'husk', count:18, interval:1.35}, {type:'brute', count:16, interval:2.0} ]
+      8:[ {type:'swarm', count:40, interval:0.42}, {type:'sprinter', count:40, interval:0.5}, {type:'husk', count:23, interval:1.35}, {type:'brute', count:21, interval:2.0} ]
     }
   },
   {
@@ -74,8 +74,10 @@ const LEVELS = [
 // 4 kademe: erken sürü -> hızlılar katılır -> zırhlılar katılır -> ağır tehditler.
 /* Dalga bazlı düşman sayısı çarpanı:
    1. dalga normal, 2. dalga +%50, 3. dalga +%100, 4-6. dalga +%150,
-   7. ve sonrası ayrıca +%70. Üstüne tüm dalgalara genel +%30 uygulanır. */
+   7. ve sonrası ayrıca +%70. Üstüne tüm dalgalara genel +%30 uygulanır.
+   WAVE_EXTRA_MULT ile tek tek dalgalara ek ince ayar yapılabilir. */
 const GLOBAL_COUNT_BOOST = 1.30;
+const WAVE_EXTRA_MULT = { 8: 1.30 };  // 8. dalga ayrıca +%30
 function waveCountMultiplier(waveIndex){
   let m;
   if(waveIndex <= 1) m = 1.0;
@@ -83,7 +85,7 @@ function waveCountMultiplier(waveIndex){
   else if(waveIndex === 3) m = 2.0;
   else if(waveIndex <= 6) m = 2.5;
   else m = 2.5 * 1.7;
-  return m * GLOBAL_COUNT_BOOST;
+  return m * GLOBAL_COUNT_BOOST * (WAVE_EXTRA_MULT[waveIndex] || 1);
 }
 
 /* Spawn aralıkları: düşman sayısı arttıkça dalganın tek seferde
