@@ -168,6 +168,7 @@ function loadLevel(idx){
   spawnTimeline=[]; waveElapsed=0; shake=0;
   seenEnemyTypes = new Set();
   paused = false;
+  hideWaveToast(); // ui.js
   document.getElementById('pauseOverlay').classList.remove('show');
   document.getElementById('pauseBtn').textContent = '⏸';
   document.getElementById('goldVal').textContent = gold;
@@ -191,6 +192,7 @@ function togglePause(){
 
 function goToMainMenu(){
   playMenuTap();
+  hideWaveToast(); // ui.js
   document.getElementById('pauseOverlay').classList.remove('show');
   document.getElementById('overlay').classList.remove('show');
   paused = true;
@@ -230,6 +232,7 @@ function startWave(){
 
 function endGame(win){
   gameOver=!win; gameWon=win;
+  hideWaveToast(); // ui.js
   closeTowerPanel();
   if(typeof closeTowerDrawer === 'function') closeTowerDrawer();
   const overlay=document.getElementById('overlay');
@@ -279,6 +282,7 @@ function update(dt){
     if(!pending && enemies.length===0){
       waveActive=false;
       if(waveIndex>=level.waveCount){ endGame(true); return; }
+      showWaveToast(`Dalga ${waveIndex} Tamamlandı!`); // ui.js
       renderWavePreview();   // ui.js
     }
   }

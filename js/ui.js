@@ -2,6 +2,25 @@
    UI — DOM'a dokunan tüm render fonksiyonları burada.
    engine.js durum değiştiğinde bu fonksiyonları çağırır.
    ============================================================ */
+/* ---- Dalga tamamlandı bildirimi (2 saniye) ---- */
+let waveToastTimer = null;
+function showWaveToast(text){
+  const el = document.getElementById('waveToast');
+  if(!el) return;
+  el.textContent = text;
+  // Animasyonu yeniden tetiklemek için sınıfı sıfırla (reflow zorla).
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  clearTimeout(waveToastTimer);
+  waveToastTimer = setTimeout(()=>el.classList.remove('show'), 2000);
+}
+function hideWaveToast(){
+  const el = document.getElementById('waveToast');
+  if(el) el.classList.remove('show');
+  clearTimeout(waveToastTimer);
+}
+
 /* ---- Menü sayfası gezinme ---- */
 function showMenuPage(id){
   document.querySelectorAll('.menu-page').forEach(p=>{

@@ -173,6 +173,35 @@ canvas{
 }
 .tp-sell-confirm .btn.ghost{ flex:1; }
 
+/* --- Dalga tamamlandı bildirimi --- */
+.wave-toast{
+  position:absolute; left:50%; top:38%;
+  transform:translate(-50%,-50%) scale(0.85);
+  z-index:7; pointer-events:none;
+  opacity:0;
+  background:rgba(10,18,12,0.82);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+  border:2px solid var(--gold);
+  border-radius:14px;
+  padding:12px 22px;
+  font-family:'Baloo 2', sans-serif; font-weight:800;
+  font-size:clamp(16px,5vw,21px); color:var(--gold);
+  text-shadow:0 2px 4px rgba(0,0,0,0.7);
+  white-space:nowrap; text-align:center;
+  box-shadow:0 8px 26px rgba(0,0,0,0.45);
+}
+.wave-toast.show{
+  animation:wave-toast-pop 2s ease forwards;
+}
+@keyframes wave-toast-pop{
+  0%   { opacity:0; transform:translate(-50%,-50%) scale(0.8); }
+  10%  { opacity:1; transform:translate(-50%,-50%) scale(1.06); }
+  18%  { transform:translate(-50%,-50%) scale(1); }
+  80%  { opacity:1; transform:translate(-50%,-50%) scale(1); }
+  100% { opacity:0; transform:translate(-50%,-58%) scale(0.96); }
+}
+
 .overlay{
   position:absolute; inset:0; z-index:8;
   display:flex; align-items:center; justify-content:center; flex-direction:column;
