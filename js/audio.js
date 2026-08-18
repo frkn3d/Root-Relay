@@ -23,8 +23,7 @@ function ensureAudioCtx(){
 
 function syncSoundButtons(){
   document.querySelectorAll('.sound-toggle-btn').forEach(btn=>{
-    const isStart = btn.id==='soundBtn';
-    btn.textContent = soundEnabled ? (isStart?'🔊 Ses':'🔊') : (isStart?'🔇 Ses':'🔇');
+    btn.textContent = soundEnabled ? '🔊 Ses' : '🔇 Ses';
   });
 }
 
@@ -33,7 +32,7 @@ function toggleSound(){
   soundEnabled = !soundEnabled;
   try{ localStorage.setItem('rr_sound', soundEnabled?'1':'0'); }catch(e){}
   syncSoundButtons();
-  if(soundEnabled) playClick();
+  if(soundEnabled) playMenuTap();
 }
 
 const lastSoundAt = {};
@@ -72,6 +71,27 @@ function playPlace(){ blip(300,0.10,'triangle',0.16,520); }
 function playError(){ blip(140,0.18,'sawtooth',0.13,90); }
 function playWaveStart(){ blip(300,0.35,'sine',0.14,700); }
 function playClick(){ blip(700,0.05,'square',0.07,700); }
+
+// Menü/gezinme tuşları için kısık, tok (muted-thud) ses — oyun içi
+// efektlerden (playShoot, playCoin vb.) bilinçli olarak farklı: alçak
+// perdeli, hızla sönümlenen, parlak olmayan bir "tok" darbe.
+function playMenuTap(){
+  if(!throttleSound('menutap',60)) return;
+  if(!soundEnabled) return;
+  const ctx = ensureAudioCtx();
+  if(!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type='sine';
+  osc.frequency.setValueAtTime(220, ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime+0.09);
+  gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.10, ctx.currentTime+0.008);
+  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.11);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(); osc.stop(ctx.currentTime+0.13);
+}
+
 function playVictory(){
   [520,660,780,1040].forEach((f,i)=>setTimeout(()=>blip(f,0.22,'triangle',0.15),i*110));
 }

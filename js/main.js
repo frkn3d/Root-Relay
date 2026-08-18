@@ -57,8 +57,8 @@ canvas.addEventListener('pointerup',(e)=>{
 });
 
 document.getElementById('waveBtn').addEventListener('pointerup', startWave);
-document.getElementById('resetBtn').addEventListener('pointerup', ()=>loadLevel(currentLevelIdx));
-document.getElementById('overlayBtn').addEventListener('pointerup', ()=>loadLevel(currentLevelIdx));
+document.getElementById('resetBtn').addEventListener('pointerup', ()=>{ playMenuTap(); loadLevel(currentLevelIdx); });
+document.getElementById('overlayBtn').addEventListener('pointerup', ()=>{ playMenuTap(); loadLevel(currentLevelIdx); });
 document.getElementById('pauseBtn').addEventListener('pointerup', togglePause);
 document.getElementById('resumeBtn').addEventListener('pointerup', togglePause);
 document.getElementById('speedBtn').addEventListener('pointerup', toggleSpeed);
@@ -67,14 +67,11 @@ document.getElementById('tpUpgradeBtn').addEventListener('pointerup', doUpgradeT
 document.getElementById('tpSellBtn').addEventListener('pointerup', requestSellTower);
 document.getElementById('tpSellCancel').addEventListener('pointerup', cancelSellTower);
 document.getElementById('tpSellYes').addEventListener('pointerup', confirmSellTower);
-document.getElementById('tpCloseBtn').addEventListener('pointerup', closeTowerPanel);
-document.getElementById('ssPlayBtn').addEventListener('pointerup', ()=>{
-  ensureAudioCtx();
-  playClick();
-  document.getElementById('startScreen').classList.add('hide');
-});
+document.getElementById('tpCloseBtn').addEventListener('pointerup', ()=>{ playMenuTap(); closeTowerPanel(); });
+document.getElementById('mainMenuBtnPause').addEventListener('pointerup', goToMainMenu);
+document.getElementById('mainMenuBtnOverlay').addEventListener('pointerup', goToMainMenu);
 document.getElementById('soundBtn').addEventListener('pointerup', toggleSound);
-document.getElementById('soundBtnTop').addEventListener('pointerup', toggleSound);
+document.getElementById('soundBtnPause').addEventListener('pointerup', toggleSound);
 
 syncSoundButtons();
 renderTowerSelectBtn();

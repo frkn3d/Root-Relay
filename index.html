@@ -11,13 +11,6 @@
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <div class="title">Root <span>&</span> Relay</div>
-    <div class="subtitle">dikey mod — dokunmatik öncelikli</div>
-  </header>
-
-  <div class="level-picker" id="levelPicker"></div>
-
   <div class="stage">
     <div class="frame" id="frame">
       <canvas id="game"></canvas>
@@ -26,8 +19,7 @@
         <div class="ss-badge">🌿</div>
         <div class="ss-title">Root <span>&</span> Relay</div>
         <div class="ss-sub">biyolüminesan ormanda kule savunması</div>
-        <div class="ss-best" id="ssBest"></div>
-        <button class="btn ss-play" id="ssPlayBtn">▶ Oyna</button>
+        <div class="ss-levels" id="ssLevelList"></div>
         <button class="ss-sound sound-toggle-btn" id="soundBtn">🔊 Ses</button>
       </div>
 
@@ -39,7 +31,6 @@
         <div class="hud-right">
           <div class="hud-chip"><span class="ic">💀</span>Dalga <b id="waveVal">0</b>/<b id="waveMax">8</b></div>
           <div class="hud-icon-row">
-            <div class="soundIcon sound-toggle-btn" id="soundBtnTop" title="Ses">🔊</div>
             <div class="pauseIcon" id="pauseBtn" title="Duraklat">⏸</div>
             <div class="resetIcon" id="resetBtn" title="Sıfırla">↺</div>
           </div>
@@ -50,12 +41,19 @@
         <h2 id="overlayTitle">Röle Düştü</h2>
         <div class="overlay-stars" id="overlayStars"></div>
         <p id="overlayText">Dalga 0'da yenildin</p>
-        <button class="btn ghost" id="overlayBtn" style="margin-top:6px;">Tekrar Dene</button>
+        <div class="overlay-actions">
+          <button class="btn ghost" id="overlayBtn">Tekrar Dene</button>
+          <button class="btn ghost" id="mainMenuBtnOverlay">🏠 Ana Menü</button>
+        </div>
       </div>
 
       <div class="overlay pause-overlay" id="pauseOverlay">
         <h2>⏸ Duraklatıldı</h2>
         <p>Oyun beklemede — devam etmek için dokun</p>
+        <div class="pause-actions">
+          <button class="btn ghost sound-toggle-btn" id="soundBtnPause">🔊 Ses</button>
+          <button class="btn ghost" id="mainMenuBtnPause">🏠 Ana Menü</button>
+        </div>
         <button class="btn ghost" id="resumeBtn" style="margin-top:6px;">Devam Et</button>
       </div>
 

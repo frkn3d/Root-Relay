@@ -8,15 +8,27 @@ function renderStars(n){
   return s;
 }
 
-function renderLevelPicker(){
-  const el = document.getElementById('levelPicker');
+function renderStartLevelList(){
+  const el = document.getElementById('ssLevelList');
+  if(!el) return;
   el.innerHTML='';
   LEVELS.forEach((lv,i)=>{
-    const card=document.createElement('div');
-    card.className='level-card'+(i===currentLevelIdx?' active':'');
     const prog = getLevelProgress(lv.id);
-    card.innerHTML = `<div>${lv.name}</div><div class="lc-stars">${renderStars(prog.bestStars)}</div>`;
-    card.addEventListener('pointerup', ()=>loadLevel(i));
+    const card=document.createElement('div');
+    card.className='ss-level-card';
+    card.innerHTML = `
+      <div class="ss-level-info">
+        <div class="ss-level-name">${lv.name}</div>
+        <div class="ss-level-stars">${renderStars(prog.bestStars)}</div>
+        <div class="ss-level-best">${prog.bestWave>0 ? 'En iyi dalga: '+prog.bestWave+'/'+lv.waveCount : 'Henüz oynanmadı'}</div>
+      </div>
+      <div class="ss-level-play">▶</div>
+    `;
+    card.addEventListener('pointerup', ()=>{
+      playMenuTap();
+      loadLevel(i);
+      document.getElementById('startScreen').classList.add('hide');
+    });
     el.appendChild(card);
   });
 }
@@ -45,6 +57,7 @@ function renderTowerDrawer(){
 }
 
 function toggleTowerDrawer(){
+  playMenuTap();
   const el = document.getElementById('towerDrawer');
   const isOpen = el.classList.toggle('show');
   document.getElementById('towerSelectBtn').classList.toggle('open', isOpen);

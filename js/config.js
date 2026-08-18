@@ -3,9 +3,11 @@
    Yeni düşman/kule/bölüm eklemek için sadece bu dosya değişir.
    ============================================================ */
 const ENEMY_TYPES = {
-  spore:    { hp:26, speed:0.85, radius:15, gold:6,  dmgToLives:1, label:'Spor',   shape:'blob',   body:'#ff8f78', body2:'#c94f42', eyes:1 },
-  sprinter: { hp:16, speed:1.6,  radius:12, gold:4,  dmgToLives:1, label:'Koşucu', shape:'runner', body:'#ffbf6b', body2:'#d98a2e', eyes:2 },
-  brute:    { hp:82, speed:0.48, radius:21, gold:13, dmgToLives:2, label:'Ur',     shape:'brute',  body:'#b25bc9', body2:'#6f2f88', eyes:2 },
+  spore:    { hp:26, speed:0.85, radius:15, gold:6,  dmgToLives:1, label:'Spor',    shape:'blob',   body:'#ff8f78', body2:'#c94f42', eyes:1 },
+  swarm:    { hp:10, speed:1.1,  radius:9,  gold:3,  dmgToLives:1, label:'Sürü',    shape:'blob',   body:'#c9e07a', body2:'#7a9c3a', eyes:1 },
+  sprinter: { hp:16, speed:1.6,  radius:12, gold:4,  dmgToLives:1, label:'Koşucu',  shape:'runner', body:'#ffbf6b', body2:'#d98a2e', eyes:2 },
+  husk:     { hp:50, speed:0.62, radius:17, gold:9,  dmgToLives:1, label:'Kabuklu', shape:'brute',  body:'#c9b483', body2:'#8a6f42', eyes:2 },
+  brute:    { hp:82, speed:0.48, radius:21, gold:13, dmgToLives:2, label:'Ur',      shape:'brute',  body:'#b25bc9', body2:'#6f2f88', eyes:2 },
 };
 
 const TOWER_TYPES = {
@@ -15,6 +17,8 @@ const TOWER_TYPES = {
   ice:    { id:'ice',    name:'Don Peykesi',  cost:70,  range:140, rate:0.7,  dmg:4,  splash:0,  kind:'ice',    color:'#8fd9f0', icon:'❄️', slowFactor:0.42, slowDuration:1.4 },
 };
 
+// Yapı alanları: her segmentin orta noktası etrafında, birbirinden en az
+// ~80-140px uzaklıkta yerleştirildi ki kuleler görsel olarak üst üste binmesin.
 const LEVELS = [
   {
     id:'orman-girisi', name:'Orman Girişi', waveCount:8,
@@ -24,12 +28,16 @@ const LEVELS = [
       {x:460,y:480},{x:460,y:660},{x:140,y:660},{x:140,y:840},{x:460,y:840},{x:460,y:1000},
     ],
     spots:[
-      {x:250,y:60},{x:250,y:195},{x:545,y:210},{x:300,y:225},{x:300,y:375},
-      {x:55,y:390},{x:300,y:410},{x:300,y:550},{x:545,y:570},{x:300,y:590},
-      {x:300,y:730},{x:55,y:750},{x:300,y:775},{x:300,y:915},
+      {x:130,y:55}, {x:330,y:185}, {x:530,y:210},
+      {x:400,y:235}, {x:200,y:365}, {x:60,y:390},
+      {x:400,y:415}, {x:200,y:545}, {x:530,y:570},
+      {x:400,y:595}, {x:200,y:725}, {x:60,y:750},
+      {x:400,y:775}, {x:200,y:905}, {x:530,y:920},
     ],
-    difficulty:{ hpGrowth:0.16, speedGrowth:0.025, speedCap:1.5, countBase:6, countGrowth:1.6 },
-    waveOverrides:{ 8:[ {type:'brute', count:4, interval:1.1}, {type:'sprinter', count:6, interval:0.25} ] }
+    difficulty:{ hpGrowth:0.16, speedGrowth:0.025, speedCap:1.5, countBase:7, countGrowth:1.85 },
+    waveOverrides:{
+      8:[ {type:'brute', count:4, interval:1.1}, {type:'husk', count:3, interval:0.9}, {type:'sprinter', count:6, interval:0.25} ]
+    }
   },
   {
     id:'sisli-vadi', name:'Sisli Vadi', waveCount:10,
@@ -40,28 +48,42 @@ const LEVELS = [
       {x:520,y:880},{x:300,y:880},{x:300,y:1000},
     ],
     spots:[
-      {x:460,y:35},{x:180,y:35},{x:180,y:165},{x:465,y:170},{x:460,y:315},
-      {x:80,y:325},{x:340,y:400},{x:340,y:490},{x:60,y:560},{x:340,y:630},
-      {x:340,y:790},{x:465,y:800},{x:170,y:940},{x:420,y:940},
+      {x:400,y:35}, {x:560,y:155}, {x:250,y:160},
+      {x:110,y:295}, {x:30,y:320},
+      {x:180,y:335}, {x:420,y:465}, {x:575,y:480},
+      {x:260,y:495}, {x:460,y:625}, {x:130,y:640},
+      {x:260,y:655}, {x:460,y:785}, {x:575,y:800},
+      {x:410,y:945}, {x:230,y:940},
     ],
-    difficulty:{ hpGrowth:0.21, speedGrowth:0.03, speedCap:1.65, countBase:7, countGrowth:1.9 },
-    waveOverrides:{ 10:[ {type:'brute', count:6, interval:0.9}, {type:'sprinter', count:10, interval:0.2}, {type:'spore', count:8, interval:0.3} ] }
+    difficulty:{ hpGrowth:0.21, speedGrowth:0.03, speedCap:1.65, countBase:8, countGrowth:2.15 },
+    waveOverrides:{
+      10:[ {type:'brute', count:6, interval:0.9}, {type:'husk', count:5, interval:0.7}, {type:'sprinter', count:10, interval:0.2}, {type:'spore', count:8, interval:0.3} ]
+    }
   },
 ];
 
+// Zorluk formülü: dalga index'inden düşman kompozisyonu üretir.
+// 4 kademe: erken sürü -> hızlılar katılır -> zırhlılar katılır -> ağır tehditler.
 function generateWave(level, waveIndex){
   if(level.waveOverrides && level.waveOverrides[waveIndex]) return level.waveOverrides[waveIndex];
   const p = level.difficulty;
   const count = p.countBase + Math.floor(waveIndex * p.countGrowth);
   const groups = [];
-  if(waveIndex < 3){
-    groups.push({type:'spore', count, interval:0.55});
-  } else if(waveIndex < 6){
+  if(waveIndex < 2){
     groups.push({type:'spore', count:Math.ceil(count*0.7), interval:0.5});
-    groups.push({type:'sprinter', count:Math.ceil(count*0.4), interval:0.3});
+    groups.push({type:'swarm', count:Math.ceil(count*0.5), interval:0.22});
+  } else if(waveIndex < 4){
+    groups.push({type:'spore', count:Math.ceil(count*0.5), interval:0.45});
+    groups.push({type:'swarm', count:Math.ceil(count*0.4), interval:0.2});
+    groups.push({type:'sprinter', count:Math.ceil(count*0.3), interval:0.3});
+  } else if(waveIndex < 7){
+    groups.push({type:'spore', count:Math.ceil(count*0.4), interval:0.4});
+    groups.push({type:'sprinter', count:Math.ceil(count*0.35), interval:0.28});
+    groups.push({type:'husk', count:Math.max(1,Math.floor(waveIndex/2)), interval:0.8});
   } else {
-    groups.push({type:'spore', count:Math.ceil(count*0.6), interval:0.45});
-    groups.push({type:'sprinter', count:Math.ceil(count*0.4), interval:0.28});
+    groups.push({type:'spore', count:Math.ceil(count*0.35), interval:0.4});
+    groups.push({type:'sprinter', count:Math.ceil(count*0.3), interval:0.26});
+    groups.push({type:'husk', count:Math.max(1,Math.floor(waveIndex/2.5)), interval:0.7});
     groups.push({type:'brute', count:Math.max(1,Math.floor(waveIndex/3)), interval:1.0});
   }
   return groups;

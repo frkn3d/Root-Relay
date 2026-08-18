@@ -171,25 +171,29 @@ function loadLevel(idx){
   document.getElementById('overlay').classList.remove('show');
   closeTowerPanel();
   if(typeof closeTowerDrawer === 'function') closeTowerDrawer();
-  renderLevelPicker();   // ui.js
-  renderWavePreview();   // ui.js
-
-  const ssBest = document.getElementById('ssBest');
-  if(ssBest){
-    const prog = getLevelProgress(level.id);
-    ssBest.textContent = prog.bestStars>0
-      ? `${level.name} — En iyi: ${renderStars(prog.bestStars)} (Dalga ${prog.bestWave}/${level.waveCount})`
-      : `${level.name} — henüz tamamlanmadı`;
-  }
+  renderStartLevelList(); // ui.js — yıldız/en-iyi bilgisini tazele
+  renderWavePreview();    // ui.js
 }
 
 function togglePause(){
   if(gameOver||gameWon) return;
   paused = !paused;
-  playClick();
+  playMenuTap();
   document.getElementById('pauseOverlay').classList.toggle('show', paused);
   document.getElementById('pauseBtn').textContent = paused ? '▶' : '⏸';
   if(!paused) lastTime = performance.now();
+}
+
+function goToMainMenu(){
+  playMenuTap();
+  document.getElementById('pauseOverlay').classList.remove('show');
+  document.getElementById('overlay').classList.remove('show');
+  paused = true;
+  document.getElementById('pauseBtn').textContent = '▶';
+  closeTowerPanel();
+  if(typeof closeTowerDrawer === 'function') closeTowerDrawer();
+  renderStartLevelList();
+  document.getElementById('startScreen').classList.remove('hide');
 }
 
 function startWave(){
@@ -242,7 +246,7 @@ function endGame(win){
     playDefeat();
   }
   overlay.classList.add('show');
-  renderLevelPicker(); // yıldız/en-iyi bilgisini tazele
+  renderStartLevelList(); // yıldız/en-iyi bilgisini tazele
 }
 
 /* ---- Update (delta-time tabanlı) ---- */
