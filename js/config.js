@@ -17,7 +17,7 @@ const ENEMY_TYPES = {
   /* BÜYÜK BOSS — çok yavaş, çok dayanıklı. Etrafında bir don fırtınası
      taşır: auraRadius içindeki kulelerin atış hızını auraSlow oranında
      düşürür (0.5 = %50 yavaş). */
-  frostlord:{ hp:2600, speed:0.26, radius:38, gold:120, dmgToLives:5, label:'Don Efendisi', shape:'boss',
+  frostlord:{ hp:2600, speed:0.26, radius:24, gold:120, dmgToLives:5, label:'Don Efendisi', shape:'boss',
               body:'#7fd4ea', body2:'#2d5f80', eyes:2, boss:true, auraRadius:165, auraSlow:0.5 },
 };
 

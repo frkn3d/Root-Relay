@@ -482,24 +482,18 @@ function drawBossAura(e){
 
   const g = ctx.createRadialGradient(e.x,e.y,R*0.2,e.x,e.y,R);
   g.addColorStop(0,'rgba(150,220,245,0.03)');
-  g.addColorStop(0.7,'rgba(120,200,235,0.13)');
-  g.addColorStop(1,'rgba(90,170,215,0.22)');
+  g.addColorStop(0.7,'rgba(120,200,235,0.10)');
+  g.addColorStop(1,'rgba(90,170,215,0.02)');
   ctx.beginPath(); ctx.arc(e.x,e.y,R,0,Math.PI*2);
   ctx.fillStyle=g; ctx.fill();
 
-  // dönen kenar halkası
-  ctx.beginPath(); ctx.arc(e.x,e.y,R,0,Math.PI*2);
-  ctx.strokeStyle='rgba(190,240,255,0.55)'; ctx.lineWidth=2;
-  ctx.setLineDash([10,8]); ctx.lineDashOffset=-t0*22;
-  ctx.stroke(); ctx.setLineDash([]);
-
-  // içerideki savrulan kar
-  for(let i=0;i<14;i++){
-    const ang = t0*0.5 + i*(Math.PI*2/14);
-    const rr = R*(0.35 + ((t0*0.25+i*0.13)%1)*0.6);
+  // içerideki savrulan kar — sınırı çember yerine bu belirtir
+  for(let i=0;i<18;i++){
+    const ang = t0*0.5 + i*(Math.PI*2/18);
+    const rr = R*(0.35 + ((t0*0.25+i*0.11)%1)*0.62);
     const sx = e.x+Math.cos(ang)*rr, sy = e.y+Math.sin(ang)*rr;
     ctx.beginPath(); ctx.arc(sx,sy,1.6,0,Math.PI*2);
-    ctx.fillStyle='rgba(230,250,255,0.6)'; ctx.fill();
+    ctx.fillStyle='rgba(230,250,255,0.55)'; ctx.fill();
   }
   ctx.restore();
 }
@@ -610,10 +604,6 @@ function drawBossEnemy(e){
   ctx.beginPath(); ctx.ellipse(0, R+10, R*0.9, R*0.3, 0, 0, Math.PI*2);
   ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.fill();
 
-  // dış hale
-  ctx.beginPath(); ctx.arc(0,0,R+12,0,Math.PI*2);
-  ctx.fillStyle='rgba(140,220,245,0.12)'; ctx.fill();
-
   // bacaklar
   const legPhase = Math.sin(e.bounce*0.9)*5;
   [[-R*0.45, legPhase],[R*0.45, -legPhase]].forEach(([dx,ph])=>{
@@ -697,24 +687,19 @@ function drawBossEnemy(e){
 
   ctx.restore();
 
-  // BOSS can barı — normalden büyük ve etiketli
+  // BOSS can barı — normalden büyük (isim yazısı yok, sahneyi kapatmasın)
   const w = R*2.6;
   ctx.save();
   ctx.translate(e.x, e.y + bob);
   ctx.fillStyle='rgba(0,0,0,0.55)';
-  ctx.fillRect(-w/2, -R-24, w, 8);
+  ctx.fillRect(-w/2, -R-20, w, 7);
   const frac = Math.max(0, e.hp/e.maxHp);
   const hg = ctx.createLinearGradient(-w/2,0,w/2,0);
   hg.addColorStop(0,'#ff6b6b'); hg.addColorStop(1,'#ffd36b');
   ctx.fillStyle=hg;
-  ctx.fillRect(-w/2, -R-24, w*frac, 8);
+  ctx.fillRect(-w/2, -R-20, w*frac, 7);
   ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=1.5;
-  ctx.strokeRect(-w/2, -R-24, w, 8);
-  ctx.font='700 10px "Baloo 2", sans-serif';
-  ctx.textAlign='center'; ctx.textBaseline='bottom';
-  ctx.fillStyle='#dff4ff';
-  ctx.shadowColor='rgba(0,0,0,0.9)'; ctx.shadowBlur=4;
-  ctx.fillText(e.label || 'BOSS', 0, -R-28);
+  ctx.strokeRect(-w/2, -R-20, w, 7);
   ctx.restore();
 }
 
