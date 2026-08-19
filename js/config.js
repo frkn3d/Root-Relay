@@ -63,7 +63,7 @@ const LEVELS = [
     difficulty:{ hpGrowth:0.16, speedGrowth:0.025, speedCap:1.5, countBase:7, countGrowth:1.85 },
     waveOverrides:{
       // KÜP DALGASI — bölünen kaotik dalga
-      6:[ {type:'cube', count:14, interval:2.2}, {type:'swarm', count:20, interval:0.5} ],
+      6:[ {type:'cube', count:14, interval:4.2}, {type:'swarm', count:20, interval:0.5} ],
       9:[ {type:'swarm', count:40, interval:0.42}, {type:'sprinter', count:40, interval:0.5}, {type:'husk', count:23, interval:1.35}, {type:'brute', count:21, interval:2.0} ],
       // BOSS DALGASI: tek Don Efendisi + maiyeti
       10:[ {type:'frostlord', count:1, interval:1.0}, {type:'husk', count:10, interval:1.6}, {type:'sprinter', count:16, interval:0.7} ]
@@ -88,7 +88,7 @@ const LEVELS = [
     difficulty:{ hpGrowth:0.21, speedGrowth:0.03, speedCap:1.65, countBase:8, countGrowth:2.15 },
     waveOverrides:{
       // KÜP DALGASI — bölünen kaotik dalga
-      7:[ {type:'cube', count:20, interval:2.0}, {type:'swarm', count:26, interval:0.45}, {type:'sprinter', count:14, interval:0.6} ],
+      7:[ {type:'cube', count:20, interval:4.0}, {type:'swarm', count:26, interval:0.45}, {type:'sprinter', count:14, interval:0.6} ],
       11:[ {type:'swarm', count:44, interval:0.39}, {type:'sprinter', count:44, interval:0.42}, {type:'spore', count:35, interval:0.55}, {type:'husk', count:26, interval:1.25}, {type:'brute', count:22, interval:1.8} ],
       // BOSS DALGASI: iki Don Efendisi + maiyeti
       12:[ {type:'frostlord', count:2, interval:9.0}, {type:'brute', count:12, interval:1.8}, {type:'husk', count:16, interval:1.3}, {type:'sprinter', count:24, interval:0.6} ]

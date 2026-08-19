@@ -355,7 +355,21 @@ function update(dt){
     let pending=false;
     spawnTimeline.forEach(entry=>{
       if(!entry.spawned){
-        if(entry.t<=waveElapsed){ entry.spawned=true; enemies.push({...entry, dist:0, flashT:0, bounce:Math.random()*10, slowT:0, slowFactor:1}); }
+        if(entry.t<=waveElapsed){
+          entry.spawned=true;
+          enemies.push({
+            ...entry, dist:0, flashT:0,
+            bounce:Math.random()*10, slowT:0, slowFactor:1,
+            // Her birim kendi salınım fazı/frekansı/genliğiyle doğar;
+            // aksi halde aynı anda doğanlar senkronize hareket eder.
+            wobbleT: Math.random()*Math.PI*2,
+            wobbleSeed: Math.random()*2.2,
+            wobbleScale: 0.65 + Math.random()*0.7,
+            wobblePhase2: Math.random()*Math.PI*2,
+            spin: Math.random()*Math.PI*2,
+            spinDir: Math.random()<0.5 ? -1 : 1,
+          });
+        }
         else pending=true;
       }
     });
@@ -381,12 +395,18 @@ function update(dt){
     // öngörülemez görünür.
     if(e.wobbleAmp){
       e.wobbleT = (e.wobbleT||0) + dt*(3.2 + (e.wobbleSeed||0));
-      const off = Math.sin(e.wobbleT)*0.65 + Math.sin(e.wobbleT*2.7 + 1.3)*0.35;
+      // Üç farklı frekansın toplamı + birime özel faz kayması:
+      // aynı anda doğan birimler bile birbirinden bağımsız savrulur.
+      const ph = e.wobblePhase2 || 0;
+      const off = Math.sin(e.wobbleT)*0.55
+                + Math.sin(e.wobbleT*2.7 + 1.3 + ph)*0.3
+                + Math.sin(e.wobbleT*0.61 + ph*2)*0.25;
       const len = Math.hypot(p2.x-p.x, p2.y-p.y) || 1;
       const nx = -(p2.y-p.y)/len, ny = (p2.x-p.x)/len;   // dik vektör
-      e.x += nx*off*e.wobbleAmp;
-      e.y += ny*off*e.wobbleAmp;
-      e.spin = (e.spin||0) + dt*(2.5 + off*2);
+      const amp = e.wobbleAmp * (e.wobbleScale || 1);
+      e.x += nx*off*amp;
+      e.y += ny*off*amp;
+      e.spin = (e.spin||0) + dt*(2.5 + off*2) * (e.spinDir || 1);
     }
 
     e.bounce += dt*e.speed*slowMult*9;
@@ -548,9 +568,12 @@ function update(dt){
             splitsLeft: e.splitsLeft - 1,
             // yavrular yolda hafifçe ayrışsın ve farklı salınsın
             dist: Math.max(0, e.dist + (k===0 ? -10 : 10)),
-            wobbleSeed: Math.random()*2.5,
-            wobbleT: Math.random()*6,
-            spin: Math.random()*Math.PI,
+            wobbleSeed: Math.random()*2.2,
+            wobbleT: Math.random()*Math.PI*2,
+            wobbleScale: 0.65 + Math.random()*0.7,
+            wobblePhase2: Math.random()*Math.PI*2,
+            spin: Math.random()*Math.PI*2,
+            spinDir: Math.random()<0.5 ? -1 : 1,
             flashT: 0, slowT: e.slowT, slowFactor: e.slowFactor,
             bounce: Math.random()*10,
           });
