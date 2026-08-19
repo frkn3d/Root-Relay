@@ -292,6 +292,9 @@ function startWave(){
         boss: !!def.boss, label: def.label,
         auraRadius: def.auraRadius || 0, auraSlow: def.auraSlow || 0,
         splitsLeft: def.splits || 0,
+        splitsTotal: def.splits || 0,
+        baseSpeed: def.speed*mult.speed,
+        splitSpeedMults: def.splitSpeedMults || null,
         splitHpFactor: def.splitHpFactor || 0.4,
         splitSizeFactor: def.splitSizeFactor || 0.4,
         splitSpeedFactor: def.splitSpeedFactor || 1.12,
@@ -557,13 +560,22 @@ function update(dt){
       // KÜP BÖLÜNMESİ: ölen küp, canının ve boyutunun %40'ı kadar
       // iki yavru bırakır. splitsLeft bitene kadar zincir devam eder.
       if(e.splitsLeft > 0){
+        // Kaçıncı küçülme olduğunu bul (1 = ilk küçülme)
+        const gen = (e.splitsTotal || 0) - e.splitsLeft + 1;
+        let childSpeed;
+        if(e.splitSpeedMults && e.splitSpeedMults[gen-1] !== undefined){
+          // Taban hıza göre kademeli çarpan (birikmeli değil)
+          childSpeed = (e.baseSpeed || e.speed) * e.splitSpeedMults[gen-1];
+        } else {
+          childSpeed = e.speed * e.splitSpeedFactor;
+        }
         for(let k=0;k<2;k++){
           const childHp = Math.max(1, e.maxHp * e.splitHpFactor);
           spawned.push({
             ...e,
             hp: childHp, maxHp: childHp,
             radius: Math.max(e.minRadius, e.radius * e.splitSizeFactor),
-            speed: e.speed * e.splitSpeedFactor,  // küçüldükçe belirgin hızlanır
+            speed: childSpeed,
             gold: Math.max(1, Math.round(e.gold*0.5)),
             splitsLeft: e.splitsLeft - 1,
             // yavrular yolda hafifçe ayrışsın ve farklı salınsın

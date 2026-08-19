@@ -13,7 +13,10 @@ const ENEMY_TYPES = {
      boyutunun %40'ı kadar olur. splitsLeft tükenene dek bölünmeye
      devam eder. Yolda zikzak çizerek "deli gibi" ilerler. */
   cube:     { hp:130, speed:0.0725, radius:20, gold:8,  dmgToLives:1, label:'Küp',     shape:'cube',   body:'#ff9f43', body2:'#b5541a', eyes:2,
-              splits:3, splitHpFactor:0.40, splitSizeFactor:0.40, minRadius:6, wobble:26, splitSpeedFactor:1.30 },
+              splits:3, splitHpFactor:0.40, splitSizeFactor:0.40, minRadius:6, wobble:26,
+              /* Nesil başına hız çarpanı (taban hıza göre):
+                 1. küçülme +%50, 2. küçülme +%100, 3. küçülme +%150 */
+              splitSpeedMults:[1.5, 2.0, 2.5] },
   /* BÜYÜK BOSS — çok yavaş, çok dayanıklı. Etrafında bir don fırtınası
      taşır: auraRadius içindeki kulelerin atış hızını auraSlow oranında
      düşürür (0.5 = %50 yavaş). */
