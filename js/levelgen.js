@@ -581,6 +581,83 @@ function placeProps(rng, paths, spots, biomeId, seasonId){
   return props;
 }
 
+/* ============================================================
+   MEVSİM & BİYOM ETKİLERİ
+
+   Tema sadece görsel değil, taktiksel bir katman: her mevsim ve
+   bitki örtüsü oynanışı hafifçe değiştirir. Oranlar bilinçli olarak
+   %15 ile sınırlıdır ki bölümler adil kalsın. Tek istisna Don
+   Peykesi'nin süre bonusudur — o saniye cinsinden verilir.
+   ============================================================ */
+
+const SEASON_MODS = {
+  spring: { label:'İlkbahar dengesi', note:'Belirgin bir etki yok.' },
+
+  summer: { label:'Yaz sıcağı',
+            note:'Buz daha çabuk erir, zehir daha hızlı yayılır.',
+            iceSlowBonus:-0.5, dmgMul:{poison:1.12} },
+
+  autumn: { label:'Sonbahar hasadı',
+            note:'Düşmanlardan %12 daha fazla altın düşer.',
+            goldMul:1.12 },
+
+  winter: { label:'Kış donu',
+            note:'Don Peykesi +2 sn, düşmanlar %8 yavaş, havan %10 zayıf.',
+            iceSlowBonus:+2.0, enemySpeedMul:0.92, dmgMul:{mortar:0.90} },
+};
+
+const BIOME_MODS = {
+  forest:        { label:'Orman evi', note:'Okçular kendi evinde: +%12 hasar.',
+                   dmgMul:{archer:1.12} },
+
+  desert:        { label:'Çöl kavuruculuğu', note:'Don Peykesi −1 sn, düşmanlar %10 hızlı.',
+                   iceSlowBonus:-1.0, enemySpeedMul:1.10 },
+
+  mediterranean: { label:'Ilıman iklim', note:'Belirgin bir etki yok.' },
+
+  tundra:        { label:'Donmuş toprak', note:'Don Peykesi +0.5 sn, düşmanlar %6 yavaş.',
+                   iceSlowBonus:+0.5, enemySpeedMul:0.94 },
+
+  swamp:         { label:'Bataklık çamuru', note:'Düşmanlar %10 yavaş, zehir +%15 etkili.',
+                   enemySpeedMul:0.90, dmgMul:{poison:1.15} },
+
+  savanna:       { label:'Açık savan', note:'Düşmanlar %8 hızlı, menziller +%8.',
+                   enemySpeedMul:1.08, rangeMul:1.08 },
+
+  volcanic:      { label:'Volkanik zemin', note:'Havan +%15 hasar, Don Peykesi −0.5 sn.',
+                   iceSlowBonus:-0.5, dmgMul:{mortar:1.15} },
+};
+
+/* Mevsim ve biyom etkilerini tek bir modifikatör nesnesinde birleştirir. */
+function buildMods(theme){
+  const s = SEASON_MODS[theme.season] || {};
+  const b = BIOME_MODS[theme.biome] || {};
+
+  const dmgMul = {};
+  [s.dmgMul, b.dmgMul].forEach(src=>{
+    if(!src) return;
+    Object.keys(src).forEach(k=>{ dmgMul[k] = (dmgMul[k] || 1) * src[k]; });
+  });
+  // Güvenlik: hasar/menzil çarpanları %15 sınırını aşmasın
+  Object.keys(dmgMul).forEach(k=>{
+    dmgMul[k] = Math.max(0.85, Math.min(1.15, dmgMul[k]));
+  });
+
+  const enemySpeedMul = Math.max(0.85, Math.min(1.15,
+    (s.enemySpeedMul || 1) * (b.enemySpeedMul || 1)));
+  const goldMul = Math.max(0.85, Math.min(1.15,
+    (s.goldMul || 1) * (b.goldMul || 1)));
+  const rangeMul = Math.max(0.85, Math.min(1.15,
+    (s.rangeMul || 1) * (b.rangeMul || 1)));
+
+  return {
+    iceSlowBonus: (s.iceSlowBonus || 0) + (b.iceSlowBonus || 0),
+    enemySpeedMul, goldMul, rangeMul, dmgMul,
+    notes: [s.note, b.note].filter(n=>n && n!=='Belirgin bir etki yok.'),
+    labels: [s.label, b.label].filter(Boolean),
+  };
+}
+
 /* ---------- Ana üretici ---------- */
 function generateLevel(seed, levelNo){
   const diff = difficultyFor(levelNo);
@@ -616,6 +693,7 @@ function generateLevel(seed, levelNo){
     name: 'Bölüm ' + levelNo,
     difficulty01: diff,
     theme,
+    mods: buildMods(theme),
     layout: routes.layout,
     style: routes.style,
     entries: routes.entries,

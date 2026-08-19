@@ -186,6 +186,7 @@ function renderSeedPreview(){
     `<b>Bölüm ${n}</b> — ${s} · ${b} · ${r} yol<br>` +
     `${lv.entries} giriş / ${lv.exits} çıkış · ${lv.waveCount} dalga · ${lv.spots.length} kule noktası<br>` +
     `Zorluk: ${'●'.repeat(dots)}${'○'.repeat(5-dots)} · Tarz: ${lv.archetype.name}` +
+    (lv.mods.notes.length ? `<br><span style="color:#8fe3a0">☀ ${lv.mods.notes.join(' ')}</span>` : '') +
     (prog.bestStars>0 ? `<br>En iyi: ${'⭐'.repeat(prog.bestStars)}` : '');
 }
 
@@ -286,8 +287,12 @@ function renderTowerPanel(){
   let statsHtml = '';
   if(t.def.slowFactor){
     const slowPct = Math.round((1 - t.def.slowFactor) * 100);
+    const bonus = st.slowDuration - t.def.slowDuration;
+    const bonusTxt = Math.abs(bonus) > 0.05
+      ? ` <span style="color:${bonus>0?'#8fe3a0':'#ff9f9f'}">(${bonus>0?'+':''}${bonus.toFixed(1)})</span>`
+      : '';
     statsHtml += `<div class="tp-stat-row"><span>🐌 Yavaşlatma</span><b>%${slowPct}</b></div>`;
-    statsHtml += `<div class="tp-stat-row"><span>⏳ Süre</span><b>${t.def.slowDuration.toFixed(1)}sn</b></div>`;
+    statsHtml += `<div class="tp-stat-row"><span>⏳ Süre</span><b>${st.slowDuration.toFixed(1)}sn${bonusTxt}</b></div>`;
   } else {
     statsHtml += `<div class="tp-stat-row"><span>💥 Hasar</span><b>${Math.round(st.dmg)}</b></div>`;
   }

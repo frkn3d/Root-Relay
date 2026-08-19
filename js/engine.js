@@ -198,21 +198,36 @@ function upgradeCost(t){
   // Fiyatlar her zaman 5'in katı olsun — okunması kolay, tutarlı sayılar
   return Math.round(t.def.cost * UPGRADE_COST_MULT[lvl] / 5) * 5;
 }
+/* Aktif bölümün mevsim/biyom etkileri. Klasik bölümlerde tema
+   olmadığı için nötr değerler döner. */
+const NEUTRAL_MODS = { iceSlowBonus:0, enemySpeedMul:1, goldMul:1, rangeMul:1, dmgMul:{}, notes:[], labels:[] };
+function levelMods(){
+  return (level && level.mods) ? level.mods : NEUTRAL_MODS;
+}
+
 function getTowerStats(t){
   const lvl = t.level||0;
-  let range = t.def.range * (1+lvl*0.10);
+  const m = levelMods();
+  const kind = t.def.kind;
+  const dmgMul = m.dmgMul[kind] || 1;
+
+  let range = t.def.range * (1+lvl*0.10) * m.rangeMul;
   // Mantar Havanı son seviyede ek menzil kazanır (uzun menzilli topçu rolü)
-  if(t.def.kind==='mortar' && lvl>=3) range += 25;
+  if(kind==='mortar' && lvl>=3) range += 25;
   return {
-    dmg: t.def.dmg * (1+lvl*0.28),
+    dmg: t.def.dmg * (1+lvl*0.28) * dmgMul,
     range: range,
     rate: t.def.rate * (1-lvl*0.15),
     splash: t.def.splash ? t.def.splash*(1+lvl*0.10) : 0,
-    poisonDps: t.def.poisonDps ? t.def.poisonDps*(1+lvl*0.30) : 0,
+    poisonDps: t.def.poisonDps ? t.def.poisonDps*(1+lvl*0.30)*dmgMul : 0,
     poisonDuration: t.def.poisonDuration || 0,
     chainCount: t.def.chainCount ? t.def.chainCount + lvl : 0,
     chainFalloff: t.def.chainFalloff || 0.6,
     chainRange: t.def.chainRange ? t.def.chainRange*(1+lvl*0.10) : 0,
+    // Don Peykesi'nin yavaşlatma süresi mevsime göre uzar/kısalır
+    slowDuration: t.def.slowDuration
+      ? Math.max(0.5, t.def.slowDuration + m.iceSlowBonus)
+      : 0,
   };
 }
 /* Menzil içindeki düşmanlardan, kulenin hedefleme moduna göre birini seçer.
@@ -474,6 +489,11 @@ function loadLevel(idx){
   closeTowerPanel();
   if(typeof closeTowerDrawer === 'function') closeTowerDrawer();
   renderWavePreview();    // ui.js
+
+  // Mevsim/biyom etkisi varsa oyuncuya kısaca bildir
+  if(level.mods && level.mods.notes && level.mods.notes.length){
+    showWaveToast(level.mods.labels.join(' · '));  // ui.js
+  }
 }
 
 function togglePause(){
@@ -507,6 +527,7 @@ function startWave(){
     ? generateWaveForGenerated(level, waveIndex)   // levelgen.js
     : generateWave(level, waveIndex);              // config.js
   const mult = statMultipliers(level, waveIndex);
+  const m = levelMods();
   spawnTimeline=[]; let t=0;
   let routeCursor = 0;
   const routeCount = Math.max(1, levelPaths.length);
@@ -519,14 +540,14 @@ function startWave(){
         // Birden çok giriş varsa düşmanlar sırayla rotalara paylaştırılır
         pathIdx: routeCount>1 ? (routeCursor++ % routeCount) : 0,
         hp: def.hp*mult.hp, maxHp: def.hp*mult.hp,
-        speed: def.speed*mult.speed,
+        speed: def.speed*mult.speed*m.enemySpeedMul,
         radius: def.radius, body:def.body, body2:def.body2, shape:def.shape, eyes:def.eyes,
-        gold: def.gold, dmgToLives: def.dmgToLives,
+        gold: Math.max(1, Math.round(def.gold*m.goldMul)), dmgToLives: def.dmgToLives,
         boss: !!def.boss, label: def.label,
         auraRadius: def.auraRadius || 0, auraSlow: def.auraSlow || 0,
         splitsLeft: def.splits || 0,
         splitsTotal: def.splits || 0,
-        baseSpeed: def.speed*mult.speed,
+        baseSpeed: def.speed*mult.speed*m.enemySpeedMul,
         splitSpeedMults: def.splitSpeedMults || null,
         splitHpFactor: def.splitHpFactor || 0.4,
         splitSizeFactor: def.splitSizeFactor || 0.4,
@@ -726,7 +747,7 @@ function update(dt){
         const dist0 = Math.hypot(target.x-t.x, target.y-t.y);
         projectiles.push({x:t.x,y:t.y-20,target,dmg:st.dmg,splash:st.splash,kind:t.def.kind,
           speed:t.def.kind==='mortar'?4.2:(t.def.kind==='bolt'?11:7),travel:dist0,
-          slow:t.def.slowFactor,slowDuration:t.def.slowDuration,
+          slow:t.def.slowFactor,slowDuration:st.slowDuration,
           poisonDps:st.poisonDps, poisonDuration:st.poisonDuration,
           chainCount:st.chainCount, chainFalloff:st.chainFalloff, chainRange:st.chainRange});
         t.cooldown = st.rate * rateMult;
