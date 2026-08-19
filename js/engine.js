@@ -280,6 +280,7 @@ function startWave(){
         splitsLeft: def.splits || 0,
         splitHpFactor: def.splitHpFactor || 0.4,
         splitSizeFactor: def.splitSizeFactor || 0.4,
+        splitSpeedFactor: def.splitSpeedFactor || 1.12,
         minRadius: def.minRadius || 6,
         wobbleAmp: def.wobble || 0,
       });
@@ -485,7 +486,7 @@ function update(dt){
             ...e,
             hp: childHp, maxHp: childHp,
             radius: Math.max(e.minRadius, e.radius * e.splitSizeFactor),
-            speed: e.speed * 1.12,               // küçüldükçe biraz hızlanır
+            speed: e.speed * e.splitSpeedFactor,  // küçüldükçe belirgin hızlanır
             gold: Math.max(1, Math.round(e.gold*0.5)),
             splitsLeft: e.splitsLeft - 1,
             // yavrular yolda hafifçe ayrışsın ve farklı salınsın
