@@ -12,7 +12,7 @@ const ENEMY_TYPES = {
   /* KÜP — öldüğünde ikiye bölünür. Çocuklar ebeveynin canının ve
      boyutunun %40'ı kadar olur. splitsLeft tükenene dek bölünmeye
      devam eder. Yolda zikzak çizerek "deli gibi" ilerler. */
-  cube:     { hp:130, speed:0.29, radius:20, gold:8,  dmgToLives:1, label:'Küp',     shape:'cube',   body:'#ff9f43', body2:'#b5541a', eyes:2,
+  cube:     { hp:130, speed:0.145, radius:20, gold:8,  dmgToLives:1, label:'Küp',     shape:'cube',   body:'#ff9f43', body2:'#b5541a', eyes:2,
               splits:3, splitHpFactor:0.40, splitSizeFactor:0.40, minRadius:6, wobble:26 },
   /* BÜYÜK BOSS — çok yavaş, çok dayanıklı. Etrafında bir don fırtınası
      taşır: auraRadius içindeki kulelerin atış hızını auraSlow oranında
