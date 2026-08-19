@@ -9,6 +9,11 @@ const ENEMY_TYPES = {
   sprinter: { hp:19,  speed:1.6,  radius:12, gold:4,  dmgToLives:1, label:'Koşucu',  shape:'runner', body:'#ffbf6b', body2:'#d98a2e', eyes:2 },
   husk:     { hp:60,  speed:0.62, radius:17, gold:9,  dmgToLives:1, label:'Kabuklu', shape:'brute',  body:'#c9b483', body2:'#8a6f42', eyes:2 },
   brute:    { hp:178, speed:0.48, radius:21, gold:13, dmgToLives:2, label:'Ur',      shape:'brute',  body:'#b25bc9', body2:'#6f2f88', eyes:2 },
+  /* BÜYÜK BOSS — çok yavaş, çok dayanıklı. Etrafında bir don fırtınası
+     taşır: auraRadius içindeki kulelerin atış hızını auraSlow oranında
+     düşürür (0.5 = %50 yavaş). */
+  frostlord:{ hp:2600, speed:0.26, radius:38, gold:120, dmgToLives:5, label:'Don Efendisi', shape:'boss',
+              body:'#7fd4ea', body2:'#2d5f80', eyes:2, boss:true, auraRadius:165, auraSlow:0.5 },
 };
 
 const TOWER_TYPES = {
@@ -29,7 +34,7 @@ const TARGET_MODES = [
 
 const LEVELS = [
   {
-    id:'orman-girisi', name:'Orman Girişi', waveCount:8,
+    id:'orman-girisi', name:'Orman Girişi', waveCount:9,
     startGold:170, startLives:10,
     path:[
       {x:-20,y:120},{x:460,y:120},{x:460,y:300},{x:140,y:300},{x:140,y:480},
@@ -44,11 +49,13 @@ const LEVELS = [
     ],
     difficulty:{ hpGrowth:0.16, speedGrowth:0.025, speedCap:1.5, countBase:7, countGrowth:1.85 },
     waveOverrides:{
-      8:[ {type:'swarm', count:40, interval:0.42}, {type:'sprinter', count:40, interval:0.5}, {type:'husk', count:23, interval:1.35}, {type:'brute', count:21, interval:2.0} ]
+      8:[ {type:'swarm', count:40, interval:0.42}, {type:'sprinter', count:40, interval:0.5}, {type:'husk', count:23, interval:1.35}, {type:'brute', count:21, interval:2.0} ],
+      // BOSS DALGASI: tek Don Efendisi + maiyeti
+      9:[ {type:'frostlord', count:1, interval:1.0}, {type:'husk', count:10, interval:1.6}, {type:'sprinter', count:16, interval:0.7} ]
     }
   },
   {
-    id:'sisli-vadi', name:'Sisli Vadi', waveCount:10,
+    id:'sisli-vadi', name:'Sisli Vadi', waveCount:11,
     startGold:170, startLives:8,
     path:[
       {x:640,y:90},{x:320,y:90},{x:320,y:230},{x:80,y:230},{x:80,y:400},
@@ -65,7 +72,9 @@ const LEVELS = [
     ],
     difficulty:{ hpGrowth:0.21, speedGrowth:0.03, speedCap:1.65, countBase:8, countGrowth:2.15 },
     waveOverrides:{
-      10:[ {type:'swarm', count:44, interval:0.39}, {type:'sprinter', count:44, interval:0.42}, {type:'spore', count:35, interval:0.55}, {type:'husk', count:26, interval:1.25}, {type:'brute', count:22, interval:1.8} ]
+      10:[ {type:'swarm', count:44, interval:0.39}, {type:'sprinter', count:44, interval:0.42}, {type:'spore', count:35, interval:0.55}, {type:'husk', count:26, interval:1.25}, {type:'brute', count:22, interval:1.8} ],
+      // BOSS DALGASI: iki Don Efendisi + maiyeti
+      11:[ {type:'frostlord', count:2, interval:9.0}, {type:'brute', count:12, interval:1.8}, {type:'husk', count:16, interval:1.3}, {type:'sprinter', count:24, interval:0.6} ]
     }
   },
 ];

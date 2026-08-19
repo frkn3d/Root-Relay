@@ -139,6 +139,22 @@ function pickTarget(t, range){
   return best;
 }
 
+/* Boss auralarının kule üzerindeki etkisi.
+   Dönen değer atış aralığı çarpanıdır: 1 = normal, 2 = iki kat yavaş.
+   Birden fazla aura üst üste binerse en güçlüsü uygulanır (çarpışmaz). */
+function towerRateMultiplier(t){
+  let worst = 0;
+  for(let i=0;i<enemies.length;i++){
+    const e = enemies[i];
+    if(!e.auraRadius) continue;
+    if(Math.hypot(e.x-t.x, e.y-t.y) <= e.auraRadius){
+      if(e.auraSlow > worst) worst = e.auraSlow;
+    }
+  }
+  t.chilled = worst > 0;
+  return worst > 0 ? 1/(1-worst) : 1;   // %50 yavaş => aralık 2 katı
+}
+
 function setTargetMode(id){
   if(!selectedTower) return;
   selectedTower.targetMode = id;
@@ -259,6 +275,8 @@ function startWave(){
         speed: def.speed*mult.speed,
         radius: def.radius, body:def.body, body2:def.body2, shape:def.shape, eyes:def.eyes,
         gold: def.gold, dmgToLives: def.dmgToLives,
+        boss: !!def.boss, label: def.label,
+        auraRadius: def.auraRadius || 0, auraSlow: def.auraSlow || 0,
       });
       t += g.interval;
     }
@@ -379,13 +397,14 @@ function update(dt){
     }
 
     const st = getTowerStats(t);
+    const rateMult = towerRateMultiplier(t);
     t.cooldown = Math.max(0, t.cooldown-dt);
     if(t.cooldown<=0){
       const target = pickTarget(t, st.range);
       if(target){
         const dist0 = Math.hypot(target.x-t.x, target.y-t.y);
         projectiles.push({x:t.x,y:t.y-20,target,dmg:st.dmg,splash:st.splash,kind:t.def.kind,speed:t.def.kind==='mortar'?4.2:7,travel:dist0,slow:t.def.slowFactor,slowDuration:t.def.slowDuration});
-        t.cooldown = st.rate;
+        t.cooldown = st.rate * rateMult;
         t.pulse = 1;
         t.angle = Math.atan2(target.y-t.y, target.x-t.x);
         playShoot(t.def.kind);
@@ -436,8 +455,20 @@ function update(dt){
     dead.forEach(e=>{
       gold += e.gold;
       playCoin();
-      floatTexts.push({x:e.x,y:e.y-10,text:'+'+e.gold+'🪙',life:0.7,vy:-25,color:'#f4c04a'});
-      for(let i=0;i<12;i++) particles.push({x:e.x,y:e.y,vx:(Math.random()-0.5)*120,vy:(Math.random()-0.5)*120,life:0.45,color:e.body});
+      if(e.boss){
+        // Boss ölümü: büyük patlama, sarsıntı ve bildirim
+        shake = Math.min(shake+14, 20);
+        showWaveToast(e.label + ' Yıkıldı!'); // ui.js
+        for(let i=0;i<60;i++){
+          const ang=(i/60)*Math.PI*2, sp=80+Math.random()*180;
+          particles.push({x:e.x,y:e.y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,life:0.9,color:i%2?'#bfeeff':'#ffffff'});
+        }
+        explosions.push({x:e.x,y:e.y,r:8,maxR:e.auraRadius||120,life:0.6});
+        floatTexts.push({x:e.x,y:e.y-30,text:'+'+e.gold+'🪙',life:1.2,vy:-30,color:'#f4c04a'});
+      } else {
+        floatTexts.push({x:e.x,y:e.y-10,text:'+'+e.gold+'🪙',life:0.7,vy:-25,color:'#f4c04a'});
+        for(let i=0;i<12;i++) particles.push({x:e.x,y:e.y,vx:(Math.random()-0.5)*120,vy:(Math.random()-0.5)*120,life:0.45,color:e.body});
+      }
     });
     enemies = enemies.filter(e=>e.hp>0);
     document.getElementById('goldVal').textContent = gold;

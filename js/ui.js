@@ -218,9 +218,12 @@ function renderWavePreview(){
   const nextIdx = waveIndex+1;
   if(nextIdx > level.waveCount){ el.innerHTML='<span>Tüm dalgalar tamamlandı 🌿</span>'; return; }
   const groups = generateWave(level, nextIdx);
-  el.innerHTML = `<span>Sıradaki (D${nextIdx}):</span>` + groups.map(g=>{
+  const hasBoss = groups.some(g=>ENEMY_TYPES[g.type] && ENEMY_TYPES[g.type].boss);
+  const lead = hasBoss ? `<span class="wp-boss">⚠ BOSS DALGASI (D${nextIdx})</span>` : `<span>Sıradaki (D${nextIdx}):</span>`;
+  el.innerHTML = lead + groups.map(g=>{
     const def = ENEMY_TYPES[g.type];
     const isNew = !seenEnemyTypes.has(g.type);
-    return `<span class="chip"><i style="background:${def.body}"></i>${g.count}× ${def.label}${isNew?'<span class="new-badge">YENİ</span>':''}</span>`;
+    const cls = def.boss ? ' chip-boss' : '';
+    return `<span class="chip${cls}"><i style="background:${def.body}"></i>${g.count}× ${def.label}${isNew?'<span class="new-badge">YENİ</span>':''}</span>`;
   }).join('');
 }

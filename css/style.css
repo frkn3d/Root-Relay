@@ -426,6 +426,16 @@ canvas{
   background:var(--red); color:#fff; font-size:7px; font-weight:700;
   border-radius:3px; padding:1px 3px; margin-left:2px;
 }
+.next-wave-preview .wp-boss{
+  flex-shrink:0; color:#9fe6ff; font-weight:700;
+  animation:boss-blink 1.2s ease-in-out infinite;
+}
+@keyframes boss-blink{ 0%,100%{opacity:1;} 50%{opacity:0.45;} }
+.next-wave-preview .chip-boss{
+  border-color:#7fd4ea;
+  background:rgba(127,212,234,0.18);
+  color:#dff4ff;
+}
 
 .btn.ghost{
   background:transparent; border:1px solid var(--line); color:var(--cream-dim);

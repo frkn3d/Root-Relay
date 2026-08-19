@@ -472,6 +472,52 @@ function drawBuildProgress(t){
 
 /* Menzil halkası — düşmanlardan ÖNCE (zeminin üstüne) çizilir ki
    yarı saydam dolgu düşmanların üstünü kapatmasın. */
+/* Boss'un taşıdığı don fırtınası — zemin katmanında, düşmanlardan
+   önce çizilir ki içindeki birimlerin üstünü kapatmasın. */
+function drawBossAura(e){
+  if(!e.auraRadius) return;
+  const t0 = performance.now()/1000;
+  ctx.save();
+  const R = e.auraRadius;
+
+  const g = ctx.createRadialGradient(e.x,e.y,R*0.2,e.x,e.y,R);
+  g.addColorStop(0,'rgba(150,220,245,0.03)');
+  g.addColorStop(0.7,'rgba(120,200,235,0.13)');
+  g.addColorStop(1,'rgba(90,170,215,0.22)');
+  ctx.beginPath(); ctx.arc(e.x,e.y,R,0,Math.PI*2);
+  ctx.fillStyle=g; ctx.fill();
+
+  // dönen kenar halkası
+  ctx.beginPath(); ctx.arc(e.x,e.y,R,0,Math.PI*2);
+  ctx.strokeStyle='rgba(190,240,255,0.55)'; ctx.lineWidth=2;
+  ctx.setLineDash([10,8]); ctx.lineDashOffset=-t0*22;
+  ctx.stroke(); ctx.setLineDash([]);
+
+  // içerideki savrulan kar
+  for(let i=0;i<14;i++){
+    const ang = t0*0.5 + i*(Math.PI*2/14);
+    const rr = R*(0.35 + ((t0*0.25+i*0.13)%1)*0.6);
+    const sx = e.x+Math.cos(ang)*rr, sy = e.y+Math.sin(ang)*rr;
+    ctx.beginPath(); ctx.arc(sx,sy,1.6,0,Math.PI*2);
+    ctx.fillStyle='rgba(230,250,255,0.6)'; ctx.fill();
+  }
+  ctx.restore();
+}
+
+/* Etki altındaki kulenin üstünde donma göstergesi */
+function drawChillBadge(t){
+  if(!t.chilled) return;
+  const t0 = performance.now()/1000;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(t.x, t.y, 24, 0, Math.PI*2);
+  ctx.strokeStyle='rgba(160,225,250,'+(0.5+Math.sin(t0*4)*0.2)+')';
+  ctx.lineWidth=2; ctx.setLineDash([3,4]); ctx.lineDashOffset=t0*10;
+  ctx.stroke(); ctx.setLineDash([]);
+  ctx.font='11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('❄', t.x, t.y-30);
+  ctx.restore();
+}
+
 function drawTowerRange(t){
   const isSelected = towerPanelOpen && selectedTower===t;
   const showRing = isSelected || activeTowerRing===t;
@@ -548,7 +594,132 @@ function drawTower(t){
   }
 }
 
+/* BÜYÜK BOSS — buzdan taçlı, ağır adımlı bir dev.
+   Diğer düşmanlardan bariz şekilde ayrışsın diye çok daha büyük,
+   kristal zırhlı ve kendi ışığını yayan bir siluet. */
+function drawBossEnemy(e){
+  const t0 = performance.now()/1000;
+  const R = e.radius;
+  const bob = Math.sin(e.bounce*0.7)*3;
+  const flash = Math.max(0, e.flashT||0) > 0.05;
+
+  ctx.save();
+  ctx.translate(e.x, e.y + bob);
+
+  // gölge
+  ctx.beginPath(); ctx.ellipse(0, R+10, R*0.9, R*0.3, 0, 0, Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.fill();
+
+  // dış hale
+  ctx.beginPath(); ctx.arc(0,0,R+12,0,Math.PI*2);
+  ctx.fillStyle='rgba(140,220,245,0.12)'; ctx.fill();
+
+  // bacaklar
+  const legPhase = Math.sin(e.bounce*0.9)*5;
+  [[-R*0.45, legPhase],[R*0.45, -legPhase]].forEach(([dx,ph])=>{
+    ctx.beginPath();
+    ctx.ellipse(dx, R*0.78+ph*0.25, R*0.3, R*0.2, 0, 0, Math.PI*2);
+    ctx.fillStyle=e.body2; ctx.fill();
+    ctx.strokeStyle='#12303f'; ctx.lineWidth=2; ctx.stroke();
+  });
+
+  // omuz kristalleri
+  [[-1,0.9],[1,0.9],[-1,0.45],[1,0.45]].forEach(([s,h])=>{
+    const cx=s*R*0.85, cy=-R*h*0.45, sz=R*0.3;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy-sz); ctx.lineTo(cx-sz*0.5, cy+sz*0.55); ctx.lineTo(cx+sz*0.5, cy+sz*0.55);
+    ctx.closePath();
+    const cg=ctx.createLinearGradient(cx,cy-sz,cx,cy+sz*0.55);
+    cg.addColorStop(0,'#ffffff'); cg.addColorStop(1,'#4a90b5');
+    ctx.fillStyle=cg; ctx.fill();
+    ctx.strokeStyle='#12303f'; ctx.lineWidth=1.8; ctx.stroke();
+  });
+
+  // gövde
+  const bg = ctx.createRadialGradient(-R*0.3,-R*0.35,4,0,0,R);
+  bg.addColorStop(0, flash ? '#ffffff' : '#d8f4ff');
+  bg.addColorStop(0.4, flash ? '#ffffff' : e.body);
+  bg.addColorStop(1, e.body2);
+  ctx.beginPath(); ctx.arc(0,0,R,0,Math.PI*2);
+  ctx.fillStyle=bg; ctx.fill();
+  ctx.lineWidth=3.5; ctx.strokeStyle='#0e2836'; ctx.stroke();
+
+  // zırh çatlakları
+  ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=1.5;
+  [[-0.5,-0.2,-0.1,0.4],[0.35,-0.35,0.15,0.3],[0.1,-0.6,-0.15,-0.1]].forEach(([x1,y1,x2,y2])=>{
+    ctx.beginPath(); ctx.moveTo(x1*R,y1*R); ctx.lineTo(x2*R,y2*R); ctx.stroke();
+  });
+
+  // taç
+  ctx.save(); ctx.translate(0,-R*0.95);
+  for(let i=-2;i<=2;i++){
+    const h = (i===0?1.5:(Math.abs(i)===1?1.15:0.8))*R*0.42;
+    const x = i*R*0.34;
+    ctx.beginPath();
+    ctx.moveTo(x, -h); ctx.lineTo(x-R*0.13, R*0.1); ctx.lineTo(x+R*0.13, R*0.1);
+    ctx.closePath();
+    const g=ctx.createLinearGradient(x,-h,x,R*0.1);
+    g.addColorStop(0,'#ffffff'); g.addColorStop(1,'#5fa8cc');
+    ctx.fillStyle=g; ctx.fill();
+    ctx.strokeStyle='#0e2836'; ctx.lineWidth=1.8; ctx.stroke();
+  }
+  ctx.restore();
+
+  // gözler
+  const eyeY = -R*0.12;
+  [-1,1].forEach(s=>{
+    ctx.beginPath(); ctx.ellipse(s*R*0.3, eyeY, R*0.17, R*0.2, 0, 0, Math.PI*2);
+    ctx.fillStyle='#ffffff'; ctx.fill();
+    ctx.strokeStyle='#0e2836'; ctx.lineWidth=2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(s*R*0.3, eyeY+R*0.03, R*0.08, 0, Math.PI*2);
+    ctx.fillStyle='#1b4a63'; ctx.fill();
+    // parıltı
+    ctx.beginPath(); ctx.arc(s*R*0.3, eyeY, R*0.055, 0, Math.PI*2);
+    ctx.fillStyle='#8fe6ff'; ctx.shadowColor='#8fe6ff'; ctx.shadowBlur=8; ctx.fill();
+    ctx.shadowBlur=0;
+  });
+  // kaşlar
+  ctx.strokeStyle='#0e2836'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(-R*0.55,eyeY-R*0.32); ctx.lineTo(-R*0.12,eyeY-R*0.12); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(R*0.55,eyeY-R*0.32); ctx.lineTo(R*0.12,eyeY-R*0.12); ctx.stroke();
+
+  // etrafında dönen buz parçaları
+  for(let i=0;i<5;i++){
+    const ang = t0*0.9 + i*(Math.PI*2/5);
+    const rr = R+16+Math.sin(t0*2+i)*4;
+    ctx.save();
+    ctx.translate(Math.cos(ang)*rr, Math.sin(ang)*rr*0.7);
+    ctx.rotate(t0*2+i);
+    ctx.beginPath(); ctx.moveTo(0,-4); ctx.lineTo(-3,3); ctx.lineTo(3,3); ctx.closePath();
+    ctx.fillStyle='rgba(220,248,255,0.85)'; ctx.fill();
+    ctx.restore();
+  }
+
+  ctx.restore();
+
+  // BOSS can barı — normalden büyük ve etiketli
+  const w = R*2.6;
+  ctx.save();
+  ctx.translate(e.x, e.y + bob);
+  ctx.fillStyle='rgba(0,0,0,0.55)';
+  ctx.fillRect(-w/2, -R-24, w, 8);
+  const frac = Math.max(0, e.hp/e.maxHp);
+  const hg = ctx.createLinearGradient(-w/2,0,w/2,0);
+  hg.addColorStop(0,'#ff6b6b'); hg.addColorStop(1,'#ffd36b');
+  ctx.fillStyle=hg;
+  ctx.fillRect(-w/2, -R-24, w*frac, 8);
+  ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=1.5;
+  ctx.strokeRect(-w/2, -R-24, w, 8);
+  ctx.font='700 10px "Baloo 2", sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='bottom';
+  ctx.fillStyle='#dff4ff';
+  ctx.shadowColor='rgba(0,0,0,0.9)'; ctx.shadowBlur=4;
+  ctx.fillText(e.label || 'BOSS', 0, -R-28);
+  ctx.restore();
+}
+
 function drawEnemy(e){
+  if(e.shape==='boss'){ drawBossEnemy(e); return; }
   const bob = Math.sin(e.bounce)*3;
   const squash = 1 - Math.abs(Math.sin(e.bounce))*0.12;
   ctx.save();
@@ -677,11 +848,13 @@ function render(){
   ctx.clearRect(-20,-20,LW+40,LH+40);
   ctx.drawImage(bgCanvas,0,0);
   drawPath(); drawSpots();
-  // Katman sırası: menzil halkaları zeminde, sonra düşmanlar,
-  // en üstte kuleler — böylece kuleler düşmanların arkasında kalmaz.
+  // Katman sırası: boss auraları ve menzil halkaları zeminde,
+  // sonra düşmanlar, en üstte kuleler — kuleler arkada kalmasın.
+  enemies.forEach(drawBossAura);
   towers.forEach(drawTowerRange);
   enemies.forEach(drawEnemy);
   towers.forEach(drawTower);
+  towers.forEach(drawChillBadge);
   projectiles.forEach(drawProjectile);
   drawExplosions();
   drawParticles();
