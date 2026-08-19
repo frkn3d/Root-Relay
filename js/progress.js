@@ -59,58 +59,49 @@ function clearResume(){
   try{ localStorage.removeItem(RESUME_KEY); }catch(e){}
 }
 
-/* ---- Market: kalıcı yükseltmeler ----
-   Satın alınan seviyeler localStorage'da tutulur ve her bölüm
-   başlangıcında oyuna uygulanır. */
-const SHOP_KEY = 'rr_shop_v1';
-
+/* ---- Bölüm içi market ----
+   Elmas global para birimidir (yıldızlardan kazanılır), ancak satın
+   alınan takviyeler YALNIZCA içinde bulunulan bölüm için geçerlidir.
+   Bölüm yeniden başlarsa alımlar sıfırlanır. */
 const SHOP_ITEMS = [
   {
-    id:'startGold', icon:'🪙', name:'Başlangıç Altını',
-    desc:'Her bölüme daha fazla altınla başla.',
-    costs:[10, 22, 40], step:50, unit:'altın',
+    id:'goldPack', icon:'🪙', name:'Altın Kesesi',
+    desc:'Anında altın kazan.',
+    effect:'+200 altın',
+    baseCost:6, costStep:3, maxBuys:5,
   },
   {
-    id:'startLives', icon:'❤️', name:'Başlangıç Canı',
-    desc:'Her bölüme daha fazla canla başla.',
-    costs:[12, 26, 48], step:2, unit:'can',
+    id:'lifePack', icon:'❤️', name:'Can Takviyesi',
+    desc:'Rölenin canını onar.',
+    effect:'+3 can',
+    baseCost:10, costStep:6, maxBuys:3,
   },
   {
-    id:'buildSpeed', icon:'⏱️', name:'Hızlı İnşaat',
-    desc:'Kule kurma ve yükseltme süreleri kısalır.',
-    costs:[15, 32, 55], step:15, unit:'% daha hızlı',
+    id:'buildBoost', icon:'⏱️', name:'Hızlı İnşaat',
+    desc:'Bu bölümde kule kurma ve yükseltme süreleri kısalır.',
+    effect:'%30 daha hızlı',
+    baseCost:12, costStep:8, maxBuys:2,
   },
 ];
 
-function loadShop(){
-  try{
-    const raw = localStorage.getItem(SHOP_KEY);
-    return raw ? JSON.parse(raw) : {};
-  }catch(e){ return {}; }
-}
-function getShopLevel(id){
-  const s = loadShop();
-  return s[id] || 0;
-}
 function shopItemById(id){ return SHOP_ITEMS.find(i=>i.id===id); }
+
+/* Bölüm içi alım sayacı — engine.js her bölüm başında sıfırlar. */
+let sessionShop = {};
+function resetSessionShop(){ sessionShop = {}; }
+function getSessionBuys(id){ return sessionShop[id] || 0; }
 function shopNextCost(id){
   const item = shopItemById(id);
-  const lvl = getShopLevel(id);
-  if(!item || lvl >= item.costs.length) return null;  // maks seviye
-  return item.costs[lvl];
+  if(!item) return null;
+  const n = getSessionBuys(id);
+  if(n >= item.maxBuys) return null;          // bu bölümde limit doldu
+  return item.baseCost + item.costStep * n;   // her alımda pahalanır
 }
-function buyShopItem(id){
-  const cost = shopNextCost(id);
-  if(cost===null) return {ok:false, reason:'max'};
-  if(getGems() < cost) return {ok:false, reason:'gems'};
-  addGems(-cost);
-  const s = loadShop();
-  s[id] = (s[id] || 0) + 1;
-  try{ localStorage.setItem(SHOP_KEY, JSON.stringify(s)); }catch(e){}
-  return {ok:true};
+function markSessionBuy(id){
+  sessionShop[id] = getSessionBuys(id) + 1;
 }
 
-/* Oyuna uygulanacak bonuslar */
-function shopBonusGold(){  return getShopLevel('startGold')  * 50; }
-function shopBonusLives(){ return getShopLevel('startLives') * 2; }
-function shopBuildFactor(){ return Math.max(0.4, 1 - getShopLevel('buildSpeed') * 0.15); }
+/* Bu bölümde alınan "Hızlı İnşaat" takviyelerinin inşa süresi çarpanı */
+function sessionBuildFactor(){
+  return Math.pow(0.7, getSessionBuys('buildBoost'));
+}

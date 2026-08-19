@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#12261b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
 <title>Root & Relay — Tower Defense</title>
-<link rel="stylesheet" href="css/style.css?v=42">
+<link rel="stylesheet" href="css/style.css?v=43">
 </head>
 <body class="in-menu">
 <div class="wrap">
@@ -23,6 +23,7 @@
       </div>
       <div class="tb-group">
         <div class="hud-chip"><span class="ic">💀</span><b id="waveVal">0</b>/<b id="waveMax">8</b></div>
+        <div class="pauseIcon shopIcon" id="shopBtn" title="Market">🛒</div>
         <div class="pauseIcon" id="fsBtn" title="Tam ekran">⛶</div>
         <div class="pauseIcon" id="pauseBtn" title="Duraklat">⏸</div>
       </div>
@@ -41,7 +42,6 @@
           <div class="menu-list">
             <button class="menu-btn primary" id="mmContinue">▶ Devam Et</button>
             <button class="menu-btn" id="mmLevels">🗺️ Bölüm Seç</button>
-            <button class="menu-btn" id="mmShop">🛒 Market</button>
             <button class="menu-btn" id="mmSettings">⚙️ Ayarlar</button>
             <button class="menu-btn" id="mmAbout">ℹ️ Hakkında</button>
           </div>
@@ -50,13 +50,6 @@
         <div class="menu-page" id="menuLevels">
           <div class="menu-head">Bölüm Seç</div>
           <div class="ss-levels" id="ssLevelList"></div>
-          <button class="menu-btn back" data-back>← Geri</button>
-        </div>
-
-        <div class="menu-page" id="menuShop">
-          <div class="menu-head">Market</div>
-          <div class="gem-bar"><span class="gem-ic">💎</span><b id="gemCountShop">0</b></div>
-          <div class="shop-list" id="shopList"></div>
           <button class="menu-btn back" data-back>← Geri</button>
         </div>
 
@@ -91,6 +84,14 @@
           <button class="btn ghost" id="overlayBtn">Tekrar Dene</button>
           <button class="btn ghost" id="mainMenuBtnOverlay">🏠 Ana Menü</button>
         </div>
+      </div>
+
+      <div class="overlay pause-overlay" id="shopOverlay">
+        <h2>🛒 Market</h2>
+        <div class="gem-bar"><span class="gem-ic">💎</span><b id="gemCountShop">0</b></div>
+        <p class="shop-note">Alınan takviyeler yalnızca bu bölüm için geçerlidir.</p>
+        <div class="shop-list" id="shopList"></div>
+        <button class="btn pause-menu-btn primary" id="shopCloseBtn" style="max-width:220px;">Kapat</button>
       </div>
 
       <div class="overlay pause-overlay" id="pauseOverlay">
@@ -148,12 +149,12 @@
 </div>
 
 <!-- Sıra önemli: config -> progress -> audio -> engine -> render -> ui -> main -->
-<script src="js/config.js?v=42"></script>
-<script src="js/progress.js?v=42"></script>
-<script src="js/audio.js?v=42"></script>
-<script src="js/engine.js?v=42"></script>
-<script src="js/render.js?v=42"></script>
-<script src="js/ui.js?v=42"></script>
-<script src="js/main.js?v=42"></script>
+<script src="js/config.js?v=43"></script>
+<script src="js/progress.js?v=43"></script>
+<script src="js/audio.js?v=43"></script>
+<script src="js/engine.js?v=43"></script>
+<script src="js/render.js?v=43"></script>
+<script src="js/ui.js?v=43"></script>
+<script src="js/main.js?v=43"></script>
 </body>
 </html>

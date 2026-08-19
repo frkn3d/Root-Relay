@@ -117,6 +117,7 @@ function findTowerAt(mx,my){
 function canvasInputBlocked(){
   if(gameOver||gameWon||paused) return true;
   if(!document.getElementById('startScreen').classList.contains('hide')) return true;
+  if(document.getElementById('shopOverlay').classList.contains('show')) return true;
   return false;
 }
 
@@ -236,9 +237,10 @@ document.getElementById('soundBtnPause').addEventListener('pointerup', toggleSou
 
 /* ---- Ana menü gezinme ---- */
 document.getElementById('mmLevels').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuLevels'); });
-document.getElementById('mmShop').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuShop'); });
 document.getElementById('mmSettings').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuSettings'); });
 document.getElementById('mmAbout').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuAbout'); });
+document.getElementById('shopBtn').addEventListener('pointerup', openShopOverlay);
+document.getElementById('shopCloseBtn').addEventListener('pointerup', closeShopOverlay);
 document.querySelectorAll('[data-back]').forEach(btn=>{
   btn.addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuMain'); });
 });

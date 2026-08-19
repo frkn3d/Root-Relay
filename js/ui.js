@@ -33,22 +33,12 @@ function renderShop(){
   const gems = getGems();
 
   SHOP_ITEMS.forEach(item=>{
-    const lvl = getShopLevel(item.id);
-    const maxLvl = item.costs.length;
+    const bought = getSessionBuys(item.id);
     const cost = shopNextCost(item.id);
     const maxed = cost === null;
 
-    // Mevcut ve sonraki etki metni
-    const curVal = lvl * item.step;
-    const nextVal = (lvl+1) * item.step;
-    const effect = maxed
-      ? `Şu an: +${curVal}${item.unit.startsWith('%') ? '' : ' '}${item.unit}`
-      : (lvl>0
-          ? `+${curVal} → +${nextVal} ${item.unit}`
-          : `+${nextVal} ${item.unit}`);
-
     let pips = '';
-    for(let i=0;i<maxLvl;i++) pips += `<i class="${i<lvl?'on':''}"></i>`;
+    for(let i=0;i<item.maxBuys;i++) pips += `<i class="${i<bought?'on':''}"></i>`;
 
     const row = document.createElement('div');
     row.className = 'shop-item';
@@ -57,19 +47,18 @@ function renderShop(){
       <div class="shop-info">
         <div class="shop-name">${item.name}</div>
         <div class="shop-desc">${item.desc}</div>
-        <div class="shop-effect">${effect}</div>
+        <div class="shop-effect">${item.effect}</div>
         <div class="shop-pips">${pips}</div>
       </div>
       <button class="shop-buy${maxed?' maxed':''}" ${maxed || gems<cost ? 'disabled' : ''}>
-        ${maxed ? 'MAKS' : '💎'+cost}
+        ${maxed ? 'DOLDU' : '💎'+cost}
       </button>
     `;
     const btn = row.querySelector('.shop-buy');
     if(!maxed){
       btn.addEventListener('pointerup', ()=>{
-        const res = buyShopItem(item.id);
+        const res = buyInGameItem(item.id);   // engine.js
         if(res.ok){
-          playCoin();
           refreshGemDisplay();
           renderShop();
         } else {
@@ -81,14 +70,31 @@ function renderShop(){
   });
 }
 
+function openShopOverlay(){
+  if(gameOver || gameWon) return;
+  playMenuTap();
+  shopWasPaused = paused;
+  paused = true;                       // market açıkken oyun durur
+  refreshGemDisplay();
+  renderShop();
+  document.getElementById('shopOverlay').classList.add('show');
+}
+function closeShopOverlay(){
+  playMenuTap();
+  document.getElementById('shopOverlay').classList.remove('show');
+  if(!shopWasPaused){
+    paused = false;
+    lastTime = performance.now();      // duraklama süresi dt'ye yansımasın
+  }
+}
+let shopWasPaused = false;
+
 /* ---- Menü sayfası gezinme ---- */
 function showMenuPage(id){
   document.querySelectorAll('.menu-page').forEach(p=>{
     p.classList.toggle('active', p.id===id);
   });
-  if(id==='menuMain' || id==='menuShop') refreshGemDisplay();
-  if(id==='menuShop') renderShop();
-  if(id==='menuMain') refreshContinueButton();
+  if(id==='menuMain') { refreshGemDisplay(); refreshContinueButton(); }
   if(id==='menuLevels') renderStartLevelList();
 }
 

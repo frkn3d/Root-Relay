@@ -106,7 +106,7 @@ const UPGRADE_COST_MULT = [0.6, 0.9, 1.3]; // level0->1, level1->2, level2->3
 const BUILD_TIMES = [4, 6, 8];
 function buildDurationFor(levelAfter){
   const base = BUILD_TIMES[Math.max(0, Math.min(levelAfter, BUILD_TIMES.length-1))];
-  return base * shopBuildFactor();   // progress.js
+  return base * sessionBuildFactor();   // progress.js — bölüm içi takviye
 }
 
 function upgradeCost(t){
@@ -225,15 +225,47 @@ function toggleSpeed(){
   btn.classList.toggle('turbo', gameSpeed >= 4);
 }
 
+/* Bölüm içi market: alım yapar ve etkiyi ANINDA uygular.
+   Etkiler yalnızca bu bölüm için geçerlidir. */
+function buyInGameItem(id){
+  const cost = shopNextCost(id);        // progress.js
+  if(cost === null) return {ok:false, reason:'max'};
+  if(getGems() < cost) return {ok:false, reason:'gems'};
+
+  addGems(-cost);
+  markSessionBuy(id);
+
+  if(id === 'goldPack'){
+    gold += 200;
+    document.getElementById('goldVal').textContent = gold;
+    floatTexts.push({x:LW/2, y:LH*0.35, text:'+200🪙', life:1.1, vy:-34, color:'#f4c04a'});
+  } else if(id === 'lifePack'){
+    lives += 3;
+    startLivesEffective += 3;   // yıldız oranı bozulmasın
+    document.getElementById('livesVal').textContent = lives;
+    floatTexts.push({x:LW/2, y:LH*0.35, text:'+3 ❤️', life:1.1, vy:-34, color:'#ff8f78'});
+  } else if(id === 'buildBoost'){
+    // Halihazırda inşa halindeki kuleler de hızlansın
+    const f = 0.7;
+    towers.forEach(t=>{
+      if(t.buildLeft > 0){ t.buildLeft *= f; t.buildDuration *= f; }
+    });
+    floatTexts.push({x:LW/2, y:LH*0.35, text:'İNŞAAT HIZLANDI', life:1.2, vy:-30, color:'#8fe3a0'});
+  }
+  playCoin();
+  return {ok:true};
+}
+
 function loadLevel(idx){
   currentLevelIdx = idx;
   level = LEVELS[idx];
   pathTotalLen = computePathLength(level.path);
   pathDecor = buildPathDecor(level.path, pathTotalLen);
   spots = level.spots.map(s=>({x:s.x,y:s.y,occ:null}));
-  gold = level.startGold + shopBonusGold();
-  lives = level.startLives + shopBonusLives();
-  startLivesEffective = lives;   // yıldız hesabı bonus canı da hesaba katsın
+  gold = level.startGold;
+  lives = level.startLives;
+  startLivesEffective = lives;   // yıldız hesabı için taban
+  resetSessionShop();            // progress.js — bölüm içi alımlar sıfırlanır
   waveIndex = 0;
   waveActive=false; gameOver=false; gameWon=false;
   towers=[]; enemies=[]; projectiles=[]; particles=[]; floatTexts=[]; explosions=[]; arcs=[];
@@ -241,6 +273,7 @@ function loadLevel(idx){
   seenEnemyTypes = new Set();
   paused = false;
   hideWaveToast(); // ui.js
+  document.getElementById('shopOverlay').classList.remove('show');
   setWaveBtnReady(true); // ui.js — ilk dalgaya davet
   document.getElementById('pauseOverlay').classList.remove('show');
   document.getElementById('pauseBtn').textContent = '⏸';
@@ -266,6 +299,7 @@ function togglePause(){
 function goToMainMenu(){
   playMenuTap();
   hideWaveToast(); // ui.js
+  document.getElementById('shopOverlay').classList.remove('show');
   document.getElementById('pauseOverlay').classList.remove('show');
   document.getElementById('overlay').classList.remove('show');
   paused = true;
@@ -318,6 +352,7 @@ function startWave(){
 function endGame(win){
   gameOver=!win; gameWon=win;
   hideWaveToast(); // ui.js
+  document.getElementById('shopOverlay').classList.remove('show');
   setWaveBtnReady(false); // ui.js
   closeTowerPanel();
   if(typeof closeTowerDrawer === 'function') closeTowerDrawer();
