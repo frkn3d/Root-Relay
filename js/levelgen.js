@@ -731,6 +731,7 @@ function generateWaveForGenerated(level, waveIndex){
   if(last && level.allowBoss){
     return [
       {type:'frostlord', count: diff>0.8 ? 2 : 1, interval:8.0},
+      {type:'flask', count: Math.round(3+diff*4), interval:2.2},
       {type:'husk', count: Math.round(6+diff*10), interval:1.2},
       {type:'sprinter', count: Math.round(8+diff*12), interval:0.6},
     ];
@@ -753,7 +754,11 @@ function generateWaveForGenerated(level, waveIndex){
 
   // Arketip, hangi türün ağır basacağını ve ritmi belirler
   const baseIntervals = { swarm:0.40, sprinter:0.75, spore:0.75, husk:1.20, brute:1.70, flask:1.50 };
+  // ŞİŞE yalnızca son 3 dalgada görünür — her dalgada çıkması hem
+  // tekrara düşürüyor hem de erken dalgaları gereksiz zorlaştırıyordu.
+  const isLateWave = waveIndex > level.waveCount - 3;
   pool.forEach(type=>{
+    if(type === 'flask' && !isLateWave) return;
     const share = arch.shares[type] !== undefined ? arch.shares[type] : 0.2;
     const c = Math.max(1, Math.round(count * share));
     const interval = (baseIntervals[type] || 0.8) * arch.pace;
