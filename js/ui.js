@@ -26,12 +26,68 @@ function hideWaveToast(){
   clearTimeout(waveToastTimer);
 }
 
+function renderShop(){
+  const el = document.getElementById('shopList');
+  if(!el) return;
+  el.innerHTML = '';
+  const gems = getGems();
+
+  SHOP_ITEMS.forEach(item=>{
+    const lvl = getShopLevel(item.id);
+    const maxLvl = item.costs.length;
+    const cost = shopNextCost(item.id);
+    const maxed = cost === null;
+
+    // Mevcut ve sonraki etki metni
+    const curVal = lvl * item.step;
+    const nextVal = (lvl+1) * item.step;
+    const effect = maxed
+      ? `Şu an: +${curVal}${item.unit.startsWith('%') ? '' : ' '}${item.unit}`
+      : (lvl>0
+          ? `+${curVal} → +${nextVal} ${item.unit}`
+          : `+${nextVal} ${item.unit}`);
+
+    let pips = '';
+    for(let i=0;i<maxLvl;i++) pips += `<i class="${i<lvl?'on':''}"></i>`;
+
+    const row = document.createElement('div');
+    row.className = 'shop-item';
+    row.innerHTML = `
+      <div class="shop-ic">${item.icon}</div>
+      <div class="shop-info">
+        <div class="shop-name">${item.name}</div>
+        <div class="shop-desc">${item.desc}</div>
+        <div class="shop-effect">${effect}</div>
+        <div class="shop-pips">${pips}</div>
+      </div>
+      <button class="shop-buy${maxed?' maxed':''}" ${maxed || gems<cost ? 'disabled' : ''}>
+        ${maxed ? 'MAKS' : '💎'+cost}
+      </button>
+    `;
+    const btn = row.querySelector('.shop-buy');
+    if(!maxed){
+      btn.addEventListener('pointerup', ()=>{
+        const res = buyShopItem(item.id);
+        if(res.ok){
+          playCoin();
+          refreshGemDisplay();
+          renderShop();
+        } else {
+          playError();
+        }
+      });
+    }
+    el.appendChild(row);
+  });
+}
+
 /* ---- Menü sayfası gezinme ---- */
 function showMenuPage(id){
   document.querySelectorAll('.menu-page').forEach(p=>{
     p.classList.toggle('active', p.id===id);
   });
   if(id==='menuMain' || id==='menuShop') refreshGemDisplay();
+  if(id==='menuShop') renderShop();
   if(id==='menuMain') refreshContinueButton();
   if(id==='menuLevels') renderStartLevelList();
 }
@@ -168,6 +224,13 @@ function renderTowerPanel(){
   `;
   if(t.def.splash>0){
     statsHtml += `<div class="tp-stat-row"><span>💫 Alan Yarıçapı</span><b>${Math.round(st.splash)}</b></div>`;
+  }
+  if(st.poisonDps>0){
+    statsHtml += `<div class="tp-stat-row"><span>☠️ Zehir</span><b>${Math.round(st.poisonDps)}/sn</b></div>`;
+    statsHtml += `<div class="tp-stat-row"><span>⏳ Süre</span><b>${st.poisonDuration.toFixed(1)}sn</b></div>`;
+  }
+  if(st.chainCount>0){
+    statsHtml += `<div class="tp-stat-row"><span>⚡ Sıçrama</span><b>${st.chainCount} hedef</b></div>`;
   }
   document.getElementById('tpStats').innerHTML = statsHtml;
 

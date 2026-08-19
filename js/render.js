@@ -340,6 +340,126 @@ function drawIceTower(t){
   ctx.restore();
 }
 
+/* ZEHİR SARMAŞIĞI — dolanan sarmaşıklı, damlayan bir yaratık kulesi */
+function drawPoisonTower(t){
+  const {x,y}=t, pulse=1+(t.pulse||0)*0.22;
+  const t0 = performance.now()/1000;
+  const lvl = t.level||0;
+  ctx.save();
+  drawBasePlinth(x,y,t.pulse);
+
+  // gövde: sarmaşık sarılı kütük
+  const g = ctx.createLinearGradient(x-10,y-20,x+10,y+6);
+  g.addColorStop(0, brightenColor('#5f8f3a', lvl));
+  g.addColorStop(1, brightenColor('#33581f', lvl));
+  ctx.fillStyle=g; ctx.strokeStyle='#16290d'; ctx.lineWidth=2.5;
+  roundedRect(x-10,y-20,20,28,7); ctx.fill(); ctx.stroke();
+
+  // dolanan sarmaşıklar
+  ctx.strokeStyle=brightenColor('#8fc95a', lvl); ctx.lineWidth=2.2;
+  for(let i=0;i<3;i++){
+    const yy = y-16+i*9;
+    ctx.beginPath();
+    ctx.moveTo(x-10, yy);
+    ctx.quadraticCurveTo(x, yy+(i%2?5:-5), x+10, yy);
+    ctx.stroke();
+  }
+
+  // üstteki tomurcuk
+  ctx.save(); ctx.translate(x,y-20); ctx.scale(pulse,pulse);
+  const pods = [[0,-14,8],[-9,-6,5.5],[9,-7,5.5]];
+  if(lvl>=1) pods.push([-13,-14,4.5]);
+  if(lvl>=2) pods.push([13,-15,4.5]);
+  if(lvl>=3) pods.push([0,-26,6]);
+  pods.forEach(([dx,dy,r],i)=>{
+    const wob = Math.sin(t0*1.6+i)*1.2;
+    ctx.beginPath();
+    ctx.ellipse(dx+wob, dy, r, r*1.25, 0, 0, Math.PI*2);
+    const pg=ctx.createRadialGradient(dx-r*0.3,dy-r*0.4,1,dx,dy,r*1.3);
+    pg.addColorStop(0, brightenColor('#d4f58f', lvl));
+    pg.addColorStop(1, brightenColor('#4e8a26', lvl));
+    ctx.fillStyle=pg; ctx.fill();
+    ctx.lineWidth = 1.8+lvl*0.25;
+    ctx.strokeStyle = lvl>=3 ? '#f4c04a' : '#16290d';
+    ctx.stroke();
+  });
+  ctx.restore();
+
+  // damlayan zehir
+  for(let i=0;i<2+lvl;i++){
+    const cyc = (t0*0.7 + i*0.4) % 1;
+    const dx = x - 8 + i*(16/(1+lvl));
+    ctx.beginPath();
+    ctx.ellipse(dx, y-24+cyc*26, 1.8, 2.8, 0, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(160,225,90,${0.75*(1-cyc)})`;
+    ctx.fill();
+  }
+
+  ctx.beginPath(); ctx.arc(x, y-10, 3+lvl*0.4+((t.pulse||0)*2), 0, Math.PI*2);
+  ctx.fillStyle='#d9ff9e'; ctx.shadowColor='#9fdc5c'; ctx.shadowBlur=10+lvl*3; ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.restore();
+}
+
+/* ŞİMŞEK DİREĞİ — metal direk, tepesinde çatallı bobin ve kıvılcımlar */
+function drawBoltTower(t){
+  const {x,y}=t, pulse=1+(t.pulse||0)*0.3;
+  const t0 = performance.now()/1000;
+  const lvl = t.level||0;
+  ctx.save();
+  drawBasePlinth(x,y,t.pulse);
+
+  // direk
+  const g = ctx.createLinearGradient(x-7,y-34,x+7,y+4);
+  g.addColorStop(0,'#8d93a1'); g.addColorStop(0.5,'#5a6070'); g.addColorStop(1,'#3a3f4c');
+  ctx.fillStyle=g; ctx.strokeStyle='#1d2029'; ctx.lineWidth=2.5;
+  roundedRect(x-7,y-34,14,38,4); ctx.fill(); ctx.stroke();
+  // yatay kuşaklar
+  ctx.strokeStyle='rgba(255,255,255,0.2)'; ctx.lineWidth=1.4;
+  [-26,-16,-6].forEach(dy=>{
+    ctx.beginPath(); ctx.moveTo(x-7,y+dy); ctx.lineTo(x+7,y+dy); ctx.stroke();
+  });
+
+  // tepedeki bobin
+  ctx.save(); ctx.translate(x,y-34); ctx.scale(pulse,pulse);
+  for(let i=0;i<3;i++){
+    ctx.beginPath();
+    ctx.ellipse(0, -4-i*4, 9-i*1.6, 3.2, 0, 0, Math.PI*2);
+    ctx.strokeStyle = lvl>=3 ? '#f4c04a' : '#c9a34a';
+    ctx.lineWidth=2; ctx.stroke();
+  }
+  // çatallı uçlar
+  const prongs = 3 + Math.min(lvl,2);
+  for(let i=0;i<prongs;i++){
+    const a = -Math.PI/2 + (i-(prongs-1)/2)*0.5;
+    ctx.beginPath();
+    ctx.moveTo(0,-14);
+    ctx.lineTo(Math.cos(a)*11, -14+Math.sin(a)*11);
+    ctx.strokeStyle='#b9c4d6'; ctx.lineWidth=2.2; ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(Math.cos(a)*11, -14+Math.sin(a)*11, 2, 0, Math.PI*2);
+    ctx.fillStyle='#fff3a8'; ctx.shadowColor='#ffe066'; ctx.shadowBlur=8; ctx.fill();
+    ctx.shadowBlur=0;
+  }
+  // merkez çekirdek
+  ctx.beginPath(); ctx.arc(0,-16,4+lvl*0.6+((t.pulse||0)*3),0,Math.PI*2);
+  ctx.fillStyle='#fffbe0'; ctx.shadowColor='#ffe066'; ctx.shadowBlur=16+lvl*4; ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.restore();
+
+  // etrafta çakan kıvılcımlar
+  for(let i=0;i<2+lvl;i++){
+    if(((t0*7 + i*2.3) % 3) > 0.4) continue;   // aralıklı çaksın
+    const a = t0*3 + i*2.1;
+    const r = 14+Math.sin(t0*5+i)*4;
+    ctx.beginPath();
+    ctx.moveTo(x, y-34);
+    ctx.lineTo(x+Math.cos(a)*r, y-34+Math.sin(a)*r);
+    ctx.strokeStyle='rgba(255,240,150,0.8)'; ctx.lineWidth=1.4; ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function drawMortarTower(t){
   const {x,y}=t;
   const t0 = performance.now()/1000;
@@ -547,6 +667,8 @@ function drawTower(t){
   if(t.def.kind==='archer') drawArcherTower(t);
   else if(t.def.kind==='mage') drawMageTower(t);
   else if(t.def.kind==='ice') drawIceTower(t);
+  else if(t.def.kind==='poison') drawPoisonTower(t);
+  else if(t.def.kind==='bolt') drawBoltTower(t);
   else drawMortarTower(t);
   ctx.restore();
 
@@ -820,6 +942,20 @@ function drawEnemy(e){
     }
   }
 
+  // ZEHİR: yükselen yeşil kabarcıklar
+  if(e.poisonT > 0){
+    const t0 = performance.now()/1000;
+    ctx.beginPath(); ctx.arc(0,0,e.radius+1,0,Math.PI*2);
+    ctx.fillStyle='rgba(150,220,80,0.28)'; ctx.fill();
+    for(let i=0;i<3;i++){
+      const cyc = (t0*1.1 + i*0.33) % 1;
+      const bx = (i-1)*e.radius*0.45;
+      const by = -cyc*(e.radius+10);
+      ctx.beginPath(); ctx.arc(bx, by, 1.6*(1-cyc*0.5), 0, Math.PI*2);
+      ctx.fillStyle=`rgba(180,240,110,${0.8*(1-cyc)})`; ctx.fill();
+    }
+  }
+
   const legPhase = Math.sin(e.bounce*1.4)*4;
   ctx.fillStyle=e.body2;
   ctx.beginPath(); ctx.ellipse(-e.radius*0.4, e.radius*0.75+legPhase*0.3, e.radius*0.28, e.radius*0.18,0,0,Math.PI*2); ctx.fill();
@@ -871,6 +1007,24 @@ function drawProjectile(p){
     const g=ctx.createLinearGradient(-6,0,6,0);
     g.addColorStop(0,'#8fd9f0'); g.addColorStop(1,'#ffffff');
     ctx.fillStyle=g; ctx.shadowColor='#8fd9f0'; ctx.shadowBlur=10; ctx.fill();
+  } else if(p.kind==='poison'){
+    const t0 = performance.now()/1000;
+    ctx.beginPath(); ctx.arc(p.x,p.y,4.5,0,Math.PI*2);
+    ctx.fillStyle='#b9ea78'; ctx.shadowColor='#9fdc5c'; ctx.shadowBlur=12; ctx.fill();
+    ctx.shadowBlur=0;
+    for(let i=0;i<2;i++){
+      const a=t0*6+i*Math.PI;
+      ctx.beginPath(); ctx.arc(p.x+Math.cos(a)*5, p.y+Math.sin(a)*5, 1.5, 0, Math.PI*2);
+      ctx.fillStyle='rgba(200,245,140,0.7)'; ctx.fill();
+    }
+  } else if(p.kind==='bolt'){
+    const ang = Math.atan2(p.target.y-p.y, p.target.x-p.x);
+    ctx.translate(p.x,p.y); ctx.rotate(ang);
+    ctx.beginPath();
+    ctx.moveTo(-10,0); ctx.lineTo(-3,-3.5); ctx.lineTo(0,0.5); ctx.lineTo(8,-1);
+    ctx.strokeStyle='#fff3a8'; ctx.lineWidth=2.4; ctx.lineCap='round';
+    ctx.shadowColor='#ffe066'; ctx.shadowBlur=12; ctx.stroke();
+    ctx.shadowBlur=0;
   } else {
     const ang = Math.atan2(p.target.y-p.y, p.target.x-p.x);
     ctx.translate(p.x,p.y); ctx.rotate(ang);
@@ -883,6 +1037,34 @@ function drawProjectile(p){
   }
   ctx.restore();
 }
+/* Şimşek zincirinin sıçrama yayları — kırık çizgi olarak çizilir */
+function drawArcs(){
+  arcs.forEach(a=>{
+    const alpha = Math.max(0, a.life/0.22);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle='#fff3a8';
+    ctx.lineWidth=2.6; ctx.lineCap='round';
+    ctx.shadowColor='#ffe066'; ctx.shadowBlur=12;
+    ctx.beginPath();
+    ctx.moveTo(a.x1, a.y1);
+    // ortada kırılmalar: düz çizgi yerine zikzak
+    const segs = 4;
+    for(let i=1;i<segs;i++){
+      const tt = i/segs;
+      const mx = a.x1 + (a.x2-a.x1)*tt;
+      const my = a.y1 + (a.y2-a.y1)*tt;
+      const nx = -(a.y2-a.y1), ny = (a.x2-a.x1);
+      const len = Math.hypot(nx,ny) || 1;
+      const off = (Math.random()-0.5)*14;
+      ctx.lineTo(mx + nx/len*off, my + ny/len*off);
+    }
+    ctx.lineTo(a.x2, a.y2);
+    ctx.stroke();
+    ctx.restore();
+  });
+}
+
 function drawExplosions(){
   explosions.forEach(x=>{
     ctx.save(); ctx.globalAlpha = Math.max(x.life/0.35,0)*0.6;
@@ -920,6 +1102,7 @@ function render(){
   towers.forEach(drawTower);
   towers.forEach(drawChillBadge);
   projectiles.forEach(drawProjectile);
+  drawArcs();
   drawExplosions();
   drawParticles();
   drawFloatTexts();

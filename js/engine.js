@@ -81,7 +81,8 @@ function buildPathDecor(path, totalLen){
 }
 
 let gold, lives, waveIndex, waveActive, gameOver, gameWon;
-let towers, enemies, projectiles, particles, floatTexts, explosions;
+let startLivesEffective = 10;
+let towers, enemies, projectiles, particles, floatTexts, explosions, arcs;
 let spawnTimeline, waveElapsed;
 let shake = 0;
 let spots = [];
@@ -100,10 +101,12 @@ let sellConfirmPending = false;
 const UPGRADE_COST_MULT = [0.6, 0.9, 1.3]; // level0->1, level1->2, level2->3
 
 /* İnşa/yükseltme süreleri (saniye).
-   BUILD_TIMES[0] = ilk kurulum, [1] = 2. seviye, [2] = 3. seviye */
-const BUILD_TIMES = [1, 3, 5];
+   BUILD_TIMES[0] = ilk kurulum, [1] = 2. seviye, [2] = 3. seviye.
+   Market'teki "Hızlı İnşaat" yükseltmesi bu süreleri kısaltır. */
+const BUILD_TIMES = [4, 6, 8];
 function buildDurationFor(levelAfter){
-  return BUILD_TIMES[Math.max(0, Math.min(levelAfter, BUILD_TIMES.length-1))];
+  const base = BUILD_TIMES[Math.max(0, Math.min(levelAfter, BUILD_TIMES.length-1))];
+  return base * shopBuildFactor();   // progress.js
 }
 
 function upgradeCost(t){
@@ -113,11 +116,19 @@ function upgradeCost(t){
 }
 function getTowerStats(t){
   const lvl = t.level||0;
+  let range = t.def.range * (1+lvl*0.10);
+  // Mantar Havanı son seviyede ek menzil kazanır (uzun menzilli topçu rolü)
+  if(t.def.kind==='mortar' && lvl>=3) range += 25;
   return {
     dmg: t.def.dmg * (1+lvl*0.28),
-    range: t.def.range * (1+lvl*0.10),
+    range: range,
     rate: t.def.rate * (1-lvl*0.15),
     splash: t.def.splash ? t.def.splash*(1+lvl*0.10) : 0,
+    poisonDps: t.def.poisonDps ? t.def.poisonDps*(1+lvl*0.30) : 0,
+    poisonDuration: t.def.poisonDuration || 0,
+    chainCount: t.def.chainCount ? t.def.chainCount + lvl : 0,
+    chainFalloff: t.def.chainFalloff || 0.6,
+    chainRange: t.def.chainRange ? t.def.chainRange*(1+lvl*0.10) : 0,
   };
 }
 /* Menzil içindeki düşmanlardan, kulenin hedefleme moduna göre birini seçer.
@@ -217,9 +228,12 @@ function loadLevel(idx){
   pathTotalLen = computePathLength(level.path);
   pathDecor = buildPathDecor(level.path, pathTotalLen);
   spots = level.spots.map(s=>({x:s.x,y:s.y,occ:null}));
-  gold = level.startGold; lives = level.startLives; waveIndex = 0;
+  gold = level.startGold + shopBonusGold();
+  lives = level.startLives + shopBonusLives();
+  startLivesEffective = lives;   // yıldız hesabı bonus canı da hesaba katsın
+  waveIndex = 0;
   waveActive=false; gameOver=false; gameWon=false;
-  towers=[]; enemies=[]; projectiles=[]; particles=[]; floatTexts=[]; explosions=[];
+  towers=[]; enemies=[]; projectiles=[]; particles=[]; floatTexts=[]; explosions=[]; arcs=[];
   spawnTimeline=[]; waveElapsed=0; shake=0;
   seenEnemyTypes = new Set();
   paused = false;
@@ -305,7 +319,7 @@ function endGame(win){
   const h=document.getElementById('overlayTitle'), p=document.getElementById('overlayText');
   const starsEl = document.getElementById('overlayStars');
   if(win){
-    const frac = lives/level.startLives;
+    const frac = lives/startLivesEffective;
     const stars = frac>=0.8 ? 3 : (frac>=0.4 ? 2 : 1);
     const prev = getLevelProgress(level.id);
     updateLevelProgress(level.id, stars, level.waveCount);
@@ -378,7 +392,16 @@ function update(dt){
     e.bounce += dt*e.speed*slowMult*9;
     if(e.flashT>0) e.flashT -= dt*3;
     if(e.slowT>0) e.slowT -= dt;
+    // ZEHİR: süre boyunca saniyede poisonDps kadar hasar
+    if(e.poisonT > 0){
+      e.poisonT -= dt;
+      e.hp -= (e.poisonDps||0) * dt;
+      if(e.poisonT <= 0){ e.poisonT = 0; e.poisonDps = 0; }
+    }
   });
+
+  arcs.forEach(a=>{ a.life -= dt; });
+  arcs = arcs.filter(a=>a.life > 0);
 
   const reached = enemies.filter(e=>e.dist>=pathTotalLen);
   if(reached.length){
@@ -423,7 +446,11 @@ function update(dt){
       const target = pickTarget(t, st.range);
       if(target){
         const dist0 = Math.hypot(target.x-t.x, target.y-t.y);
-        projectiles.push({x:t.x,y:t.y-20,target,dmg:st.dmg,splash:st.splash,kind:t.def.kind,speed:t.def.kind==='mortar'?4.2:7,travel:dist0,slow:t.def.slowFactor,slowDuration:t.def.slowDuration});
+        projectiles.push({x:t.x,y:t.y-20,target,dmg:st.dmg,splash:st.splash,kind:t.def.kind,
+          speed:t.def.kind==='mortar'?4.2:(t.def.kind==='bolt'?11:7),travel:dist0,
+          slow:t.def.slowFactor,slowDuration:t.def.slowDuration,
+          poisonDps:st.poisonDps, poisonDuration:st.poisonDuration,
+          chainCount:st.chainCount, chainFalloff:st.chainFalloff, chainRange:st.chainRange});
         t.cooldown = st.rate * rateMult;
         t.pulse = 1;
         t.angle = Math.atan2(target.y-t.y, target.x-t.x);
@@ -458,7 +485,37 @@ function update(dt){
           p.target.slowFactor = p.slow;
           if(p.dmg <= 0) p.target.flashT = 0.6;
         }
-        for(let i=0;i<5;i++) particles.push({x:p.x,y:p.y,vx:(Math.random()-0.5)*90,vy:(Math.random()-0.5)*90,life:0.35,color:p.kind==='mage'?'#8fe3cc':(p.kind==='ice'?'#bfeeff':'#c9a56a')});
+        // ZEHİR: hedefe zamana yayılı hasar yükle (en güçlü etki geçerli)
+        if(p.poisonDps > 0){
+          if(!(p.target.poisonDps > p.poisonDps)){
+            p.target.poisonDps = p.poisonDps;
+          }
+          p.target.poisonT = Math.max(p.target.poisonT||0, p.poisonDuration);
+        }
+        // ŞİMŞEK: hedeften yakındaki düşmanlara sıçra
+        if(p.chainCount > 0){
+          let cur = p.target;
+          let dmg = p.dmg;
+          const hitSet = new Set([cur]);
+          for(let c=0;c<p.chainCount;c++){
+            let next=null, bestD=Infinity;
+            for(let i=0;i<enemies.length;i++){
+              const e = enemies[i];
+              if(hitSet.has(e)) continue;
+              const d = Math.hypot(e.x-cur.x, e.y-cur.y);
+              if(d <= p.chainRange && d < bestD){ bestD=d; next=e; }
+            }
+            if(!next) break;
+            dmg *= p.chainFalloff;
+            next.hp -= dmg; next.flashT = 1;
+            arcs.push({x1:cur.x, y1:cur.y, x2:next.x, y2:next.y, life:0.22});
+            floatTexts.push({x:next.x,y:next.y,text:'-'+Math.round(dmg),life:0.5,vy:-26,color:'#fff3a8'});
+            hitSet.add(next);
+            cur = next;
+          }
+        }
+        for(let i=0;i<5;i++) particles.push({x:p.x,y:p.y,vx:(Math.random()-0.5)*90,vy:(Math.random()-0.5)*90,life:0.35,
+          color:p.kind==='mage'?'#8fe3cc':(p.kind==='ice'?'#bfeeff':(p.kind==='poison'?'#b9ea78':(p.kind==='bolt'?'#fff3a8':'#c9a56a')))});
       }
       p.dead=true;
     } else {
