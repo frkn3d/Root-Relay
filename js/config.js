@@ -28,7 +28,7 @@ const TOWER_TYPES = {
   archer: { id:'archer', name:'Yosun Okçusu', cost:50,  range:150, rate:0.8,  dmg:9,  splash:0,  kind:'archer', color:'#7fb377', icon:'🏹' },
   mage:   { id:'mage',   name:'Işık Kulesi',  cost:90,  range:185, rate:0.85, dmg:15, splash:0,  kind:'mage',   color:'#4fc3a1', icon:'🔮' },
   mortar: { id:'mortar', name:'Mantar Havanı',cost:130, range:160, rate:1.7,  dmg:18, splash:58, kind:'mortar', color:'#c9793f', icon:'💥' },
-  ice:    { id:'ice',    name:'Don Peykesi',  cost:70,  range:140, rate:0.7,  dmg:0,  splash:0,  kind:'ice',    color:'#8fd9f0', icon:'❄️', slowFactor:0.42, slowDuration:2.8 },
+  ice:    { id:'ice',    name:'Don Peykesi',  cost:70,  range:140, rate:0.7,  dmg:0,  splash:0,  kind:'ice',    color:'#8fd9f0', icon:'❄️', slowFactor:0.42, slowDuration:5.6 },
   /* ZEHİR SARMAŞIĞI — vuruşta az hasar, ardından zamana yayılı hasar.
      Zırhlı/kalabalık dalgalarda birikerek etkili olur. */
   poison: { id:'poison', name:'Zehir Sarmaşığı', cost:85, range:150, rate:1.15, dmg:3, splash:0, kind:'poison', color:'#9fdc5c', icon:'🌿',

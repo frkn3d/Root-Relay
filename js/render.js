@@ -93,6 +93,48 @@ function drawPath(){
   ctx.fillText('🔮', end.x, end.y+1);
   ctx.restore();
 }
+/* Yolun başına ve sonuna, gidiş yönünü belirten silik akan oklar.
+   Yolun teğetine göre döner, sürekli ileri kayarak yönü belli eder. */
+function drawDirectionArrows(){
+  const t0 = performance.now()/1000;
+  // Başlangıçta ve bitişte birer küme; her kümede 3 ok
+  const zones = [
+    { start: 40,                 label:'giris' },
+    { start: pathTotalLen - 150, label:'cikis' },
+  ];
+  ctx.save();
+  zones.forEach(zone=>{
+    for(let i=0;i<3;i++){
+      // Okların yol boyunca sürekli ileri akması
+      const cyc = ((t0*0.45 + i/3) % 1);
+      const d = zone.start + cyc*110;
+      if(d < 0 || d > pathTotalLen) continue;
+
+      const p  = pointAtDistance(level.path, pathTotalLen, d);
+      const p2 = pointAtDistance(level.path, pathTotalLen, Math.min(d+6, pathTotalLen));
+      const ang = Math.atan2(p2.y-p.y, p2.x-p.x);
+
+      // Kümenin başında belirip sonunda sönsün
+      const fade = Math.sin(cyc*Math.PI);
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(ang);
+      ctx.globalAlpha = 0.30 * fade;
+      ctx.strokeStyle = '#fff6dd';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-7, -7);
+      ctx.lineTo(2, 0);
+      ctx.lineTo(-7, 7);
+      ctx.stroke();
+      ctx.restore();
+    }
+  });
+  ctx.restore();
+}
+
 function drawSpots(){
   spots.forEach(s=>{
     if(s.occ) return;
@@ -1093,7 +1135,7 @@ function render(){
   if(shake>0) ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
   ctx.clearRect(-20,-20,LW+40,LH+40);
   ctx.drawImage(bgCanvas,0,0);
-  drawPath(); drawSpots();
+  drawPath(); drawDirectionArrows(); drawSpots();
   // Katman sırası: boss auraları ve menzil halkaları zeminde,
   // sonra düşmanlar, en üstte kuleler — kuleler arkada kalmasın.
   enemies.forEach(drawBossAura);
