@@ -137,6 +137,16 @@ function closeStartScreen(){
   }
 }
 
+/* ---- Bölüm kilitleri ----
+   İlk bölüm hep açık. Sonraki bölümler, bir öncekini en az 1 yıldızla
+   tamamlayınca açılır. */
+function isLevelUnlocked(idx){
+  if(idx <= 0) return true;
+  const prev = LEVELS[idx-1];
+  if(!prev) return false;
+  return getLevelProgress(prev.id).bestStars > 0;
+}
+
 function renderStars(n){
   let s='';
   for(let i=0;i<3;i++) s += i<n ? '⭐' : '☆';
@@ -149,22 +159,36 @@ function renderStartLevelList(){
   el.innerHTML='';
   LEVELS.forEach((lv,i)=>{
     const prog = getLevelProgress(lv.id);
+    const unlocked = isLevelUnlocked(i);
     const card=document.createElement('div');
-    card.className='ss-level-card';
-    card.innerHTML = `
-      <div class="ss-level-info">
-        <div class="ss-level-name">${lv.name}</div>
-        <div class="ss-level-stars">${renderStars(prog.bestStars)}</div>
-        <div class="ss-level-best">${prog.bestWave>0 ? 'En iyi dalga: '+prog.bestWave+'/'+lv.waveCount : 'Henüz oynanmadı'}</div>
-      </div>
-      <div class="ss-level-play">▶</div>
-    `;
-    card.addEventListener('pointerup', ()=>{
-      playMenuTap();
-      loadLevel(i);
-      saveResume(i, 0);
-      closeStartScreen();
-    });
+    card.className='ss-level-card' + (unlocked ? '' : ' locked');
+
+    if(unlocked){
+      card.innerHTML = `
+        <div class="ss-level-info">
+          <div class="ss-level-name">${lv.name}</div>
+          <div class="ss-level-stars">${renderStars(prog.bestStars)}</div>
+          <div class="ss-level-best">${prog.bestWave>0 ? 'En iyi dalga: '+prog.bestWave+'/'+lv.waveCount : 'Henüz oynanmadı'}</div>
+        </div>
+        <div class="ss-level-play">▶</div>
+      `;
+      card.addEventListener('pointerup', ()=>{
+        playMenuTap();
+        loadLevel(i);
+        saveResume(i, 0);
+        closeStartScreen();
+      });
+    } else {
+      const prevName = LEVELS[i-1] ? LEVELS[i-1].name : '';
+      card.innerHTML = `
+        <div class="ss-level-info">
+          <div class="ss-level-name">${lv.name}</div>
+          <div class="ss-level-locked">🔒 ${prevName} bölümünü tamamla</div>
+        </div>
+        <div class="ss-level-play locked">🔒</div>
+      `;
+      card.addEventListener('pointerup', ()=>{ playError(); });
+    }
     el.appendChild(card);
   });
 }

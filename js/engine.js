@@ -402,6 +402,14 @@ function endGame(win){
     playDefeat();
   }
   overlay.classList.add('show');
+
+  // Kazanıldıysa ve sıradaki bölüm varsa doğrudan geçiş butonu göster
+  const nextBtn = document.getElementById('nextLevelBtn');
+  if(nextBtn){
+    const hasNext = win && LEVELS[currentLevelIdx+1];
+    nextBtn.style.display = hasNext ? '' : 'none';
+    if(hasNext) nextBtn.textContent = LEVELS[currentLevelIdx+1].name + ' →';
+  }
 }
 
 /* ---- Update (delta-time tabanlı) ---- */

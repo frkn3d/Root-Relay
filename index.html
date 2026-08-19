@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#12261b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
 <title>Root & Relay — Tower Defense</title>
-<link rel="stylesheet" href="css/style.css?v=46">
+<link rel="stylesheet" href="css/style.css?v=47">
 </head>
 <body class="in-menu">
 <div class="wrap">
@@ -21,7 +21,7 @@
         <div class="hud-chip"><span class="ic">❤️</span><b id="livesVal">10</b></div>
         <div class="hud-chip" id="goldChip"><span class="ic">🪙</span><b id="goldVal">170</b></div>
       </div>
-      <button class="shopBtn" id="shopBtn" title="Market">🛒</button>
+      <button class="shopBtn" id="shopBtn" title="Market"><span class="shop-glyph">🛒</span></button>
       <div class="tb-group">
         <div class="hud-chip"><span class="ic">💀</span><b id="waveVal">0</b>/<b id="waveMax">8</b></div>
         <div class="pauseIcon" id="fsBtn" title="Tam ekran">⛶</div>
@@ -81,6 +81,7 @@
         <div class="overlay-stars" id="overlayStars"></div>
         <p id="overlayText">Dalga 0'da yenildin</p>
         <div class="overlay-actions">
+          <button class="btn ghost" id="nextLevelBtn" style="display:none;">Sonraki Bölüm →</button>
           <button class="btn ghost" id="overlayBtn">Tekrar Dene</button>
           <button class="btn ghost" id="mainMenuBtnOverlay">🏠 Ana Menü</button>
         </div>
@@ -150,12 +151,12 @@
 </div>
 
 <!-- Sıra önemli: config -> progress -> audio -> engine -> render -> ui -> main -->
-<script src="js/config.js?v=46"></script>
-<script src="js/progress.js?v=46"></script>
-<script src="js/audio.js?v=46"></script>
-<script src="js/engine.js?v=46"></script>
-<script src="js/render.js?v=46"></script>
-<script src="js/ui.js?v=46"></script>
-<script src="js/main.js?v=46"></script>
+<script src="js/config.js?v=47"></script>
+<script src="js/progress.js?v=47"></script>
+<script src="js/audio.js?v=47"></script>
+<script src="js/engine.js?v=47"></script>
+<script src="js/render.js?v=47"></script>
+<script src="js/ui.js?v=47"></script>
+<script src="js/main.js?v=47"></script>
 </body>
 </html>

@@ -220,6 +220,13 @@ canvas.addEventListener('pointerup',(e)=>{
 
 document.getElementById('waveBtn').addEventListener('pointerup', startWave);
 document.getElementById('overlayBtn').addEventListener('pointerup', ()=>{ playMenuTap(); loadLevel(currentLevelIdx); });
+document.getElementById('nextLevelBtn').addEventListener('pointerup', ()=>{
+  const next = currentLevelIdx + 1;
+  if(!LEVELS[next]) return;
+  playMenuTap();
+  loadLevel(next);
+  saveResume(next, 0);
+});
 document.getElementById('restartBtnPause').addEventListener('pointerup', ()=>{ playMenuTap(); loadLevel(currentLevelIdx); });
 document.getElementById('pauseBtn').addEventListener('pointerup', togglePause);
 document.getElementById('resumeBtn').addEventListener('pointerup', togglePause);
