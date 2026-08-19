@@ -177,6 +177,197 @@ function drawDirectionArrows(){
   ctx.restore();
 }
 
+/* ============================================================
+   MANZARA DEKORU — boş araziye serpilen biyom nesneleri.
+   Yola ve kule noktalarına değmeyecek şekilde üretilmişlerdir.
+   ============================================================ */
+function propShadow(s){
+  ctx.beginPath();
+  ctx.ellipse(0, 2, 7*s, 2.6*s, 0, 0, Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,0.22)'; ctx.fill();
+}
+
+function drawProp(p, snowy){
+  const s = p.s;
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.scale(p.f*s, s);
+
+  switch(p.type){
+    case 'tree': {
+      propShadow(1);
+      ctx.fillStyle='#5a3a1e';
+      ctx.fillRect(-1.6, -6, 3.2, 8);
+      const g = ctx.createRadialGradient(-3,-14,1,0,-12,12);
+      g.addColorStop(0, snowy?'#dfeee2':'#6fae62');
+      g.addColorStop(1, snowy?'#8fae95':'#33622f');
+      ctx.beginPath(); ctx.arc(0,-12,10,0,Math.PI*2);
+      ctx.fillStyle=g; ctx.fill();
+      ctx.beginPath(); ctx.arc(-6,-8,6,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(6,-9,6.5,0,Math.PI*2); ctx.fill();
+      break;
+    }
+    case 'pine': {
+      propShadow(1);
+      ctx.fillStyle='#4a3018';
+      ctx.fillRect(-1.4, -5, 2.8, 7);
+      for(let i=0;i<3;i++){
+        const yy=-6-i*6, w=9-i*2.4;
+        ctx.beginPath();
+        ctx.moveTo(0, yy-9); ctx.lineTo(-w, yy); ctx.lineTo(w, yy);
+        ctx.closePath();
+        ctx.fillStyle = snowy ? (i===2?'#eaf5ef':'#9dbfa8') : (i%2?'#2f5c34':'#3a6d3c');
+        ctx.fill();
+      }
+      break;
+    }
+    case 'bush': {
+      propShadow(0.8);
+      ctx.beginPath(); ctx.arc(0,-3,6,0,Math.PI*2);
+      ctx.fillStyle = snowy?'#cfe3d4':'#446f34'; ctx.fill();
+      ctx.beginPath(); ctx.arc(-4,-1,4.5,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(4,-2,4,0,Math.PI*2); ctx.fill();
+      break;
+    }
+    case 'shrub': {
+      propShadow(0.7);
+      ctx.strokeStyle = snowy?'#b9cfc0':'#5c7a3e'; ctx.lineWidth=1.6;
+      for(let i=-2;i<=2;i++){
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(i*2.6, -6-Math.abs(i)); ctx.stroke();
+      }
+      break;
+    }
+    case 'cactus': {
+      propShadow(0.8);
+      ctx.fillStyle='#3f7a46'; ctx.strokeStyle='#28512d'; ctx.lineWidth=1;
+      roundedRect(-2.6,-16,5.2,18,2.6); ctx.fill(); ctx.stroke();
+      roundedRect(-8,-12,3.4,8,1.7); ctx.fill(); ctx.stroke();
+      roundedRect(-8,-12.5,9,3.2,1.6); ctx.fill(); ctx.stroke();
+      roundedRect(5,-9,3.4,7,1.7); ctx.fill(); ctx.stroke();
+      roundedRect(-1,-9.5,7.5,3,1.5); ctx.fill(); ctx.stroke();
+      break;
+    }
+    case 'rock': {
+      propShadow(0.9);
+      const g=ctx.createLinearGradient(-6,-8,6,2);
+      g.addColorStop(0, snowy?'#e8eef0':'#9a968c');
+      g.addColorStop(1,'#5d5a52');
+      ctx.beginPath();
+      ctx.moveTo(-7,1); ctx.lineTo(-4,-6); ctx.lineTo(2,-8); ctx.lineTo(7,-2); ctx.lineTo(5,1);
+      ctx.closePath(); ctx.fillStyle=g; ctx.fill();
+      ctx.strokeStyle='rgba(0,0,0,0.35)'; ctx.lineWidth=1; ctx.stroke();
+      break;
+    }
+    case 'boulder': {
+      propShadow(1.2);
+      const g=ctx.createLinearGradient(-10,-12,10,3);
+      g.addColorStop(0,'#8a7f76'); g.addColorStop(1,'#453f3a');
+      ctx.beginPath();
+      ctx.moveTo(-11,2); ctx.lineTo(-7,-9); ctx.lineTo(1,-13); ctx.lineTo(9,-6); ctx.lineTo(8,2);
+      ctx.closePath(); ctx.fillStyle=g; ctx.fill();
+      ctx.strokeStyle='rgba(0,0,0,0.4)'; ctx.lineWidth=1.2; ctx.stroke();
+      break;
+    }
+    case 'olive': {
+      propShadow(1);
+      ctx.strokeStyle='#6b5a3a'; ctx.lineWidth=2.4;
+      ctx.beginPath(); ctx.moveTo(0,2); ctx.lineTo(-1,-6); ctx.stroke();
+      ctx.beginPath(); ctx.arc(-4,-9,5.5,0,Math.PI*2);
+      ctx.fillStyle = snowy?'#d5e2d6':'#6e8b52'; ctx.fill();
+      ctx.beginPath(); ctx.arc(4,-10,5,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(0,-14,4.5,0,Math.PI*2); ctx.fill();
+      break;
+    }
+    case 'acacia': {
+      propShadow(1);
+      ctx.strokeStyle='#6b4a28'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(0,2); ctx.lineTo(0,-8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,-8); ctx.lineTo(-6,-12); ctx.moveTo(0,-8); ctx.lineTo(6,-12); ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(0,-14,11,4.5,0,0,Math.PI*2);
+      ctx.fillStyle = snowy?'#dfe7dc':'#6f8438'; ctx.fill();
+      break;
+    }
+    case 'deadtree': {
+      propShadow(0.9);
+      ctx.strokeStyle='#4a3b2e'; ctx.lineWidth=2; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(0,2); ctx.lineTo(0,-12); ctx.stroke();
+      ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.moveTo(0,-6); ctx.lineTo(-6,-11); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,-9); ctx.lineTo(5,-14); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,-12); ctx.lineTo(-3,-17); ctx.stroke();
+      break;
+    }
+    case 'deadbush': {
+      propShadow(0.6);
+      ctx.strokeStyle='#8a7a54'; ctx.lineWidth=1.2;
+      for(let i=0;i<6;i++){
+        const a=-Math.PI/2 + (i-2.5)*0.35;
+        ctx.beginPath(); ctx.moveTo(0,0);
+        ctx.lineTo(Math.cos(a)*6, Math.sin(a)*7);
+        ctx.stroke();
+      }
+      break;
+    }
+    case 'reed': {
+      ctx.strokeStyle = snowy?'#c8d6c9':'#5d7a44'; ctx.lineWidth=1.5; ctx.lineCap='round';
+      for(let i=-2;i<=2;i++){
+        ctx.beginPath();
+        ctx.moveTo(i*2, 2);
+        ctx.quadraticCurveTo(i*2.6, -6, i*2.6+i*1.5, -12);
+        ctx.stroke();
+      }
+      break;
+    }
+    default: { // grass
+      ctx.strokeStyle = snowy?'#d8e4d8':'#7c8a3e'; ctx.lineWidth=1.3; ctx.lineCap='round';
+      for(let i=-2;i<=2;i++){
+        ctx.beginPath(); ctx.moveTo(i*1.8,1);
+        ctx.quadraticCurveTo(i*2.4,-3, i*3.4,-6.5); ctx.stroke();
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawProps(){
+  if(!level.props || !level.props.length) return;
+  const snowy = level.theme && level.theme.season==='winter';
+  level.props.forEach(p=>drawProp(p, snowy));
+}
+
+/* Kışın sürekli kar yağışı — ekran genelinde, hafif rüzgârlı */
+const snowFlakes = (()=>{
+  const arr=[];
+  for(let i=0;i<90;i++){
+    arr.push({
+      x: Math.random()*LW,
+      y: Math.random()*LH,
+      r: 1 + Math.random()*2.2,
+      sp: 18 + Math.random()*38,
+      sw: 0.5 + Math.random()*1.6,
+      ph: Math.random()*Math.PI*2,
+    });
+  }
+  return arr;
+})();
+
+function drawSnowfall(){
+  if(!(level.theme && level.theme.season==='winter')) return;
+  const t0 = performance.now()/1000;
+  ctx.save();
+  snowFlakes.forEach(f=>{
+    // Sürekli aşağı akış + yanal salınım (döngüsel, durum tutmadan)
+    const y = (f.y + t0*f.sp) % (LH+20);
+    const x = f.x + Math.sin(t0*f.sw + f.ph) * 12;
+    ctx.beginPath();
+    ctx.arc(x, y, f.r, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,'+(0.35 + f.r*0.12)+')';
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
 function drawSpots(){
   const t0 = performance.now()/1000;
   spots.forEach(s=>{
@@ -1198,7 +1389,7 @@ function render(){
   ctx.clearRect(-20,-20,LW+40,LH+40);
   ensureBackground();
   ctx.drawImage(bgCanvas,0,0);
-  drawPath(); drawDirectionArrows(); drawSpots();
+  drawPath(); drawDirectionArrows(); drawProps(); drawSpots();
   // Katman sırası: boss auraları ve menzil halkaları zeminde,
   // sonra düşmanlar, en üstte kuleler — kuleler arkada kalmasın.
   enemies.forEach(drawBossAura);
@@ -1211,5 +1402,6 @@ function render(){
   drawExplosions();
   drawParticles();
   drawFloatTexts();
+  drawSnowfall();   // en üstte: kar her şeyin önünden geçer
   ctx.restore();
 }

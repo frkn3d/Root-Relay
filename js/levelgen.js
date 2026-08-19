@@ -234,6 +234,21 @@ function cellsToPolyline(cells, entryEdge, exitEdge){
   return out;
 }
 
+/* Bir hücre yürüyüşünün sahayı ne kadar kapsadığını ölçer.
+   Yol ekranın bir köşesine sıkışırsa geri kalan alan boş kalır ve
+   kompozisyon bozulur; bu yüzden asgari yayılım şartı aranır. */
+function walkCoverage(cells){
+  let minX=99, maxX=-1, minY=99, maxY=-1;
+  cells.forEach(c=>{
+    if(c.cx<minX) minX=c.cx; if(c.cx>maxX) maxX=c.cx;
+    if(c.cy<minY) minY=c.cy; if(c.cy>maxY) maxY=c.cy;
+  });
+  return {
+    w: maxX-minX+1, h: maxY-minY+1,
+    minX, maxX, minY, maxY,
+  };
+}
+
 /* Rota düzenini seçer ve kesişmeyen yollar üretir. */
 function buildRoutes(rng, diff, budgetScale){
   const scale = budgetScale === undefined ? 1 : budgetScale;
@@ -256,9 +271,14 @@ function buildRoutes(rng, diff, budgetScale){
   const EDGES = ['top','bottom','left','right'];
   const opposite = { top:'bottom', bottom:'top', left:'right', right:'left' };
 
-  /* Bir rota dener; başarısız olursa farklı kenarlarla tekrar dener. */
+  /* Bir rota dener; başarısız olursa farklı kenarlarla tekrar dener.
+     Kapsama şartı: yol, ızgaranın en az belli bir bölümünü kat etmeli. */
+  const NEED_W = Math.max(2, Math.round(GRID_COLS*0.7));   // en az 4/5 sütun
+  const NEED_H = Math.max(3, Math.round(GRID_ROWS*0.62));  // en az 5/8 satır
+
   function tryRoute(blocked, forcedEntry){
-    for(let attempt=0; attempt<14; attempt++){
+    let fallback = null;
+    for(let attempt=0; attempt<26; attempt++){
       const entryEdge = forcedEntry || pick(rng, EDGES);
       // Çıkış: karşı kenar ağırlıklı, bazen komşu kenar
       const exitEdge = rng() < 0.65
@@ -268,9 +288,15 @@ function buildRoutes(rng, diff, budgetScale){
       const goal  = edgeCell(rng, exitEdge);
       if(start.cx===goal.cx && start.cy===goal.cy) continue;
       const cells = selfAvoidingWalk(rng, start, goal, blocked, minCells, maxCells);
-      if(cells) return { cells, entryEdge, exitEdge };
+      if(!cells) continue;
+      const cov = walkCoverage(cells);
+      if(cov.w >= NEED_W && cov.h >= NEED_H) return { cells, entryEdge, exitEdge };
+      // Kapsama yetersiz — yedek olarak sakla, daha iyisini aramaya devam et
+      if(!fallback || (cov.w*cov.h) > walkCoverage(fallback.cells).w*walkCoverage(fallback.cells).h){
+        fallback = { cells, entryEdge, exitEdge };
+      }
     }
-    return null;
+    return fallback;   // hiç ideal bulunamazsa en geniş olanı kullan
   }
 
   const paths = [];
@@ -497,6 +523,59 @@ function buildWaves(rng, diff, levelNo){
   return { waveCount, pool, allowCube, allowBoss, archetype };
 }
 
+/* ---------- Manzara dekoru ----------
+   Boş araziye biyoma uygun nesneler serpilir. Yola ve kule
+   noktalarına değmezler; sadece görsel zenginlik katarlar. */
+const BIOME_PROPS = {
+  forest:        [['tree',0.5],['pine',0.25],['bush',0.25]],
+  desert:        [['cactus',0.45],['rock',0.4],['deadbush',0.15]],
+  mediterranean: [['olive',0.4],['bush',0.35],['rock',0.25]],
+  tundra:        [['rock',0.45],['pine',0.3],['shrub',0.25]],
+  swamp:         [['reed',0.45],['bush',0.3],['deadtree',0.25]],
+  savanna:       [['acacia',0.35],['grass',0.4],['rock',0.25]],
+  volcanic:      [['rock',0.55],['deadtree',0.25],['boulder',0.2]],
+};
+
+function pickWeighted(rng, pairs){
+  let r = rng(), acc = 0;
+  for(const [id,w] of pairs){ acc += w; if(r <= acc) return id; }
+  return pairs[pairs.length-1][0];
+}
+
+function placeProps(rng, paths, spots, biomeId, seasonId){
+  const table = BIOME_PROPS[biomeId] || BIOME_PROPS.forest;
+  const props = [];
+  const target = 26 + Math.floor(rng()*14);
+  let tries = 0;
+
+  while(props.length < target && tries < 1200){
+    tries++;
+    // Yuvarlamayi ONCE yap: aksi halde kontrolu gecen bir nokta
+    // yuvarlandiktan sonra sinirin icine kayabiliyor.
+    const x = Math.round(rnd(rng, 14, GEN.W-14));
+    const y = Math.round(rnd(rng, 14, GEN.H-14));
+
+    // Yola ve kule noktalarina degmesin
+    let dPath = Infinity;
+    for(const p of paths) dPath = Math.min(dPath, distToPath(x,y,p));
+    if(dPath < 40) continue;
+    let clash = false;
+    for(const s of spots){ if(Math.hypot(s.x-x, s.y-y) < 36){ clash=true; break; } }
+    if(clash) continue;
+    for(const q of props){ if(Math.hypot(q.x-x, q.y-y) < 30){ clash=true; break; } }
+    if(clash) continue;
+
+    props.push({
+      x, y,
+      type: pickWeighted(rng, table),
+      s: 0.75 + rng()*0.6,          // ölçek
+      f: rng() < 0.5 ? -1 : 1,      // yatay ayna
+      t: rng(),                     // ton varyasyonu
+    });
+  }
+  return props;
+}
+
 /* ---------- Ana üretici ---------- */
 function generateLevel(seed, levelNo){
   const diff = difficultyFor(levelNo);
@@ -518,6 +597,7 @@ function generateLevel(seed, levelNo){
   const rng = makeRng(hashSeed(seed + '#' + levelNo + '#rest'));
   const spots = placeSpots(rng, routes.paths, diff, totalLen);
   const theme = pickTheme(rng, levelNo);
+  const props = placeProps(rng, routes.paths, spots, theme.biome, theme.season);
   const waves = buildWaves(rng, diff, levelNo);
 
   // Ekonomi: zorlukla birlikte biraz artan başlangıç kaynakları
@@ -537,6 +617,7 @@ function generateLevel(seed, levelNo){
     exits: routes.exits,
     paths: routes.paths,
     spots,
+    props,
     waveCount: waves.waveCount,
     startGold, startLives,
     enemyPool: waves.pool,
