@@ -151,89 +151,42 @@ function isLevelUnlocked(idx){
 }
 
 /* ============================================================
-   1000 BÖLÜM — tohum seçimi ve üretilmiş bölüm listesi
+   1000 BÖLÜM — bölüm numarası girip doğrudan oynama
+
+   Bölümler tek bir sabit tohumdan üretilir; oyuncunun girdiği sayı
+   bölüm numarasıdır. Böylece herkes aynı 1000 bölümü oynar ve
+   "Bölüm 347" herkeste aynı haritadır.
    ============================================================ */
-let genSeed = '';
-let genPage = 0;
-const GEN_PAGE_SIZE = 50;
+const WORLD_SEED = 'root-relay';
 
-function randomSeedText(){
-  const words = ['orman','kar','kum','tas','ates','ruzgar','koku','dal','tohum','yosun','bulut','gol'];
-  const w = words[Math.floor(Math.random()*words.length)];
-  return w + '-' + Math.floor(Math.random()*9000+1000);
-}
-
-function currentSeed(){
+function currentLevelNo(){
   const el = document.getElementById('seedInput');
-  const v = (el && el.value.trim()) || '';
-  return v || 'root';
+  let v = parseInt((el && el.value) || '', 10);
+  if(!isFinite(v)) v = 1;
+  return Math.max(1, Math.min(GEN.TOTAL_LEVELS, v));
 }
 
-/* Tohum girildikçe ilk birkaç bölümün özetini gösterir */
+/* Girilen numaranın özetini gösterir */
 function renderSeedPreview(){
   const el = document.getElementById('seedPreview');
   if(!el) return;
-  const seed = currentSeed();
-  const lines = [1,2,3].map(n=>{
-    const lv = generateLevel(seed, n);      // levelgen.js
-    const b = BIOMES[lv.theme.biome].name;
-    const s = SEASONS[lv.theme.season].name;
-    const r = ROAD_TYPES[lv.theme.road].name;
-    return `<b>#${n}</b> ${s} · ${b} · ${r} · ${lv.style} · ${lv.archetype.name} · ${lv.entries}g/${lv.exits}ç · ${lv.waveCount} dalga`;
-  });
-  el.innerHTML = lines.join('<br>');
-}
-
-/* Üretilmiş bölümlerin ilerlemesi tohum bazlı saklanır */
-function genLevelKey(seed, n){ return 'gen-'+seed+'-'+n; }
-
-function isGenLevelUnlocked(seed, n){
-  if(UNLOCK_ALL) return true;
-  if(n <= 1) return true;
-  return getLevelProgress(genLevelKey(seed, n-1)).bestStars > 0;
-}
-
-function renderGenGrid(){
-  const grid = document.getElementById('genGrid');
-  const label = document.getElementById('genPageLabel');
-  const head = document.getElementById('genHead');
-  if(!grid) return;
-
-  const seed = genSeed;
-  head.textContent = 'Tohum: ' + seed;
-
-  const start = genPage*GEN_PAGE_SIZE + 1;
-  const end = Math.min(GEN.TOTAL_LEVELS, start + GEN_PAGE_SIZE - 1);
-  label.textContent = start + '–' + end;
-  document.getElementById('genPrev').disabled = genPage === 0;
-  document.getElementById('genNext').disabled = end >= GEN.TOTAL_LEVELS;
-
-  grid.innerHTML = '';
-  for(let n=start; n<=end; n++){
-    const unlocked = isGenLevelUnlocked(seed, n);
-    const prog = getLevelProgress(genLevelKey(seed, n));
-    const diff = difficultyFor(n);           // levelgen.js
-    const dots = Math.max(1, Math.min(5, Math.round(diff*5)));
-
-    const cell = document.createElement('div');
-    cell.className = 'gen-cell' + (unlocked ? '' : ' locked');
-    let d = '';
-    for(let i=0;i<5;i++) d += `<i class="${i<dots?'on':''}"></i>`;
-    cell.innerHTML = `
-      <div class="gen-no">${n}</div>
-      <div class="gen-diff">${d}</div>
-      <div class="gen-stars">${prog.bestStars>0 ? '⭐'.repeat(prog.bestStars) : ''}</div>
-    `;
-    if(unlocked){
-      cell.addEventListener('pointerup', ()=>{
-        playMenuTap();
-        startGeneratedLevel(seed, n);
-      });
-    } else {
-      cell.addEventListener('pointerup', ()=>playError());
-    }
-    grid.appendChild(cell);
+  const inp = document.getElementById('seedInput');
+  if(!inp || !inp.value.trim()){
+    el.innerHTML = '<span style="opacity:.6">Bölüm numarası gir…</span>';
+    return;
   }
+  const n = currentLevelNo();
+  const lv = generateLevel(WORLD_SEED, n);      // levelgen.js
+  const b = BIOMES[lv.theme.biome].name;
+  const s = SEASONS[lv.theme.season].name;
+  const r = ROAD_TYPES[lv.theme.road].name;
+  const prog = getLevelProgress(lv.id);
+  const dots = Math.max(1, Math.min(5, Math.round(lv.difficulty01*5)));
+  el.innerHTML =
+    `<b>Bölüm ${n}</b> — ${s} · ${b} · ${r} yol<br>` +
+    `${lv.entries} giriş / ${lv.exits} çıkış · ${lv.waveCount} dalga · ${lv.spots.length} kule noktası<br>` +
+    `Zorluk: ${'●'.repeat(dots)}${'○'.repeat(5-dots)} · Tarz: ${lv.archetype.name}` +
+    (prog.bestStars>0 ? `<br>En iyi: ${'⭐'.repeat(prog.bestStars)}` : '');
 }
 
 function renderStars(n){

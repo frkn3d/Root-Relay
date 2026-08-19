@@ -255,48 +255,35 @@ document.getElementById('soundBtnPause').addEventListener('pointerup', toggleSou
 document.getElementById('mmLevels').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuLevels'); });
 document.getElementById('mmEndless').addEventListener('pointerup', ()=>{
   playMenuTap();
-  const inp = document.getElementById('seedInput');
-  if(!inp.value) inp.value = randomSeedText();
   showMenuPage('menuSeed');
   renderSeedPreview();
 });
 document.getElementById('seedRandomBtn').addEventListener('pointerup', ()=>{
   playMenuTap();
-  document.getElementById('seedInput').value = randomSeedText();
+  document.getElementById('seedInput').value = 1 + Math.floor(Math.random()*GEN.TOTAL_LEVELS);
   renderSeedPreview();
 });
 document.getElementById('seedInput').addEventListener('input', renderSeedPreview);
-// Klavyedeki "git/enter" tuşu da onaylasın
 document.getElementById('seedInput').addEventListener('keydown', (e)=>{
   if(e.key === 'Enter'){
     e.preventDefault();
     e.target.blur();          // mobil klavyeyi kapat
-    openGenLevelList();
+    playSelectedGenLevel();
   }
 });
 document.getElementById('seedOkBtn').addEventListener('pointerup', ()=>{
   document.getElementById('seedInput').blur();
-  openGenLevelList();
+  playSelectedGenLevel();
 });
 
-function openGenLevelList(){
+function playSelectedGenLevel(){
+  const inp = document.getElementById('seedInput');
+  if(!inp.value.trim()){ playError(); return; }
   playMenuTap();
-  genSeed = currentSeed();
-  genPage = 0;
-  showMenuPage('menuGenLevels');
-  renderGenGrid();
+  const n = currentLevelNo();
+  inp.value = n;                 // sınır dışıysa düzeltilmiş hali görünsün
+  startGeneratedLevel(WORLD_SEED, n);
 }
-document.getElementById('genPrev').addEventListener('pointerup', ()=>{
-  if(genPage<=0) return;
-  playMenuTap(); genPage--; renderGenGrid();
-});
-document.getElementById('genNext').addEventListener('pointerup', ()=>{
-  if((genPage+1)*GEN_PAGE_SIZE >= GEN.TOTAL_LEVELS) return;
-  playMenuTap(); genPage++; renderGenGrid();
-});
-document.getElementById('genBack').addEventListener('pointerup', ()=>{
-  playMenuTap(); showMenuPage('menuSeed');
-});
 document.getElementById('mmSettings').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuSettings'); });
 document.getElementById('mmAbout').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuAbout'); });
 document.getElementById('bcOk').addEventListener('pointerup', (e)=>{ e.stopPropagation(); confirmBuild(); });
