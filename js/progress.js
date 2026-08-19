@@ -67,8 +67,8 @@ const SHOP_ITEMS = [
   {
     id:'goldPack', icon:'🪙', name:'Altın Kesesi',
     desc:'Anında altın kazan.',
-    effect:'+200 altın',
-    baseCost:6, costStep:3, maxBuys:5,
+    effect:'+50 altın',
+    baseCost:6, costStep:3, maxBuys:3,
   },
   {
     id:'lifePack', icon:'❤️', name:'Can Takviyesi',
@@ -79,8 +79,8 @@ const SHOP_ITEMS = [
   {
     id:'buildBoost', icon:'⏱️', name:'Hızlı İnşaat',
     desc:'Bu bölümde kule kurma ve yükseltme süreleri kısalır.',
-    effect:'%30 daha hızlı',
-    baseCost:12, costStep:8, maxBuys:2,
+    effect:'%10 daha hızlı',
+    baseCost:12, costStep:8, maxBuys:3,
   },
 ];
 
@@ -101,9 +101,10 @@ function markSessionBuy(id){
   sessionShop[id] = getSessionBuys(id) + 1;
 }
 
-/* Bu bölümde alınan "Hızlı İnşaat" takviyelerinin inşa süresi çarpanı */
+/* Bu bölümde alınan "Hızlı İnşaat" takviyelerinin inşa süresi çarpanı.
+   Her alım süreyi %10 kısaltır (3 alımda toplam ~%27). */
 function sessionBuildFactor(){
-  return Math.pow(0.7, getSessionBuys('buildBoost'));
+  return Math.pow(0.9, getSessionBuys('buildBoost'));
 }
 
 /* Fabrika ayarlarına dön — uygulamanın kaydettiği HER ŞEYİ siler.

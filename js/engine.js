@@ -236,9 +236,9 @@ function buyInGameItem(id){
   markSessionBuy(id);
 
   if(id === 'goldPack'){
-    gold += 200;
+    gold += 50;
     document.getElementById('goldVal').textContent = gold;
-    floatTexts.push({x:LW/2, y:LH*0.35, text:'+200🪙', life:1.1, vy:-34, color:'#f4c04a'});
+    floatTexts.push({x:LW/2, y:LH*0.35, text:'+50🪙', life:1.1, vy:-34, color:'#f4c04a'});
   } else if(id === 'lifePack'){
     lives += 3;
     startLivesEffective += 3;   // yıldız oranı bozulmasın
@@ -246,7 +246,7 @@ function buyInGameItem(id){
     floatTexts.push({x:LW/2, y:LH*0.35, text:'+3 ❤️', life:1.1, vy:-34, color:'#ff8f78'});
   } else if(id === 'buildBoost'){
     // Halihazırda inşa halindeki kuleler de hızlansın
-    const f = 0.7;
+    const f = 0.9;
     towers.forEach(t=>{
       if(t.buildLeft > 0){ t.buildLeft *= f; t.buildDuration *= f; }
     });
