@@ -106,13 +106,15 @@ const UPGRADE_COST_MULT = [0.6, 0.9, 1.3]; // level0->1, level1->2, level2->3
 const BUILD_TIMES = [4, 6, 8];
 function buildDurationFor(levelAfter){
   const base = BUILD_TIMES[Math.max(0, Math.min(levelAfter, BUILD_TIMES.length-1))];
-  return base * sessionBuildFactor();   // progress.js — bölüm içi takviye
+  // Yarım saniyenin katına yuvarla — arayüzde küsürlü sayı görünmesin
+  return Math.max(0.5, Math.round(base * sessionBuildFactor() * 2) / 2);
 }
 
 function upgradeCost(t){
   const lvl = t.level||0;
   if(lvl>=3) return null;
-  return Math.round(t.def.cost * UPGRADE_COST_MULT[lvl]);
+  // Fiyatlar her zaman 5'in katı olsun — okunması kolay, tutarlı sayılar
+  return Math.round(t.def.cost * UPGRADE_COST_MULT[lvl] / 5) * 5;
 }
 function getTowerStats(t){
   const lvl = t.level||0;
@@ -166,6 +168,21 @@ function towerRateMultiplier(t){
   return worst > 0 ? 1/(1-worst) : 1;   // %50 yavaş => aralık 2 katı
 }
 
+/* Kule paneli açıkken altın miktarı sürekli değişir (düşman öldükçe).
+   Panelin tamamını her karede yeniden çizmek pahalı olacağından,
+   yalnızca butonun aktif/pasif durumunu tazeleyen hafif bir kontrol. */
+let lastAffordState = null;
+function refreshTowerPanelAffordability(){
+  if(!towerPanelOpen || !selectedTower) { lastAffordState = null; return; }
+  const t = selectedTower;
+  const cost = upgradeCost(t);
+  const shouldDisable = (t.buildLeft > 0) || (cost === null) || (gold < cost);
+  if(shouldDisable === lastAffordState) return;   // durum değişmediyse DOM'a dokunma
+  lastAffordState = shouldDisable;
+  const btn = document.getElementById('tpUpgradeBtn');
+  if(btn) btn.disabled = shouldDisable;
+}
+
 function setTargetMode(id){
   if(!selectedTower) return;
   selectedTower.targetMode = id;
@@ -176,11 +193,13 @@ function setTargetMode(id){
 function openTowerPanel(t){
   selectedTower = t; towerPanelOpen = true; sellConfirmPending = false;
   activeTowerRing = null;
+  lastAffordState = null;
   renderTowerPanel(); // ui.js
 }
 function closeTowerPanel(){
   towerPanelOpen = false; selectedTower = null; sellConfirmPending = false;
   activeTowerRing = null;
+  lastAffordState = null;
   const panel = document.getElementById('towerPanel');
   if(panel) panel.classList.remove('show');
 }
@@ -659,4 +678,6 @@ function update(dt){
   floatTexts = floatTexts.filter(f=>f.life>0);
 
   if(shake>0) shake = Math.max(0, shake-dt*40);
+
+  refreshTowerPanelAffordability();
 }

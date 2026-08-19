@@ -266,6 +266,8 @@ function renderTowerPanel(){
     upBtn.textContent = `Yükselt · 🪙${cost} · ${secs}s`;
     upBtn.disabled = gold < cost;
   }
+  // engine.js'deki hafif tazeleyici ile durumu senkron tut
+  lastAffordState = upBtn.disabled;
 
   const sellValue = Math.floor(t.totalSpent/2);
   document.getElementById('tpSellBtn').textContent = `Sat · +🪙${sellValue}`;
