@@ -266,13 +266,30 @@ document.getElementById('seedRandomBtn').addEventListener('pointerup', ()=>{
   renderSeedPreview();
 });
 document.getElementById('seedInput').addEventListener('input', renderSeedPreview);
+// Klavyedeki "git/enter" tuşu da onaylasın
+document.getElementById('seedInput').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    e.target.blur();          // mobil klavyeyi kapat
+    openGenLevelList();
+  }
+});
+document.getElementById('seedOkBtn').addEventListener('pointerup', ()=>{
+  document.getElementById('seedInput').blur();
+  openGenLevelList();
+});
 document.getElementById('seedGoBtn').addEventListener('pointerup', ()=>{
+  document.getElementById('seedInput').blur();
+  openGenLevelList();
+});
+
+function openGenLevelList(){
   playMenuTap();
   genSeed = currentSeed();
   genPage = 0;
   showMenuPage('menuGenLevels');
   renderGenGrid();
-});
+}
 document.getElementById('genPrev').addEventListener('pointerup', ()=>{
   if(genPage<=0) return;
   playMenuTap(); genPage--; renderGenGrid();

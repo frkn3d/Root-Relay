@@ -138,9 +138,12 @@ function closeStartScreen(){
 }
 
 /* ---- Bölüm kilitleri ----
-   İlk bölüm hep açık. Sonraki bölümler, bir öncekini en az 1 yıldızla
-   tamamlayınca açılır. */
+   TEST AŞAMASI: kilitler geçici olarak kapalı. Yayına geçerken
+   UNLOCK_ALL değerini false yapmak yeterli. */
+const UNLOCK_ALL = true;
+
 function isLevelUnlocked(idx){
+  if(UNLOCK_ALL) return true;
   if(idx <= 0) return true;
   const prev = LEVELS[idx-1];
   if(!prev) return false;
@@ -185,6 +188,7 @@ function renderSeedPreview(){
 function genLevelKey(seed, n){ return 'gen-'+seed+'-'+n; }
 
 function isGenLevelUnlocked(seed, n){
+  if(UNLOCK_ALL) return true;
   if(n <= 1) return true;
   return getLevelProgress(genLevelKey(seed, n-1)).bestStars > 0;
 }

@@ -766,6 +766,24 @@ body.in-menu .frame{ border-color:transparent; box-shadow:none; }
   font-family:'JetBrains Mono', monospace; font-size:10.5px;
   color:var(--cream-dim); line-height:1.5; max-width:300px; margin:0;
 }
+.seed-row{ display:flex; gap:8px; width:100%; max-width:300px; }
+.seed-row .menu-btn{ flex:1; }
+
+/* Giriş satırı: metin kutusu + onay butonu */
+.seed-entry{ display:flex; gap:8px; width:100%; max-width:300px; align-items:stretch; }
+.seed-entry .seed-input{ flex:1; max-width:none; }
+.seed-ok{
+  flex:0 0 auto; width:54px;
+  background:linear-gradient(180deg,#7fb377,#3f6b47);
+  color:#0d1a0f;
+  border:2px solid #0a0704; border-radius:11px;
+  font-size:20px; font-weight:700; line-height:1;
+  cursor:pointer; touch-action:manipulation;
+  box-shadow:0 3px 0 #23401f;
+  display:flex; align-items:center; justify-content:center;
+}
+.seed-ok:active{ transform:translateY(2px); box-shadow:0 1px 0 #23401f; }
+
 .seed-input{
   width:100%; max-width:300px;
   background:rgba(0,0,0,0.35);
@@ -776,10 +794,13 @@ body.in-menu .frame{ border-color:transparent; box-shadow:none; }
   font-family:'JetBrains Mono', monospace; font-size:14px;
   text-align:center; letter-spacing:0.06em;
   outline:none;
+  /* body'deki user-select:none metin girişini engelliyordu */
+  -webkit-user-select:text; user-select:text;
+  touch-action:auto;
+  -webkit-appearance:none; appearance:none;
 }
 .seed-input:focus{ border-color:var(--gold); }
 .seed-input::placeholder{ color:rgba(203,185,143,0.45); }
-.seed-row{ display:flex; gap:8px; width:100%; max-width:300px; }
 .seed-row .menu-btn{ flex:1; }
 .seed-preview{
   width:100%; max-width:300px;
