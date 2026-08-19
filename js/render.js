@@ -136,14 +136,34 @@ function drawDirectionArrows(){
 }
 
 function drawSpots(){
+  const t0 = performance.now()/1000;
   spots.forEach(s=>{
     if(s.occ) return;
     ctx.save();
     ctx.beginPath(); ctx.ellipse(s.x,s.y+4,22,10,0,0,Math.PI*2);
     ctx.fillStyle='rgba(0,0,0,0.18)'; ctx.fill();
-    ctx.beginPath(); ctx.arc(s.x,s.y,17,0,Math.PI*2);
-    ctx.strokeStyle='rgba(244,192,74,0.4)'; ctx.lineWidth=2; ctx.setLineDash([4,5]); ctx.stroke();
-    ctx.setLineDash([]);
+
+    if(pendingSpot === s){
+      // Onay bekleyen nokta: kurulacak kulenin menzilini önizle
+      const def = TOWER_TYPES[selectedType];
+      ctx.beginPath(); ctx.arc(s.x,s.y,def.range,0,Math.PI*2);
+      ctx.fillStyle = def.color+'22'; ctx.fill();
+      ctx.strokeStyle = def.color; ctx.lineWidth=2;
+      ctx.setLineDash([7,6]); ctx.stroke(); ctx.setLineDash([]);
+
+      const pulse = 2+Math.sin(t0*4)*2;
+      ctx.beginPath(); ctx.arc(s.x,s.y,17+pulse,0,Math.PI*2);
+      ctx.strokeStyle='var(--gold)'; ctx.strokeStyle='#f4c04a';
+      ctx.lineWidth=2.5; ctx.stroke();
+      // hayalet ikon
+      ctx.globalAlpha=0.55;
+      ctx.font='18px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(def.icon, s.x, s.y);
+    } else {
+      ctx.beginPath(); ctx.arc(s.x,s.y,17,0,Math.PI*2);
+      ctx.strokeStyle='rgba(244,192,74,0.4)'; ctx.lineWidth=2; ctx.setLineDash([4,5]); ctx.stroke();
+      ctx.setLineDash([]);
+    }
     ctx.restore();
   });
 }

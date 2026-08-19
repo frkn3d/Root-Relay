@@ -208,6 +208,7 @@ function renderTowerDrawer(){
     card.innerHTML = `<div class="icon">${def.icon}</div><div class="name">${def.name}</div><div class="cost">🪙${def.cost}</div>`;
     card.addEventListener('pointerup', ()=>{
       selectedType = def.id;
+      if(typeof closeBuildConfirm === 'function') closeBuildConfirm();
       renderTowerSelectBtn();
       renderTowerDrawer();
       closeTowerDrawer();

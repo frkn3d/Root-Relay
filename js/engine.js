@@ -172,7 +172,21 @@ function towerRateMultiplier(t){
    Panelin tamamını her karede yeniden çizmek pahalı olacağından,
    yalnızca butonun aktif/pasif durumunu tazeleyen hafif bir kontrol. */
 let lastAffordState = null;
+let lastBuildAfford = null;
 function refreshTowerPanelAffordability(){
+  // Kurulum onayı açıksa ✓ butonunun durumunu tazele
+  if(pendingSpot){
+    const def = TOWER_TYPES[selectedType];
+    const dis = gold < def.cost;
+    if(dis !== lastBuildAfford){
+      lastBuildAfford = dis;
+      const b = document.getElementById('bcOk');
+      if(b) b.disabled = dis;
+    }
+  } else {
+    lastBuildAfford = null;
+  }
+
   if(!towerPanelOpen || !selectedTower) { lastAffordState = null; return; }
   const t = selectedTower;
   const cost = upgradeCost(t);
@@ -275,6 +289,65 @@ function buyInGameItem(id){
   return {ok:true};
 }
 
+let pendingSpot = null;   // kurulum onayı bekleyen yapı alanı
+
+/* Kurulum onay penceresini ilgili noktanın üzerinde açar */
+function openBuildConfirm(spot){
+  pendingSpot = spot;
+  const def = TOWER_TYPES[selectedType];
+  const box = document.getElementById('buildConfirm');
+  document.getElementById('bcIcon').textContent = def.icon;
+  document.getElementById('bcCost').textContent = '🪙'+def.cost;
+  document.getElementById('bcOk').disabled = gold < def.cost;
+
+  // Mantıksal canvas koordinatını ekran (CSS) koordinatına çevir
+  const rect = canvas.getBoundingClientRect();
+  const sx = rect.width / LW, sy = rect.height / LH;
+  // Pencereyi noktanın biraz üstünde konumlandır
+  let left = spot.x * sx;
+  let top  = spot.y * sy - 44;
+  // Çerçeve kenarlarından taşmasın
+  left = Math.max(48, Math.min(left, rect.width - 48));
+  top  = Math.max(34, Math.min(top,  rect.height - 34));
+  box.style.left = left + 'px';
+  box.style.top  = top  + 'px';
+  box.classList.add('show');
+  playMenuTap();
+}
+
+function closeBuildConfirm(){
+  pendingSpot = null;
+  const box = document.getElementById('buildConfirm');
+  if(box) box.classList.remove('show');
+}
+
+/* Onaylandı: kuleyi gerçekten kur */
+function confirmBuild(){
+  if(!pendingSpot) return;
+  const spot = pendingSpot;
+  const def = TOWER_TYPES[selectedType];
+  if(spot.occ){ closeBuildConfirm(); return; }
+  if(gold < def.cost){
+    playError();
+    const chip=document.getElementById('goldChip');
+    chip.classList.remove('shake'); void chip.offsetWidth; chip.classList.add('shake');
+    return;
+  }
+  gold -= def.cost;
+  document.getElementById('goldVal').textContent = gold;
+  const t = {
+    x:spot.x, y:spot.y, def, cooldown:0, pulse:0,
+    level:0, totalSpent:def.cost,
+    targetMode:'first',
+    buildDuration: buildDurationFor(0),
+    buildLeft: buildDurationFor(0),
+    pendingLevel: null,
+  };
+  towers.push(t); spot.occ = t;
+  playMenuTap();
+  closeBuildConfirm();
+}
+
 function loadLevel(idx){
   currentLevelIdx = idx;
   level = LEVELS[idx];
@@ -292,6 +365,7 @@ function loadLevel(idx){
   seenEnemyTypes = new Set();
   paused = false;
   hideWaveToast(); // ui.js
+  closeBuildConfirm();
   document.getElementById('shopOverlay').classList.remove('show');
   setWaveBtnReady(true); // ui.js — ilk dalgaya davet
   document.getElementById('pauseOverlay').classList.remove('show');
@@ -318,6 +392,7 @@ function togglePause(){
 function goToMainMenu(){
   playMenuTap();
   hideWaveToast(); // ui.js
+  closeBuildConfirm();
   document.getElementById('shopOverlay').classList.remove('show');
   document.getElementById('pauseOverlay').classList.remove('show');
   document.getElementById('overlay').classList.remove('show');
@@ -371,6 +446,7 @@ function startWave(){
 function endGame(win){
   gameOver=!win; gameWon=win;
   hideWaveToast(); // ui.js
+  closeBuildConfirm();
   document.getElementById('shopOverlay').classList.remove('show');
   setWaveBtnReady(false); // ui.js
   closeTowerPanel();

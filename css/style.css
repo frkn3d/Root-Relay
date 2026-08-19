@@ -212,6 +212,44 @@ canvas{
 .tp-sell-confirm .btn.ghost{ flex:1; }
 
 /* --- Dalga tamamlandı bildirimi --- */
+/* --- Kule kurulum onayı --- */
+.build-confirm{
+  position:absolute; z-index:7;
+  display:none;
+  transform:translate(-50%,-50%);
+  background:rgba(12,20,13,0.94);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+  border:2px solid var(--gold);
+  border-radius:11px;
+  padding:5px 6px;
+  box-shadow:0 6px 18px rgba(0,0,0,0.55);
+  line-height:1.2;
+}
+.build-confirm.show{ display:block; }
+.bc-head{
+  display:flex; align-items:center; justify-content:center; gap:4px;
+  margin-bottom:4px;
+}
+.bc-icon{ font-size:15px; line-height:1; }
+.bc-cost{
+  font-family:'JetBrains Mono', monospace; font-size:10px;
+  color:var(--gold); white-space:nowrap;
+}
+.bc-actions{ display:flex; gap:4px; }
+.bc-btn{
+  width:30px; height:26px;
+  border:2px solid #0a0704; border-radius:7px;
+  font-size:13px; font-weight:700; line-height:1;
+  cursor:pointer; touch-action:manipulation;
+  display:flex; align-items:center; justify-content:center;
+  padding:0;
+}
+.bc-btn:active{ transform:translateY(1px); }
+.bc-yes{ background:linear-gradient(180deg,#7fb377,#3f6b47); color:#0d1a0f; box-shadow:0 2px 0 #23401f; }
+.bc-no{ background:linear-gradient(180deg,#e2504a,#a5312c); color:#fff; box-shadow:0 2px 0 #6f1f1b; }
+.bc-yes:disabled{ opacity:0.4; background:linear-gradient(180deg,#555,#333); box-shadow:none; }
+
 .wave-toast{
   position:absolute; left:50%; top:38%;
   line-height:1.3;

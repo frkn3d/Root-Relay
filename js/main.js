@@ -184,7 +184,7 @@ canvas.addEventListener('pointerup',(e)=>{
     return;
   }
 
-  // Boş bir alana tıklandı: açık panel/halka varsa önce onu kapat.
+  // Boş bir alana tıklandı: açık panel/halka/onay varsa önce onu kapat.
   if(towerPanelOpen){ closeTowerPanel(); cancelPress(); return; }
   if(activeTowerRing){ activeTowerRing=null; cancelPress(); return; }
 
@@ -194,27 +194,17 @@ canvas.addEventListener('pointerup',(e)=>{
     const d=Math.hypot(mx-s.x,my-s.y);
     if(d<28 && d<bestD){bestD=d; closest=s;}
   });
-  if(!closest){ cancelPress(); return; }
-  const def=TOWER_TYPES[selectedType];
-  if(gold<def.cost){
-    playError();
-    const chip=document.getElementById('goldChip');
-    chip.classList.remove('shake'); void chip.offsetWidth; chip.classList.add('shake');
+
+  if(!closest){
+    // Boşluğa tıklandı — bekleyen onay varsa iptal et
+    if(pendingSpot) closeBuildConfirm();
     cancelPress();
     return;
   }
-  gold-=def.cost;
-  document.getElementById('goldVal').textContent=gold;
-  const t={
-    x:closest.x, y:closest.y, def, cooldown:0, pulse:0,
-    level:0, totalSpent:def.cost,
-    targetMode:'first',
-    buildDuration: buildDurationFor(0),
-    buildLeft: buildDurationFor(0),
-    pendingLevel: null,
-  };
-  towers.push(t); closest.occ=t;
-  playMenuTap();
+
+  // Aynı noktaya tekrar dokunulduysa onayı kapat, değilse yeni onay aç
+  if(pendingSpot === closest) closeBuildConfirm();
+  else openBuildConfirm(closest);
   cancelPress();
 });
 
@@ -246,6 +236,8 @@ document.getElementById('soundBtnPause').addEventListener('pointerup', toggleSou
 document.getElementById('mmLevels').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuLevels'); });
 document.getElementById('mmSettings').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuSettings'); });
 document.getElementById('mmAbout').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuAbout'); });
+document.getElementById('bcOk').addEventListener('pointerup', (e)=>{ e.stopPropagation(); confirmBuild(); });
+document.getElementById('bcCancel').addEventListener('pointerup', (e)=>{ e.stopPropagation(); playMenuTap(); closeBuildConfirm(); });
 document.getElementById('shopBtn').addEventListener('pointerup', openShopOverlay);
 document.getElementById('shopCloseBtn').addEventListener('pointerup', closeShopOverlay);
 document.getElementById('gemBuyBtn').addEventListener('pointerup', ()=>{
