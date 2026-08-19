@@ -164,7 +164,7 @@ function buildPathDecor(path, totalLen){
 
 let gold, lives, waveIndex, waveActive, gameOver, gameWon;
 let startLivesEffective = 10;
-let towers, enemies, projectiles, particles, floatTexts, explosions, arcs;
+let towers, enemies, projectiles, particles, floatTexts, explosions, arcs, healZones;
 let spawnTimeline, waveElapsed;
 let shake = 0;
 let spots = [];
@@ -471,7 +471,7 @@ function loadLevel(idx){
   resetSessionShop();            // progress.js — bölüm içi alımlar sıfırlanır
   waveIndex = 0;
   waveActive=false; gameOver=false; gameWon=false;
-  towers=[]; enemies=[]; projectiles=[]; particles=[]; floatTexts=[]; explosions=[]; arcs=[];
+  towers=[]; enemies=[]; projectiles=[]; particles=[]; floatTexts=[]; explosions=[]; arcs=[]; healZones=[];
   spawnTimeline=[]; waveElapsed=0; shake=0;
   seenEnemyTypes = new Set();
   paused = false;
@@ -545,6 +545,7 @@ function startWave(){
         gold: Math.max(1, Math.round(def.gold*m.goldMul)), dmgToLives: def.dmgToLives,
         boss: !!def.boss, label: def.label,
         auraRadius: def.auraRadius || 0, auraSlow: def.auraSlow || 0,
+        healRadius: def.healRadius || 0, healPerSec: def.healPerSec || 0, healDuration: def.healDuration || 0,
         splitsLeft: def.splits || 0,
         splitsTotal: def.splits || 0,
         baseSpeed: def.speed*mult.speed*m.enemySpeedMul,
@@ -700,6 +701,29 @@ function update(dt){
 
   arcs.forEach(a=>{ a.life -= dt; });
   arcs = arcs.filter(a=>a.life > 0);
+
+  /* İYİLEŞTİRME BİRİKİNTİLERİ (kırılan şişelerden)
+     Üst üste binen birikintiler toplanmaz; en güçlüsü uygulanır.
+     Aksi halde birkaç şişe yan yana kırıldığında bölüm kilitlenir. */
+  if(healZones.length){
+    healZones.forEach(z=>{ z.life -= dt; });
+    healZones = healZones.filter(z=>z.life > 0);
+
+    if(healZones.length && enemies.length){
+      enemies.forEach(e=>{
+        let best = 0;
+        for(let i=0;i<healZones.length;i++){
+          const z = healZones[i];
+          if(Math.hypot(e.x-z.x, e.y-z.y) <= z.r && z.healPerSec > best) best = z.healPerSec;
+        }
+        if(best > 0 && e.hp < e.maxHp){
+          e.hp = Math.min(e.maxHp, e.hp + best*dt);
+          e.healedT = 0.35;    // görsel geri bildirim için kısa işaret
+        }
+        if(e.healedT > 0) e.healedT -= dt;
+      });
+    }
+  }
 
   const reachedEnd = e => e.dist >= (pathLens[e.pathIdx||0] || pathTotalLen);
   const reached = enemies.filter(reachedEnd);
@@ -870,6 +894,24 @@ function update(dt){
           const ang=(i/10)*Math.PI*2;
           particles.push({x:e.x,y:e.y,vx:Math.cos(ang)*100,vy:Math.sin(ang)*100,life:0.35,color:e.body});
         }
+      }
+
+      // ŞİŞE KIRILMASI: yere dökülen sıvı uzun süre iyileştirir
+      if(e.healRadius > 0){
+        healZones.push({
+          x:e.x, y:e.y,
+          r:e.healRadius,
+          healPerSec:e.healPerSec,
+          life:e.healDuration,
+          maxLife:e.healDuration,
+        });
+        // Kırılma efekti: cam kırıkları + sıvı sıçraması
+        for(let i=0;i<22;i++){
+          const ang=(i/22)*Math.PI*2, sp=60+Math.random()*110;
+          particles.push({x:e.x,y:e.y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,life:0.5,
+            color: i%3===0 ? '#dffbe9' : '#7fe0a8'});
+        }
+        floatTexts.push({x:e.x,y:e.y-16,text:'ŞİŞE KIRILDI',life:1.0,vy:-26,color:'#7fe0a8'});
       }
 
       if(e.boss){

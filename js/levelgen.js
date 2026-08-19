@@ -478,19 +478,19 @@ function pickTheme(rng, levelNo){
    ve ritmi değişir. */
 const WAVE_ARCHETYPES = [
   { id:'dengeli',  name:'Dengeli',
-    shares:{spore:0.42, swarm:0.34, sprinter:0.28, husk:0.16, brute:0.12}, pace:1.00 },
+    shares:{spore:0.42, swarm:0.34, sprinter:0.28, husk:0.16, brute:0.12, flask:0.10}, pace:1.00 },
   { id:'akin',     name:'Akın',            // çok sayıda küçük, hızlı akış
-    shares:{spore:0.30, swarm:0.95, sprinter:0.55, husk:0.05, brute:0.03}, pace:0.62 },
+    shares:{spore:0.30, swarm:0.95, sprinter:0.55, husk:0.05, brute:0.03, flask:0.06}, pace:0.62 },
   { id:'kusatma',  name:'Kuşatma',         // az sayıda ağır, yavaş baskı
-    shares:{spore:0.14, swarm:0.08, sprinter:0.10, husk:0.55, brute:0.42}, pace:1.65 },
+    shares:{spore:0.14, swarm:0.08, sprinter:0.10, husk:0.55, brute:0.42, flask:0.16}, pace:1.65 },
   { id:'kosu',     name:'Koşu',            // hız odaklı
-    shares:{spore:0.18, swarm:0.30, sprinter:0.95, husk:0.10, brute:0.06}, pace:0.70 },
+    shares:{spore:0.18, swarm:0.30, sprinter:0.95, husk:0.10, brute:0.06, flask:0.06}, pace:0.70 },
   { id:'kalabalik',name:'Kalabalık',       // ekranı dolduran yığın
-    shares:{spore:0.85, swarm:0.75, sprinter:0.30, husk:0.14, brute:0.08}, pace:0.75 },
+    shares:{spore:0.85, swarm:0.75, sprinter:0.30, husk:0.14, brute:0.08, flask:0.08}, pace:0.75 },
   { id:'zirhli',   name:'Zırhlı',          // dayanıklılık sınavı
-    shares:{spore:0.20, swarm:0.15, sprinter:0.14, husk:0.70, brute:0.22}, pace:1.35 },
+    shares:{spore:0.20, swarm:0.15, sprinter:0.14, husk:0.70, brute:0.22, flask:0.18}, pace:1.35 },
   { id:'dalgali',  name:'Dalgalı',         // gruplar arası belirgin boşluk
-    shares:{spore:0.50, swarm:0.45, sprinter:0.35, husk:0.22, brute:0.16}, pace:1.45 },
+    shares:{spore:0.50, swarm:0.45, sprinter:0.35, husk:0.22, brute:0.16, flask:0.12}, pace:1.45 },
 ];
 
 function pickArchetype(rng, diff){
@@ -512,6 +512,7 @@ function buildWaves(rng, diff, levelNo){
   const pool = ['spore','swarm'];
   if(diff > 0.14) pool.push('sprinter');
   if(diff > 0.30) pool.push('husk');
+  if(diff > 0.38) pool.push('flask');   // destek birimi: iyileştirme birikintisi
   if(diff > 0.46) pool.push('brute');
 
   // Havuzdan bazen bir tür çıkarılır — aynı havuz her bölümde
@@ -751,7 +752,7 @@ function generateWaveForGenerated(level, waveIndex){
   const pool = level.enemyPool;
 
   // Arketip, hangi türün ağır basacağını ve ritmi belirler
-  const baseIntervals = { swarm:0.40, sprinter:0.75, spore:0.75, husk:1.20, brute:1.70 };
+  const baseIntervals = { swarm:0.40, sprinter:0.75, spore:0.75, husk:1.20, brute:1.70, flask:1.50 };
   pool.forEach(type=>{
     const share = arch.shares[type] !== undefined ? arch.shares[type] : 0.2;
     const c = Math.max(1, Math.round(count * share));

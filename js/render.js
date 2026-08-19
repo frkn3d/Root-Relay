@@ -1198,9 +1198,156 @@ function drawCubeEnemy(e){
   ctx.restore();
 }
 
+/* ŞİŞE — cam gövdeli, içinde çalkalanan sıvı taşıyan düşman.
+   Öldüğünde yere iyileştirme birikintisi bırakır. */
+function drawFlaskEnemy(e){
+  const t0 = performance.now()/1000;
+  const R = e.radius;
+  const bob = Math.sin(e.bounce)*2.5;
+  const flash = Math.max(0,e.flashT||0) > 0.05;
+
+  ctx.save();
+  ctx.translate(e.x, e.y + Math.abs(bob));
+
+  ctx.beginPath(); ctx.ellipse(0, R+5, R*0.75, R*0.26, 0, 0, Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,0.28)'; ctx.fill();
+
+  // bacaklar
+  const leg = Math.sin(e.bounce*1.4)*3;
+  ctx.fillStyle=e.body2;
+  ctx.beginPath(); ctx.ellipse(-R*0.36, R*0.78+leg*0.3, R*0.26, R*0.17,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(R*0.36, R*0.78-leg*0.3, R*0.26, R*0.17,0,0,Math.PI*2); ctx.fill();
+
+  // şişe gövdesi (yuvarlak alt + dar boyun)
+  ctx.beginPath();
+  ctx.moveTo(-R*0.26, -R*0.95);
+  ctx.lineTo(-R*0.26, -R*0.45);
+  ctx.quadraticCurveTo(-R*1.02, -R*0.15, -R*0.78, R*0.55);
+  ctx.quadraticCurveTo(-R*0.5, R*1.0, 0, R*1.0);
+  ctx.quadraticCurveTo(R*0.5, R*1.0, R*0.78, R*0.55);
+  ctx.quadraticCurveTo(R*1.02, -R*0.15, R*0.26, -R*0.45);
+  ctx.lineTo(R*0.26, -R*0.95);
+  ctx.closePath();
+
+  const g = ctx.createLinearGradient(-R, -R, R, R);
+  g.addColorStop(0, flash ? '#ffffff' : 'rgba(215,245,230,0.92)');
+  g.addColorStop(1, flash ? '#ffffff' : 'rgba(150,205,180,0.85)');
+  ctx.fillStyle = g; ctx.fill();
+  ctx.lineWidth = 2.2; ctx.strokeStyle = '#1e4a34'; ctx.stroke();
+
+  // içindeki sıvı — can oranına göre doluluk, hafif çalkalanma
+  const fill = Math.max(0.12, e.hp/e.maxHp);
+  const surface = R*1.0 - (R*1.45)*fill;
+  const wob = Math.sin(t0*3 + e.bounce)*1.6;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(-R*0.26, -R*0.95);
+  ctx.lineTo(-R*0.26, -R*0.45);
+  ctx.quadraticCurveTo(-R*1.02, -R*0.15, -R*0.78, R*0.55);
+  ctx.quadraticCurveTo(-R*0.5, R*1.0, 0, R*1.0);
+  ctx.quadraticCurveTo(R*0.5, R*1.0, R*0.78, R*0.55);
+  ctx.quadraticCurveTo(R*1.02, -R*0.15, R*0.26, -R*0.45);
+  ctx.lineTo(R*0.26, -R*0.95);
+  ctx.closePath();
+  ctx.clip();
+  ctx.beginPath();
+  ctx.moveTo(-R*1.2, surface+wob);
+  ctx.quadraticCurveTo(0, surface-wob*2, R*1.2, surface+wob);
+  ctx.lineTo(R*1.2, R*1.3); ctx.lineTo(-R*1.2, R*1.3);
+  ctx.closePath();
+  ctx.fillStyle = e.body; ctx.fill();
+  // kabarcıklar
+  for(let i=0;i<3;i++){
+    const cyc=(t0*0.8+i*0.33)%1;
+    const bx=(i-1)*R*0.3;
+    const by=R*0.9 - cyc*(R*0.9-surface);
+    if(by>surface){
+      ctx.beginPath(); ctx.arc(bx,by,1.4,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.fill();
+    }
+  }
+  ctx.restore();
+
+  // cam parlaması
+  ctx.beginPath();
+  ctx.moveTo(-R*0.5, -R*0.1); ctx.quadraticCurveTo(-R*0.66, R*0.35, -R*0.42, R*0.65);
+  ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=2; ctx.stroke();
+
+  // mantar tıpa
+  ctx.fillStyle='#a9763f'; ctx.strokeStyle='#5c3a1c'; ctx.lineWidth=1.6;
+  roundedRect(-R*0.34, -R*1.3, R*0.68, R*0.42, 2); ctx.fill(); ctx.stroke();
+
+  // gözler
+  const eyeY = R*0.28;
+  [-1,1].forEach(s=>{
+    ctx.beginPath(); ctx.arc(s*R*0.28, eyeY, R*0.16, 0, Math.PI*2);
+    ctx.fillStyle='#fff'; ctx.fill();
+    ctx.strokeStyle='#1e4a34'; ctx.lineWidth=1.2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(s*R*0.28+s*0.8, eyeY+0.8, R*0.07, 0, Math.PI*2);
+    ctx.fillStyle='#1e4a34'; ctx.fill();
+  });
+
+  ctx.restore();
+
+  // can barı
+  const w=R*2.1;
+  ctx.save();
+  ctx.translate(e.x, e.y + Math.abs(bob));
+  ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(-w/2,-R-14,w,4);
+  ctx.fillStyle='#7fe3b4'; ctx.fillRect(-w/2,-R-14,w*(e.hp/e.maxHp),4);
+  ctx.restore();
+}
+
+/* Kırılan şişelerin bıraktığı iyileştirme birikintisi */
+function drawHealZones(){
+  if(!healZones || !healZones.length) return;
+  const t0 = performance.now()/1000;
+  ctx.save();
+  healZones.forEach(z=>{
+    // Ömrü dolarken soluklaşsın
+    const fade = Math.min(1, z.life / 3);      // son 3 sn'de sön
+    const R = z.r;
+
+    const g = ctx.createRadialGradient(z.x,z.y,R*0.15,z.x,z.y,R);
+    g.addColorStop(0, 'rgba(140,240,190,'+(0.30*fade)+')');
+    g.addColorStop(0.7,'rgba(90,205,150,'+(0.20*fade)+')');
+    g.addColorStop(1, 'rgba(60,160,115,'+(0.05*fade)+')');
+    ctx.beginPath(); ctx.arc(z.x,z.y,R,0,Math.PI*2);
+    ctx.fillStyle=g; ctx.fill();
+
+    // kenar halkası
+    ctx.beginPath(); ctx.arc(z.x,z.y,R,0,Math.PI*2);
+    ctx.strokeStyle='rgba(170,250,205,'+(0.5*fade)+')';
+    ctx.lineWidth=2; ctx.setLineDash([6,5]); ctx.lineDashOffset=t0*10;
+    ctx.stroke(); ctx.setLineDash([]);
+
+    // yükselen kabarcıklar
+    for(let i=0;i<7;i++){
+      const cyc = (t0*0.55 + i*0.14) % 1;
+      const ang = i*(Math.PI*2/7) + t0*0.3;
+      const rr = R*0.65*(0.3+((i*0.17)%1)*0.7);
+      const bx = z.x + Math.cos(ang)*rr;
+      const by = z.y + Math.sin(ang)*rr*0.6 - cyc*16;
+      ctx.beginPath(); ctx.arc(bx,by,1.6*(1-cyc*0.5),0,Math.PI*2);
+      ctx.fillStyle='rgba(210,255,230,'+(0.65*(1-cyc)*fade)+')';
+      ctx.fill();
+    }
+
+    // kalan süre göstergesi (son 10 sn)
+    if(z.life <= 10){
+      ctx.font='700 11px "Baloo 2", sans-serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillStyle='rgba(200,255,225,'+(0.75*fade)+')';
+      ctx.fillText(Math.ceil(z.life)+'s', z.x, z.y);
+    }
+  });
+  ctx.restore();
+}
+
 function drawEnemy(e){
   if(e.shape==='boss'){ drawBossEnemy(e); return; }
   if(e.shape==='cube'){ drawCubeEnemy(e); return; }
+  if(e.shape==='flask'){ drawFlaskEnemy(e); return; }
   const bob = Math.sin(e.bounce)*3;
   const squash = 1 - Math.abs(Math.sin(e.bounce))*0.12;
   ctx.save();
@@ -1235,6 +1382,17 @@ function drawEnemy(e){
       ctx.lineTo(Math.cos(ang)*e.radius*0.9,Math.sin(ang)*e.radius*0.9);
       ctx.stroke();
     }
+  }
+
+  // İYİLEŞME: birikinti içindeyken yeşil parıltı ve yükselen artılar
+  if(e.healedT > 0){
+    const t0 = performance.now()/1000;
+    ctx.beginPath(); ctx.arc(0,0,e.radius+3,0,Math.PI*2);
+    ctx.fillStyle='rgba(130,240,180,0.30)'; ctx.fill();
+    ctx.font='700 10px "Baloo 2", sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle='rgba(180,255,210,0.9)';
+    ctx.fillText('+', 0, -e.radius - 6 - ((t0*20)%10));
   }
 
   // ZEHİR: yükselen yeşil kabarcıklar
@@ -1393,6 +1551,7 @@ function render(){
   // Katman sırası: boss auraları ve menzil halkaları zeminde,
   // sonra düşmanlar, en üstte kuleler — kuleler arkada kalmasın.
   enemies.forEach(drawBossAura);
+  drawHealZones();          // zeminde: birikintiler düşmanların altında
   towers.forEach(drawTowerRange);
   enemies.forEach(drawEnemy);
   towers.forEach(drawTower);

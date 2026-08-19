@@ -17,6 +17,11 @@ const ENEMY_TYPES = {
               /* Nesil başına hız çarpanı (taban hıza göre):
                  1. küçülme +%50, 2. küçülme +%100, 3. küçülme +%150 */
               splitSpeedMults:[1.5, 2.0, 2.5] },
+  /* ŞİŞE — öldüğünde kırılır ve yere dökülen sıvı, uzun süre
+     çevredeki düşmanları iyileştirir. Öncelik sırası kurmayı
+     zorunlu kılar: önce şişeyi mi yoksa etrafındakileri mi? */
+  flask:    { hp:64, speed:0.55, radius:15, gold:11, dmgToLives:1, label:'Şişe',    shape:'flask',  body:'#7fe0a8', body2:'#2f7a52', eyes:2,
+              healRadius:58, healPerSec:7, healDuration:45 },
   /* BÜYÜK BOSS — çok yavaş, çok dayanıklı. Etrafında bir don fırtınası
      taşır: auraRadius içindeki kulelerin atış hızını auraSlow oranında
      düşürür (0.5 = %50 yavaş). */
@@ -146,6 +151,7 @@ function generateWave(level, waveIndex){
     groups.push({type:'spore', count:Math.ceil(count*0.45), interval:0.4*SPAWN_GAP});
     groups.push({type:'swarm', count:Math.ceil(count*0.3), interval:0.2*SPAWN_GAP});
     groups.push({type:'sprinter', count:Math.ceil(count*0.4), interval:0.26*SPAWN_GAP});
+    groups.push({type:'flask', count:Math.max(1,Math.floor(waveIndex/3)), interval:1.5*SPAWN_GAP});
     groups.push({type:'husk', count:Math.max(2,Math.floor(waveIndex/2)), interval:0.7*SPAWN_GAP});
     groups.push({type:'brute', count:Math.max(1,Math.floor(waveIndex/3)), interval:1.0*SPAWN_GAP});
   }
