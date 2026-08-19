@@ -319,13 +319,18 @@ function buildRoutes(rng, diff, budgetScale){
     // İkinci giriş, birincinin kuyruğuna katılır → tek çıkış
     const joinAt = Math.max(2, Math.floor(a.cells.length * 0.55));
     const joinCell = a.cells[joinAt];
-    const headBlocked = a.cells.slice(0, joinAt);   // baş kısmına girmesin
+    /* ÖNEMLİ: ikinci yol, birinci yolun SADECE birleşme hücresine
+       dokunabilir. Aksi halde kuyruk hücrelerinden geçer ve birleşme
+       sonrası aynı hücreler tekrar kullanıldığı için yol kendi
+       üzerinden geri döner (düşmanlar kavşakta ters yöne sapar). */
+    const blockAll = a.cells.filter((_,i)=> i !== joinAt);
     let b = null;
-    for(let attempt=0; attempt<14 && !b; attempt++){
+    for(let attempt=0; attempt<20 && !b; attempt++){
       const entryEdge = pick(rng, EDGES);
       const start = edgeCell(rng, entryEdge);
-      if(headBlocked.some(c=>c.cx===start.cx && c.cy===start.cy)) continue;
-      const cells = selfAvoidingWalk(rng, start, joinCell, headBlocked, 4, 14);
+      if(blockAll.some(c=>c.cx===start.cx && c.cy===start.cy)) continue;
+      if(start.cx===joinCell.cx && start.cy===joinCell.cy) continue;
+      const cells = selfAvoidingWalk(rng, start, joinCell, blockAll, 4, 14);
       if(cells) b = { cells, entryEdge };
     }
     if(b){
