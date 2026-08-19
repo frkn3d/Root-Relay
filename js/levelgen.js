@@ -128,79 +128,216 @@ function difficultyFor(levelNo){
 
 /* ---------- Yol üretimi ---------- */
 
-/* Yol omurgası stilleri. Her biri gözle ayırt edilebilir farklı bir
-   topoloji üretir — sadece rastgele koordinat değil, farklı karakter. */
-const SPINE_STYLES = ['serpentine','comb','diagonal','loop','stagger'];
+/* ============================================================
+   YOL ÜRETİMİ — ızgara üzerinde kendini kesmeyen yürüyüş
 
-function buildSpine(rng, startX, rows, opts){
-  const {W,H,MARGIN} = GEN;
-  const style = opts.style || 'serpentine';
-  const pts = [];
-  const usableW = W - MARGIN*2;
-  const rowH = (H - MARGIN*1.2) / rows;
+   Eski "zikzak omurga" yöntemi yolun kendi üzerinden geçmesini
+   yapısal olarak engelleyemiyordu. Bunun yerine saha kaba bir
+   ızgaraya bölünür ve yol, hiçbir hücreyi iki kez kullanmayan bir
+   yürüyüşle çizilir. Bu, kesişmeyi matematiksel olarak imkânsız
+   kılar; ayrıca giriş/çıkış herhangi bir kenardan olabilir.
+   ============================================================ */
 
-  let x = startX;
-  pts.push({x, y:-20});                       // ekran dışından giriş
-  pts.push({x, y:MARGIN*0.7});
+const GRID_COLS = 5;
+const GRID_ROWS = 8;
 
-  for(let r=0; r<rows; r++){
-    const y = MARGIN*0.7 + rowH*(r+1);
-    const goRight = (r % 2 === 0) ? !opts.flip : opts.flip;
+function cellCenter(cx, cy){
+  const cw = GEN.W / GRID_COLS;
+  const ch = GEN.H / GRID_ROWS;
+  return { x: cw*(cx+0.5), y: ch*(cy+0.5) };
+}
 
-    if(style === 'comb'){
-      // Derin dişler: neredeyse tam genişlik gidip geliyor
-      const target = goRight
-        ? MARGIN + usableW * rnd(rng, 0.86, 1.0)
-        : MARGIN + usableW * rnd(rng, 0.0, 0.14);
-      pts.push({x:target, y:pts[pts.length-1].y});
-      pts.push({x:target, y});
-      x = target;
-    }
-    else if(style === 'diagonal'){
-      // Çapraz basamaklar: köşeler dik değil, eğik iniş
-      const target = goRight
-        ? MARGIN + usableW * rnd(rng, 0.55, 0.92)
-        : MARGIN + usableW * rnd(rng, 0.08, 0.45);
-      const midY = pts[pts.length-1].y + (y - pts[pts.length-1].y)*0.5;
-      pts.push({x:target, y:midY});           // eğik geçiş
-      pts.push({x:target, y});
-      x = target;
-    }
-    else if(style === 'loop'){
-      // Geniş U dönüşleri: ara duraklarla yumuşak kavis
-      const target = goRight
-        ? MARGIN + usableW * rnd(rng, 0.70, 0.96)
-        : MARGIN + usableW * rnd(rng, 0.04, 0.30);
-      const midX = (x + target)/2;
-      pts.push({x:midX, y:pts[pts.length-1].y - rowH*0.18});
-      pts.push({x:target, y:pts[pts.length-1].y + rowH*0.18});
-      pts.push({x:target, y});
-      x = target;
-    }
-    else if(style === 'stagger'){
-      // Kısa, düzensiz kaydırmalar: dar ve sık kırılmalar
-      const shift = usableW * rnd(rng, 0.18, 0.42) * (goRight?1:-1);
-      let target = x + shift;
-      target = Math.max(MARGIN, Math.min(MARGIN+usableW, target));
-      pts.push({x:target, y:pts[pts.length-1].y});
-      pts.push({x:target, y:y - rowH*0.45});
-      const shift2 = usableW * rnd(rng, 0.10, 0.26) * (goRight?-1:1);
-      let t2 = Math.max(MARGIN, Math.min(MARGIN+usableW, target + shift2));
-      pts.push({x:t2, y:y - rowH*0.45});
-      pts.push({x:t2, y});
-      x = t2;
-    }
-    else { // serpentine (klasik)
-      const target = goRight
-        ? MARGIN + usableW * rnd(rng, 0.62, 0.98)
-        : MARGIN + usableW * rnd(rng, 0.02, 0.38);
-      pts.push({x:target, y:pts[pts.length-1].y});
-      pts.push({x:target, y});
-      x = target;
-    }
+/* Bir kenardan rastgele giriş/çıkış hücresi seçer */
+function edgeCell(rng, edge){
+  switch(edge){
+    case 'top':    return { cx: rndInt(rng,0,GRID_COLS-1), cy: 0 };
+    case 'bottom': return { cx: rndInt(rng,0,GRID_COLS-1), cy: GRID_ROWS-1 };
+    case 'left':   return { cx: 0,             cy: rndInt(rng,1,GRID_ROWS-2) };
+    default:       return { cx: GRID_COLS-1,   cy: rndInt(rng,1,GRID_ROWS-2) };
   }
-  pts.push({x, y:H+20});                      // ekran dışına çıkış
-  return pts;
+}
+
+/* Hücre merkezinden ekran dışına uzanan giriş/çıkış payı */
+function edgeStub(edge, p){
+  switch(edge){
+    case 'top':    return { x:p.x, y:-25 };
+    case 'bottom': return { x:p.x, y:GEN.H+25 };
+    case 'left':   return { x:-25, y:p.y };
+    default:       return { x:GEN.W+25, y:p.y };
+  }
+}
+
+/* Kendini kesmeyen yürüyüş: başlangıç hücresinden hedefe, hiçbir
+   hücreyi tekrar kullanmadan. Rastgele sıralı derinlik öncelikli
+   arama + geri izleme. blocked: başka bir yolun kapladığı hücreler. */
+function selfAvoidingWalk(rng, start, goal, blocked, minCells, maxCells){
+  const key = (c)=>c.cx+','+c.cy;
+  const blockedSet = new Set((blocked||[]).map(key));
+  const path = [];
+  const used = new Set();
+  let steps = 0;
+  const STEP_CAP = 9000;
+
+  function neighbors(c){
+    const list = [
+      {cx:c.cx+1, cy:c.cy}, {cx:c.cx-1, cy:c.cy},
+      {cx:c.cx, cy:c.cy+1}, {cx:c.cx, cy:c.cy-1},
+    ].filter(n =>
+      n.cx>=0 && n.cx<GRID_COLS && n.cy>=0 && n.cy<GRID_ROWS &&
+      !used.has(key(n)) && !blockedSet.has(key(n))
+    );
+    // Rastgele sırala (Fisher–Yates, tohumlu)
+    for(let i=list.length-1;i>0;i--){
+      const j = Math.floor(rng()*(i+1));
+      [list[i],list[j]] = [list[j],list[i]];
+    }
+    // Hedefe yaklaşanları hafifçe öne al ki yürüyüş tıkanmasın
+    list.sort((a,b)=>{
+      const da = Math.abs(a.cx-goal.cx)+Math.abs(a.cy-goal.cy);
+      const db = Math.abs(b.cx-goal.cx)+Math.abs(b.cy-goal.cy);
+      return (da-db) * (rng()<0.55 ? 1 : -1);
+    });
+    return list;
+  }
+
+  function dfs(c){
+    if(steps++ > STEP_CAP) return false;
+    path.push(c); used.add(key(c));
+
+    if(c.cx===goal.cx && c.cy===goal.cy){
+      if(path.length >= minCells) return true;
+      // Çok kısa — geri dön ve daha uzun bir rota dene
+      path.pop(); used.delete(key(c));
+      return false;
+    }
+    if(path.length >= maxCells){
+      path.pop(); used.delete(key(c));
+      return false;
+    }
+    for(const n of neighbors(c)){
+      if(dfs(n)) return true;
+    }
+    path.pop(); used.delete(key(c));
+    return false;
+  }
+
+  return dfs(start) ? path : null;
+}
+
+/* Hücre dizisini yumuşatılmış polyline'a çevirir.
+   Köşelerde küçük kırılmalar bırakır ki yol organik görünsün. */
+function cellsToPolyline(cells, entryEdge, exitEdge){
+  const pts = cells.map(c=>cellCenter(c.cx, c.cy));
+  const out = [ edgeStub(entryEdge, pts[0]) ];
+  pts.forEach(p=>out.push(p));
+  out.push(edgeStub(exitEdge, pts[pts.length-1]));
+  return out;
+}
+
+/* Rota düzenini seçer ve kesişmeyen yollar üretir. */
+function buildRoutes(rng, diff, budgetScale){
+  const scale = budgetScale === undefined ? 1 : budgetScale;
+  const r = rng();
+  let layout;
+  if(diff < 0.18)      layout = '1-1';
+  else if(diff < 0.40) layout = (r < 0.72) ? '1-1' : '2-1';
+  else if(diff < 0.65) layout = (r < 0.45) ? '1-1' : (r < 0.78 ? '2-1' : '1-2');
+  else                 layout = (r < 0.32) ? '1-1' : (r < 0.58 ? '2-1' : (r < 0.80 ? '1-2' : '2-2'));
+
+  // Çok rotalı düzenlerde her rota daha kısa olmalı ki TOPLAM uzunluk
+  // tavanı aşmasın (KURAL 1). budgetScale, tavan aşılırsa üst katman
+  // tarafından küçültülerek yeniden denenir.
+  const multi = (layout !== '1-1');
+  const lenScale = scale * (multi ? 0.62 : 1);
+
+  const minCells = Math.max(6, Math.round((8 + diff*4) * lenScale));
+  const maxCells = Math.max(minCells+2, Math.min(26, Math.round((13 + diff*9) * lenScale)));
+
+  const EDGES = ['top','bottom','left','right'];
+  const opposite = { top:'bottom', bottom:'top', left:'right', right:'left' };
+
+  /* Bir rota dener; başarısız olursa farklı kenarlarla tekrar dener. */
+  function tryRoute(blocked, forcedEntry){
+    for(let attempt=0; attempt<14; attempt++){
+      const entryEdge = forcedEntry || pick(rng, EDGES);
+      // Çıkış: karşı kenar ağırlıklı, bazen komşu kenar
+      const exitEdge = rng() < 0.65
+        ? opposite[entryEdge]
+        : pick(rng, EDGES.filter(e=>e!==entryEdge));
+      const start = edgeCell(rng, entryEdge);
+      const goal  = edgeCell(rng, exitEdge);
+      if(start.cx===goal.cx && start.cy===goal.cy) continue;
+      const cells = selfAvoidingWalk(rng, start, goal, blocked, minCells, maxCells);
+      if(cells) return { cells, entryEdge, exitEdge };
+    }
+    return null;
+  }
+
+  const paths = [];
+  const usedCells = [];
+  let entries = 1, exits = 1;
+
+  const a = tryRoute([]);
+  if(!a){
+    // Aşırı nadir: kısıtları gevşetip basit bir dikey rota üret
+    const cells = [];
+    const col = rndInt(rng, 1, GRID_COLS-2);
+    for(let cy=0; cy<GRID_ROWS; cy++) cells.push({cx:col, cy});
+    paths.push(cellsToPolyline(cells, 'top', 'bottom'));
+    return { paths, entries:1, exits:1, layout:'1-1' };
+  }
+  paths.push(cellsToPolyline(a.cells, a.entryEdge, a.exitEdge));
+  a.cells.forEach(c=>usedCells.push(c));
+
+  if(layout === '2-1'){
+    // İkinci giriş, birincinin kuyruğuna katılır → tek çıkış
+    const joinAt = Math.max(2, Math.floor(a.cells.length * 0.55));
+    const joinCell = a.cells[joinAt];
+    const headBlocked = a.cells.slice(0, joinAt);   // baş kısmına girmesin
+    let b = null;
+    for(let attempt=0; attempt<14 && !b; attempt++){
+      const entryEdge = pick(rng, EDGES);
+      const start = edgeCell(rng, entryEdge);
+      if(headBlocked.some(c=>c.cx===start.cx && c.cy===start.cy)) continue;
+      const cells = selfAvoidingWalk(rng, start, joinCell, headBlocked, 4, 14);
+      if(cells) b = { cells, entryEdge };
+    }
+    if(b){
+      const tail = a.cells.slice(joinAt+1);
+      const merged = b.cells.concat(tail);
+      paths.push(cellsToPolyline(merged, b.entryEdge, a.exitEdge));
+      entries = 2; exits = 1;
+    } else { layout = '1-1'; }
+  }
+  else if(layout === '1-2'){
+    // Ortak baş, ayrışan kuyruk → iki çıkış
+    const splitAt = Math.max(2, Math.floor(a.cells.length * 0.45));
+    const head = a.cells.slice(0, splitAt+1);
+    const tailBlocked = a.cells.slice(splitAt+1);
+    let b = null;
+    for(let attempt=0; attempt<14 && !b; attempt++){
+      const exitEdge = pick(rng, EDGES.filter(e=>e!==a.entryEdge));
+      const goal = edgeCell(rng, exitEdge);
+      if(head.some(c=>c.cx===goal.cx && c.cy===goal.cy)) continue;
+      const cells = selfAvoidingWalk(rng, head[head.length-1], goal, head.slice(0,-1).concat(tailBlocked), 4, 14);
+      if(cells) b = { cells, exitEdge };
+    }
+    if(b){
+      const merged = head.slice(0,-1).concat(b.cells);
+      paths.push(cellsToPolyline(merged, a.entryEdge, b.exitEdge));
+      entries = 1; exits = 2;
+    } else { layout = '1-1'; }
+  }
+  else if(layout === '2-2'){
+    // Tamamen ayrı ikinci rota — birinciyle hiç hücre paylaşmaz
+    const b = tryRoute(usedCells);
+    if(b){
+      paths.push(cellsToPolyline(b.cells, b.entryEdge, b.exitEdge));
+      entries = 2; exits = 2;
+    } else { layout = '1-1'; }
+  }
+
+  return { paths, entries, exits, layout, style:'grid' };
 }
 
 /* Bir polyline'ın uzunluğu */
@@ -210,76 +347,6 @@ function polyLen(pts){
   return L;
 }
 
-/* İki yolu belirli bir noktadan sonra birleştirir (2 giriş → 1 çıkış). */
-function mergeTail(pathA, pathB, mergeFrac){
-  const idx = Math.max(2, Math.floor(pathA.length * mergeFrac));
-  const tail = pathA.slice(idx);
-  // B'nin başını koru, kuyruğunu A'nınkiyle değiştir
-  const headB = pathB.slice(0, Math.max(2, Math.floor(pathB.length * mergeFrac)));
-  return headB.concat(tail);
-}
-
-/* Rota düzenini seçer ve yolları üretir.
-   Dönen: { paths:[...], entries:n, exits:n, layoutName } */
-function buildRoutes(rng, diff){
-  // Zorluk arttıkça çok girişli/çıkışlı düzenlerin olasılığı artar
-  const r = rng();
-  let layout;
-  if(diff < 0.18)      layout = '1-1';
-  else if(diff < 0.40) layout = (r < 0.72) ? '1-1' : '2-1';
-  else if(diff < 0.65) layout = (r < 0.45) ? '1-1' : (r < 0.78 ? '2-1' : '1-2');
-  else                 layout = (r < 0.32) ? '1-1' : (r < 0.58 ? '2-1' : (r < 0.80 ? '1-2' : '2-2'));
-
-  const {W,MARGIN} = GEN;
-  const rowsBase = 3 + Math.round(diff*3);            // 3..6 zikzak katı
-  const style = pick(rng, SPINE_STYLES);              // bölümün yol karakteri
-  const paths = [];
-
-  if(layout === '1-1'){
-    const rows = rowsBase + rndInt(rng,0,1);
-    paths.push(buildSpine(rng, MARGIN + (W-MARGIN*2)*rnd(rng,0.15,0.85), rows, {flip:rng()<0.5, style}));
-  }
-  else if(layout === '2-1'){
-    const rows = rowsBase;
-    const a = buildSpine(rng, MARGIN + (W-MARGIN*2)*rnd(rng,0.05,0.30), rows, {flip:false, style});
-    const b = buildSpine(rng, MARGIN + (W-MARGIN*2)*rnd(rng,0.70,0.95), rows, {flip:true, style});
-    // İkisi de aynı kuyruğu paylaşsın → tek çıkış
-    paths.push(a);
-    paths.push(mergeTail(a, b, 0.62));
-  }
-  else if(layout === '1-2'){
-    const rows = rowsBase;
-    const a = buildSpine(rng, MARGIN + (W-MARGIN*2)*rnd(rng,0.35,0.65), rows, {flip:false, style});
-    // Ortak baş, ayrışan kuyruk
-    const splitIdx = Math.max(3, Math.floor(a.length*0.5));
-    const head = a.slice(0, splitIdx);
-    const b = buildSpine(rng, head[head.length-1].x, Math.max(2, rows-1), {flip:true, style});
-    paths.push(a);
-    paths.push(head.concat(b.slice(2)));
-  }
-  else { // 2-2
-    const rows = Math.max(3, rowsBase-1);
-    paths.push(buildSpine(rng, MARGIN + (W-MARGIN*2)*rnd(rng,0.05,0.28), rows, {flip:false, style}));
-    paths.push(buildSpine(rng, MARGIN + (W-MARGIN*2)*rnd(rng,0.72,0.95), rows, {flip:true, style}));
-  }
-
-  // KURAL 1: toplam yol uzunluğu tavanı aşarsa katları azaltarak yeniden üret
-  let guard = 0;
-  while(paths.reduce((s,p)=>s+polyLen(p),0) > GEN.H*GEN.MAX_PATH_RATIO && guard < 4){
-    guard++;
-    paths.forEach((p,i)=>{
-      // Ara noktaları seyrelt (her üçüncüyü at) — uzunluğu kısaltır
-      if(p.length > 8){
-        const trimmed = p.filter((_,k)=> k<2 || k>p.length-3 || k%3!==0);
-        paths[i] = trimmed;
-      }
-    });
-  }
-
-  const entries = (layout==='2-1'||layout==='2-2') ? 2 : 1;
-  const exits   = (layout==='1-2'||layout==='2-2') ? 2 : 1;
-  return { paths, entries, exits, layout, style };
-}
 
 /* ---------- Kule noktası yerleşimi ---------- */
 
@@ -432,11 +499,23 @@ function buildWaves(rng, diff, levelNo){
 
 /* ---------- Ana üretici ---------- */
 function generateLevel(seed, levelNo){
-  const rng = makeRng(hashSeed(seed + '#' + levelNo));
   const diff = difficultyFor(levelNo);
 
-  const routes = buildRoutes(rng, diff);
-  const totalLen = routes.paths.reduce((s,p)=>s+polyLen(p), 0);
+  /* KURAL 1: toplam yol uzunluğu tavanı aşamaz.
+     Aşarsa hücre bütçesi küçültülerek yeniden üretilir. Her deneme
+     aynı tohumdan türetilir, yani sonuç yine deterministiktir. */
+  const CAP = GEN.H * GEN.MAX_PATH_RATIO;
+  const scales = [1, 0.8, 0.65, 0.5, 0.4];
+  let routes = null, totalLen = 0;
+  for(let i=0;i<scales.length;i++){
+    const rngTry = makeRng(hashSeed(seed + '#' + levelNo));
+    routes = buildRoutes(rngTry, diff, scales[i]);
+    totalLen = routes.paths.reduce((s,p)=>s+polyLen(p), 0);
+    if(totalLen <= CAP) break;
+  }
+
+  // Yerleşim ve tema için ayrı bir akış (yol denemelerinden etkilenmesin)
+  const rng = makeRng(hashSeed(seed + '#' + levelNo + '#rest'));
   const spots = placeSpots(rng, routes.paths, diff, totalLen);
   const theme = pickTheme(rng, levelNo);
   const waves = buildWaves(rng, diff, levelNo);

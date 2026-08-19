@@ -88,6 +88,18 @@ function drawPath(){
     ctx.beginPath(); pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
   });
 
+  // Kışın yol kenarlarında kar birikintisi
+  if(level.theme && level.theme.season==='winter'){
+    ctx.strokeStyle='rgba(255,255,255,0.30)'; ctx.lineWidth=46;
+    levelPaths.forEach(pts=>{
+      ctx.beginPath(); pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
+    });
+    ctx.strokeStyle=pal.fill; ctx.lineWidth=34;
+    levelPaths.forEach(pts=>{
+      ctx.beginPath(); pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
+    });
+  }
+
   // Asfaltta orta şerit çizgisi
   if(level.theme && level.theme.road==='asphalt'){
     ctx.setLineDash([14,16]);

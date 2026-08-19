@@ -82,18 +82,26 @@ function bakeBackground(theme){
   // Mevsim rengi ince bir katman olarak üstüne biner
   if(tint){
     bctx.save();
-    bctx.globalAlpha = theme.season==='winter' ? 0.14 : 0.07;
+    bctx.globalAlpha = theme.season==='winter' ? 0.34 : 0.07;
     bctx.fillStyle = tint;
     bctx.fillRect(0,0,LW,LH);
     bctx.restore();
   }
 
-  // Kışın hafif kar örtüsü
+  // Kışın belirgin kar örtüsü: beyaz yamalar + serpme kar
   if(theme && theme.season==='winter'){
-    for(let i=0;i<120;i++){
+    // Zemine oturmuş kar yamaları
+    for(let i=0;i<70;i++){
       const x=Math.random()*LW, y=Math.random()*LH;
-      bctx.beginPath(); bctx.arc(x,y,1+Math.random()*1.6,0,Math.PI*2);
-      bctx.fillStyle='rgba(255,255,255,0.22)'; bctx.fill();
+      const r=18+Math.random()*46;
+      bctx.beginPath(); bctx.ellipse(x,y,r,r*0.55,Math.random()*Math.PI,0,Math.PI*2);
+      bctx.fillStyle='rgba(255,255,255,0.16)'; bctx.fill();
+    }
+    // İnce serpme kar
+    for(let i=0;i<260;i++){
+      const x=Math.random()*LW, y=Math.random()*LH;
+      bctx.beginPath(); bctx.arc(x,y,1+Math.random()*1.8,0,Math.PI*2);
+      bctx.fillStyle='rgba(255,255,255,0.4)'; bctx.fill();
     }
   }
 }
