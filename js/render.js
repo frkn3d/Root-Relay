@@ -718,8 +718,87 @@ function drawBossEnemy(e){
   ctx.restore();
 }
 
+/* KÜP — dönen, titreyen kare düşman. Bölündükçe küçülür.
+   Kalan bölünme hakkı köşelerdeki noktalarla gösterilir. */
+function drawCubeEnemy(e){
+  const R = e.radius;
+  const flash = Math.max(0, e.flashT||0) > 0.05;
+  const spin = e.spin || 0;
+  const jitter = Math.sin((e.wobbleT||0)*5.3)*R*0.05;
+
+  ctx.save();
+  ctx.translate(e.x, e.y);
+
+  ctx.beginPath();
+  ctx.ellipse(0, R+4, R*0.8, R*0.25, 0, 0, Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,0.28)'; ctx.fill();
+
+  ctx.rotate(spin);
+  const s = R*1.55;
+
+  const g = ctx.createLinearGradient(-s/2,-s/2,s/2,s/2);
+  g.addColorStop(0, flash ? '#ffffff' : '#ffd9a8');
+  g.addColorStop(0.45, flash ? '#ffffff' : e.body);
+  g.addColorStop(1, e.body2);
+  ctx.fillStyle = g;
+  ctx.strokeStyle = '#4a2308';
+  ctx.lineWidth = Math.max(1.6, R*0.11);
+  roundedRect(-s/2+jitter, -s/2, s, s, Math.max(2, R*0.18));
+  ctx.fill(); ctx.stroke();
+
+  // yüzey çizgileri
+  ctx.strokeStyle='rgba(0,0,0,0.16)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(-s/2, -s*0.15); ctx.lineTo(s/2, -s*0.15); ctx.stroke();
+
+  // kalan bölünme hakkı: köşe noktaları
+  if(e.splitsLeft > 0){
+    const c = s/2 - R*0.22;
+    const corners = [[-c,-c],[c,-c],[-c,c],[c,c]].slice(0, e.splitsLeft+1);
+    corners.forEach(([cx,cy])=>{
+      ctx.beginPath(); ctx.arc(cx,cy,Math.max(1.2,R*0.09),0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,0.75)'; ctx.fill();
+    });
+  }
+
+  // gözler (dönüşe karşı sabit dursun ki hep bize baksın)
+  ctx.rotate(-spin);
+  const eyeR = Math.max(1.6, R*0.2);
+  const eyeY = -R*0.1;
+  [-1,1].forEach(sd=>{
+    ctx.beginPath(); ctx.arc(sd*R*0.34, eyeY, eyeR, 0, Math.PI*2);
+    ctx.fillStyle='#fff'; ctx.fill();
+    ctx.strokeStyle='#4a2308'; ctx.lineWidth=Math.max(1, R*0.06); ctx.stroke();
+    // bebek göz salınıma göre kayar — "deli" bakış
+    const px = Math.sin((e.wobbleT||0)*2.2)*eyeR*0.35;
+    ctx.beginPath(); ctx.arc(sd*R*0.34+px, eyeY+eyeR*0.12, eyeR*0.45, 0, Math.PI*2);
+    ctx.fillStyle='#2b1608'; ctx.fill();
+  });
+  // çatık kaşlar
+  if(R > 9){
+    ctx.strokeStyle='#4a2308'; ctx.lineWidth=Math.max(1.2, R*0.09);
+    ctx.beginPath(); ctx.moveTo(-R*0.62, eyeY-R*0.42); ctx.lineTo(-R*0.16, eyeY-R*0.2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(R*0.62, eyeY-R*0.42); ctx.lineTo(R*0.16, eyeY-R*0.2); ctx.stroke();
+  }
+
+  // buz etkisi
+  if(e.slowT>0){
+    ctx.beginPath(); ctx.arc(0,0,R+2,0,Math.PI*2);
+    ctx.fillStyle='rgba(180,235,255,0.35)'; ctx.fill();
+  }
+  ctx.restore();
+
+  // can barı
+  const w = R*2.1;
+  ctx.save();
+  ctx.translate(e.x, e.y);
+  ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(-w/2, -R-13, w, 4);
+  ctx.fillStyle='#7fe3b4'; ctx.fillRect(-w/2, -R-13, w*(e.hp/e.maxHp), 4);
+  ctx.restore();
+}
+
 function drawEnemy(e){
   if(e.shape==='boss'){ drawBossEnemy(e); return; }
+  if(e.shape==='cube'){ drawCubeEnemy(e); return; }
   const bob = Math.sin(e.bounce)*3;
   const squash = 1 - Math.abs(Math.sin(e.bounce))*0.12;
   ctx.save();

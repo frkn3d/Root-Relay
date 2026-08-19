@@ -277,6 +277,11 @@ function startWave(){
         gold: def.gold, dmgToLives: def.dmgToLives,
         boss: !!def.boss, label: def.label,
         auraRadius: def.auraRadius || 0, auraSlow: def.auraSlow || 0,
+        splitsLeft: def.splits || 0,
+        splitHpFactor: def.splitHpFactor || 0.4,
+        splitSizeFactor: def.splitSizeFactor || 0.4,
+        minRadius: def.minRadius || 6,
+        wobbleAmp: def.wobble || 0,
       });
       t += g.interval;
     }
@@ -355,6 +360,20 @@ function update(dt){
     const p2 = pointAtDistance(level.path, pathTotalLen, e.dist+2);
     e.x=p.x; e.y=p.y;
     e.angle = Math.atan2(p2.y-p.y, p2.x-p.x);
+
+    // "Deli gibi" hareket: yolun eksenine dik, düzensiz salınım.
+    // İki farklı frekansın toplamı düzenli bir sinüsten çok daha
+    // öngörülemez görünür.
+    if(e.wobbleAmp){
+      e.wobbleT = (e.wobbleT||0) + dt*(3.2 + (e.wobbleSeed||0));
+      const off = Math.sin(e.wobbleT)*0.65 + Math.sin(e.wobbleT*2.7 + 1.3)*0.35;
+      const len = Math.hypot(p2.x-p.x, p2.y-p.y) || 1;
+      const nx = -(p2.y-p.y)/len, ny = (p2.x-p.x)/len;   // dik vektör
+      e.x += nx*off*e.wobbleAmp;
+      e.y += ny*off*e.wobbleAmp;
+      e.spin = (e.spin||0) + dt*(2.5 + off*2);
+    }
+
     e.bounce += dt*e.speed*slowMult*9;
     if(e.flashT>0) e.flashT -= dt*3;
     if(e.slowT>0) e.slowT -= dt;
@@ -452,11 +471,39 @@ function update(dt){
 
   const dead = enemies.filter(e=>e.hp<=0);
   if(dead.length){
+    const spawned = [];
     dead.forEach(e=>{
       gold += e.gold;
       playCoin();
+
+      // KÜP BÖLÜNMESİ: ölen küp, canının ve boyutunun %40'ı kadar
+      // iki yavru bırakır. splitsLeft bitene kadar zincir devam eder.
+      if(e.splitsLeft > 0){
+        for(let k=0;k<2;k++){
+          const childHp = Math.max(1, e.maxHp * e.splitHpFactor);
+          spawned.push({
+            ...e,
+            hp: childHp, maxHp: childHp,
+            radius: Math.max(e.minRadius, e.radius * e.splitSizeFactor),
+            speed: e.speed * 1.12,               // küçüldükçe biraz hızlanır
+            gold: Math.max(1, Math.round(e.gold*0.5)),
+            splitsLeft: e.splitsLeft - 1,
+            // yavrular yolda hafifçe ayrışsın ve farklı salınsın
+            dist: Math.max(0, e.dist + (k===0 ? -10 : 10)),
+            wobbleSeed: Math.random()*2.5,
+            wobbleT: Math.random()*6,
+            spin: Math.random()*Math.PI,
+            flashT: 0, slowT: e.slowT, slowFactor: e.slowFactor,
+            bounce: Math.random()*10,
+          });
+        }
+        for(let i=0;i<10;i++){
+          const ang=(i/10)*Math.PI*2;
+          particles.push({x:e.x,y:e.y,vx:Math.cos(ang)*100,vy:Math.sin(ang)*100,life:0.35,color:e.body});
+        }
+      }
+
       if(e.boss){
-        // Boss ölümü: büyük patlama, sarsıntı ve bildirim
         shake = Math.min(shake+14, 20);
         showWaveToast(e.label + ' Yıkıldı!'); // ui.js
         for(let i=0;i<60;i++){
@@ -471,6 +518,7 @@ function update(dt){
       }
     });
     enemies = enemies.filter(e=>e.hp>0);
+    if(spawned.length) enemies.push(...spawned);
     document.getElementById('goldVal').textContent = gold;
   }
 
