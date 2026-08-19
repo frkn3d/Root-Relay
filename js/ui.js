@@ -179,7 +179,7 @@ function renderSeedPreview(){
     const b = BIOMES[lv.theme.biome].name;
     const s = SEASONS[lv.theme.season].name;
     const r = ROAD_TYPES[lv.theme.road].name;
-    return `<b>#${n}</b> ${s} · ${b} · ${r} yol · ${lv.entries}g/${lv.exits}ç · ${lv.waveCount} dalga · ${lv.spots.length} nokta`;
+    return `<b>#${n}</b> ${s} · ${b} · ${r} · ${lv.style} · ${lv.archetype.name} · ${lv.entries}g/${lv.exits}ç · ${lv.waveCount} dalga`;
   });
   el.innerHTML = lines.join('<br>');
 }

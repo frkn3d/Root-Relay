@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#12261b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
 <title>Root & Relay — Tower Defense</title>
-<link rel="stylesheet" href="css/style.css?v=53">
+<link rel="stylesheet" href="css/style.css?v=54">
 </head>
 <body class="in-menu">
 <div class="wrap">
@@ -53,12 +53,9 @@
           <p class="seed-info">Bir tohum (seed) gir. Aynı tohum her zaman aynı 1000 bölümü üretir.</p>
           <div class="seed-entry">
             <input class="seed-input" id="seedInput" type="text" maxlength="24" placeholder="tohum yaz…" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
-            <button class="seed-ok" id="seedOkBtn" title="Onayla">✓</button>
+            <button class="seed-ok" id="seedOkBtn" title="Gir">✓</button>
           </div>
-          <div class="seed-row">
-            <button class="menu-btn" id="seedRandomBtn">🎲 Rastgele</button>
-            <button class="menu-btn primary" id="seedGoBtn">Bölümleri Gör →</button>
-          </div>
+          <button class="menu-btn" id="seedRandomBtn" style="max-width:300px;">🎲 Rastgele Tohum</button>
           <div class="seed-preview" id="seedPreview"></div>
           <button class="menu-btn back" data-back>← Geri</button>
         </div>
@@ -189,13 +186,13 @@
 </div>
 
 <!-- Sıra önemli: config -> levelgen -> progress -> audio -> engine -> render -> ui -> main -->
-<script src="js/config.js?v=53"></script>
-<script src="js/levelgen.js?v=53"></script>
-<script src="js/progress.js?v=53"></script>
-<script src="js/audio.js?v=53"></script>
-<script src="js/engine.js?v=53"></script>
-<script src="js/render.js?v=53"></script>
-<script src="js/ui.js?v=53"></script>
-<script src="js/main.js?v=53"></script>
+<script src="js/config.js?v=54"></script>
+<script src="js/levelgen.js?v=54"></script>
+<script src="js/progress.js?v=54"></script>
+<script src="js/audio.js?v=54"></script>
+<script src="js/engine.js?v=54"></script>
+<script src="js/render.js?v=54"></script>
+<script src="js/ui.js?v=54"></script>
+<script src="js/main.js?v=54"></script>
 </body>
 </html>

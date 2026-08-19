@@ -278,10 +278,6 @@ document.getElementById('seedOkBtn').addEventListener('pointerup', ()=>{
   document.getElementById('seedInput').blur();
   openGenLevelList();
 });
-document.getElementById('seedGoBtn').addEventListener('pointerup', ()=>{
-  document.getElementById('seedInput').blur();
-  openGenLevelList();
-});
 
 function openGenLevelList(){
   playMenuTap();

@@ -128,9 +128,13 @@ function difficultyFor(levelNo){
 
 /* ---------- Yol üretimi ---------- */
 
-/* Bir omurga (spine) üretir: yukarıdan aşağı zikzak çizen polyline. */
+/* Yol omurgası stilleri. Her biri gözle ayırt edilebilir farklı bir
+   topoloji üretir — sadece rastgele koordinat değil, farklı karakter. */
+const SPINE_STYLES = ['serpentine','comb','diagonal','loop','stagger'];
+
 function buildSpine(rng, startX, rows, opts){
   const {W,H,MARGIN} = GEN;
+  const style = opts.style || 'serpentine';
   const pts = [];
   const usableW = W - MARGIN*2;
   const rowH = (H - MARGIN*1.2) / rows;
@@ -141,14 +145,59 @@ function buildSpine(rng, startX, rows, opts){
 
   for(let r=0; r<rows; r++){
     const y = MARGIN*0.7 + rowH*(r+1);
-    // Yatay sıçrama: sağ/sol uçlara doğru salın
-    const goRight = (r % 2 === 0) ? (opts.flip ? false : true) : (opts.flip ? true : false);
-    const target = goRight
-      ? MARGIN + usableW * rnd(rng, 0.62, 0.98)
-      : MARGIN + usableW * rnd(rng, 0.02, 0.38);
-    pts.push({x:target, y:pts[pts.length-1].y});   // yatay kol
-    pts.push({x:target, y});                       // dikey iniş
-    x = target;
+    const goRight = (r % 2 === 0) ? !opts.flip : opts.flip;
+
+    if(style === 'comb'){
+      // Derin dişler: neredeyse tam genişlik gidip geliyor
+      const target = goRight
+        ? MARGIN + usableW * rnd(rng, 0.86, 1.0)
+        : MARGIN + usableW * rnd(rng, 0.0, 0.14);
+      pts.push({x:target, y:pts[pts.length-1].y});
+      pts.push({x:target, y});
+      x = target;
+    }
+    else if(style === 'diagonal'){
+      // Çapraz basamaklar: köşeler dik değil, eğik iniş
+      const target = goRight
+        ? MARGIN + usableW * rnd(rng, 0.55, 0.92)
+        : MARGIN + usableW * rnd(rng, 0.08, 0.45);
+      const midY = pts[pts.length-1].y + (y - pts[pts.length-1].y)*0.5;
+      pts.push({x:target, y:midY});           // eğik geçiş
+      pts.push({x:target, y});
+      x = target;
+    }
+    else if(style === 'loop'){
+      // Geniş U dönüşleri: ara duraklarla yumuşak kavis
+      const target = goRight
+        ? MARGIN + usableW * rnd(rng, 0.70, 0.96)
+        : MARGIN + usableW * rnd(rng, 0.04, 0.30);
+      const midX = (x + target)/2;
+      pts.push({x:midX, y:pts[pts.length-1].y - rowH*0.18});
+      pts.push({x:target, y:pts[pts.length-1].y + rowH*0.18});
+      pts.push({x:target, y});
+      x = target;
+    }
+    else if(style === 'stagger'){
+      // Kısa, düzensiz kaydırmalar: dar ve sık kırılmalar
+      const shift = usableW * rnd(rng, 0.18, 0.42) * (goRight?1:-1);
+      let target = x + shift;
+      target = Math.max(MARGIN, Math.min(MARGIN+usableW, target));
+      pts.push({x:target, y:pts[pts.length-1].y});
+      pts.push({x:target, y:y - rowH*0.45});
+      const shift2 = usableW * rnd(rng, 0.10, 0.26) * (goRight?-1:1);
+      let t2 = Math.max(MARGIN, Math.min(MARGIN+usableW, target + shift2));
+      pts.push({x:t2, y:y - rowH*0.45});
+      pts.push({x:t2, y});
+      x = t2;
+    }
+    else { // serpentine (klasik)
+      const target = goRight
+        ? MARGIN + usableW * rnd(rng, 0.62, 0.98)
+        : MARGIN + usableW * rnd(rng, 0.02, 0.38);
+      pts.push({x:target, y:pts[pts.length-1].y});
+      pts.push({x:target, y});
+      x = target;
+    }
   }
   pts.push({x, y:H+20});                      // ekran dışına çıkış
   return pts;
@@ -183,34 +232,35 @@ function buildRoutes(rng, diff){
 
   const {W,MARGIN} = GEN;
   const rowsBase = 3 + Math.round(diff*3);            // 3..6 zikzak katı
+  const style = pick(rng, SPINE_STYLES);              // bölümün yol karakteri
   const paths = [];
 
   if(layout === '1-1'){
     const rows = rowsBase + rndInt(rng,0,1);
-    paths.push(buildSpine(rng, MARGIN + (W-MARGIN*2)*rnd(rng,0.15,0.85), rows, {flip:rng()<0.5}));
+    paths.push(buildSpine(rng, MARGIN + (W-MARGIN*2)*rnd(rng,0.15,0.85), rows, {flip:rng()<0.5, style}));
   }
   else if(layout === '2-1'){
     const rows = rowsBase;
-    const a = buildSpine(rng, MARGIN + (W-MARGIN*2)*rnd(rng,0.05,0.30), rows, {flip:false});
-    const b = buildSpine(rng, MARGIN + (W-MARGIN*2)*rnd(rng,0.70,0.95), rows, {flip:true});
+    const a = buildSpine(rng, MARGIN + (W-MARGIN*2)*rnd(rng,0.05,0.30), rows, {flip:false, style});
+    const b = buildSpine(rng, MARGIN + (W-MARGIN*2)*rnd(rng,0.70,0.95), rows, {flip:true, style});
     // İkisi de aynı kuyruğu paylaşsın → tek çıkış
     paths.push(a);
     paths.push(mergeTail(a, b, 0.62));
   }
   else if(layout === '1-2'){
     const rows = rowsBase;
-    const a = buildSpine(rng, MARGIN + (W-MARGIN*2)*rnd(rng,0.35,0.65), rows, {flip:false});
+    const a = buildSpine(rng, MARGIN + (W-MARGIN*2)*rnd(rng,0.35,0.65), rows, {flip:false, style});
     // Ortak baş, ayrışan kuyruk
     const splitIdx = Math.max(3, Math.floor(a.length*0.5));
     const head = a.slice(0, splitIdx);
-    const b = buildSpine(rng, head[head.length-1].x, Math.max(2, rows-1), {flip:true});
+    const b = buildSpine(rng, head[head.length-1].x, Math.max(2, rows-1), {flip:true, style});
     paths.push(a);
     paths.push(head.concat(b.slice(2)));
   }
   else { // 2-2
     const rows = Math.max(3, rowsBase-1);
-    paths.push(buildSpine(rng, MARGIN + (W-MARGIN*2)*rnd(rng,0.05,0.28), rows, {flip:false}));
-    paths.push(buildSpine(rng, MARGIN + (W-MARGIN*2)*rnd(rng,0.72,0.95), rows, {flip:true}));
+    paths.push(buildSpine(rng, MARGIN + (W-MARGIN*2)*rnd(rng,0.05,0.28), rows, {flip:false, style}));
+    paths.push(buildSpine(rng, MARGIN + (W-MARGIN*2)*rnd(rng,0.72,0.95), rows, {flip:true, style}));
   }
 
   // KURAL 1: toplam yol uzunluğu tavanı aşarsa katları azaltarak yeniden üret
@@ -228,7 +278,7 @@ function buildRoutes(rng, diff){
 
   const entries = (layout==='2-1'||layout==='2-2') ? 2 : 1;
   const exits   = (layout==='1-2'||layout==='2-2') ? 2 : 1;
-  return { paths, entries, exits, layout };
+  return { paths, entries, exits, layout, style };
 }
 
 /* ---------- Kule noktası yerleşimi ---------- */
@@ -324,6 +374,37 @@ function pickTheme(rng, levelNo){
   return { season, biome, road };
 }
 
+/* ---- Dalga arketipleri ----
+   Aynı düşman havuzundan bile farklı "his" üretmek için bölüme bir
+   karakter atanır. Sadece sayılar değil, kompozisyonun ağırlık merkezi
+   ve ritmi değişir. */
+const WAVE_ARCHETYPES = [
+  { id:'dengeli',  name:'Dengeli',
+    shares:{spore:0.42, swarm:0.34, sprinter:0.28, husk:0.16, brute:0.12}, pace:1.00 },
+  { id:'akin',     name:'Akın',            // çok sayıda küçük, hızlı akış
+    shares:{spore:0.30, swarm:0.95, sprinter:0.55, husk:0.05, brute:0.03}, pace:0.62 },
+  { id:'kusatma',  name:'Kuşatma',         // az sayıda ağır, yavaş baskı
+    shares:{spore:0.14, swarm:0.08, sprinter:0.10, husk:0.55, brute:0.42}, pace:1.65 },
+  { id:'kosu',     name:'Koşu',            // hız odaklı
+    shares:{spore:0.18, swarm:0.30, sprinter:0.95, husk:0.10, brute:0.06}, pace:0.70 },
+  { id:'kalabalik',name:'Kalabalık',       // ekranı dolduran yığın
+    shares:{spore:0.85, swarm:0.75, sprinter:0.30, husk:0.14, brute:0.08}, pace:0.75 },
+  { id:'zirhli',   name:'Zırhlı',          // dayanıklılık sınavı
+    shares:{spore:0.20, swarm:0.15, sprinter:0.14, husk:0.70, brute:0.22}, pace:1.35 },
+  { id:'dalgali',  name:'Dalgalı',         // gruplar arası belirgin boşluk
+    shares:{spore:0.50, swarm:0.45, sprinter:0.35, husk:0.22, brute:0.16}, pace:1.45 },
+];
+
+function pickArchetype(rng, diff){
+  // Zor arketipler ancak zorluk yeterince yükselince açılır
+  const pool = WAVE_ARCHETYPES.filter(a=>{
+    if(a.id==='kusatma' || a.id==='zirhli') return diff > 0.32;
+    if(a.id==='kosu') return diff > 0.16;
+    return true;
+  });
+  return pick(rng, pool);
+}
+
 /* ---------- Dalga üretimi ---------- */
 function buildWaves(rng, diff, levelNo){
   // KURAL 3: ilk bölümler az dalga
@@ -334,10 +415,19 @@ function buildWaves(rng, diff, levelNo){
   if(diff > 0.14) pool.push('sprinter');
   if(diff > 0.30) pool.push('husk');
   if(diff > 0.46) pool.push('brute');
+
+  // Havuzdan bazen bir tür çıkarılır — aynı havuz her bölümde
+  // aynı hissi vermesin diye. (En az 2 tür kalır.)
+  if(pool.length >= 4 && rng() < 0.35){
+    const dropIdx = rndInt(rng, 1, pool.length-2);   // ilk ve son korunur
+    pool.splice(dropIdx, 1);
+  }
+
+  const archetype = pickArchetype(rng, diff);
   const allowCube = diff > 0.34;
   const allowBoss = diff > 0.55;
 
-  return { waveCount, pool, allowCube, allowBoss };
+  return { waveCount, pool, allowCube, allowBoss, archetype };
 }
 
 /* ---------- Ana üretici ---------- */
@@ -363,6 +453,7 @@ function generateLevel(seed, levelNo){
     difficulty01: diff,
     theme,
     layout: routes.layout,
+    style: routes.style,
     entries: routes.entries,
     exits: routes.exits,
     paths: routes.paths,
@@ -370,6 +461,7 @@ function generateLevel(seed, levelNo){
     waveCount: waves.waveCount,
     startGold, startLives,
     enemyPool: waves.pool,
+    archetype: waves.archetype,
     allowCube: waves.allowCube,
     allowBoss: waves.allowBoss,
     // Klasik bölümlerle uyum için zorluk parametreleri
@@ -410,16 +502,18 @@ function generateWaveForGenerated(level, waveIndex){
   }
 
   const mult = 1 + waveIndex*0.16;
+  const arch = level.archetype || WAVE_ARCHETYPES[0];
   const count = Math.round((p.countBase + waveIndex*p.countGrowth) * mult * 0.55);
   const groups = [];
   const pool = level.enemyPool;
 
-  // Ağırlıklı dağıtım: erken tipler daha kalabalık
-  const shares = { spore:0.42, swarm:0.34, sprinter:0.28, husk:0.16, brute:0.12 };
+  // Arketip, hangi türün ağır basacağını ve ritmi belirler
+  const baseIntervals = { swarm:0.40, sprinter:0.75, spore:0.75, husk:1.20, brute:1.70 };
   pool.forEach(type=>{
-    const c = Math.max(1, Math.round(count * (shares[type]||0.2)));
-    const interval = (type==='swarm') ? 0.4 : (type==='brute' ? 1.7 : (type==='husk' ? 1.2 : 0.75));
-    groups.push({type, count:c, interval});
+    const share = arch.shares[type] !== undefined ? arch.shares[type] : 0.2;
+    const c = Math.max(1, Math.round(count * share));
+    const interval = (baseIntervals[type] || 0.8) * arch.pace;
+    groups.push({type, count:c, interval:Math.round(interval*100)/100});
   });
   return groups;
 }
