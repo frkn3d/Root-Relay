@@ -74,9 +74,22 @@ if(window.ResizeObserver){
 }
 
 function loop(now){
-  const dt = Math.min((now-lastTime)/1000, 0.05) * gameSpeed;
+  const raw = Math.min((now-lastTime)/1000, 0.05);
   lastTime = now;
-  if(!paused) update(dt);
+  if(!paused){
+    // Yüksek hızlarda tek karede büyük dt sıçraması, düşmanların
+    // kule menzillerini atlamasına yol açar. Bu yüzden simülasyon
+    // sabit tavanlı alt adımlara bölünerek çalıştırılır.
+    let remaining = raw * gameSpeed;
+    const MAX_STEP = 0.034;
+    let guard = 0;
+    while(remaining > 0 && guard < 8){
+      const step = Math.min(remaining, MAX_STEP);
+      update(step);
+      remaining -= step;
+      guard++;
+    }
+  }
   render();
   requestAnimationFrame(loop);
 }

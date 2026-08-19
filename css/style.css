@@ -371,6 +371,12 @@ canvas{
   border-color:#08211a;
   box-shadow:0 2px 0 #0e3d31;
 }
+.speed-btn.turbo{
+  background:linear-gradient(180deg, #ff9f43, #c9541a);
+  color:#2a1408;
+  border-color:#0a0704;
+  box-shadow:0 2px 0 #7a3010;
+}
 
 .wave-btn{
   flex:1 1 auto; min-width:0;

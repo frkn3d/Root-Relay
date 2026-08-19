@@ -214,12 +214,15 @@ function confirmSellTower(){
   closeTowerPanel();
 }
 
+const SPEED_STEPS = [1, 2, 4];
 function toggleSpeed(){
-  gameSpeed = gameSpeed===1 ? 2 : 1;
+  const idx = SPEED_STEPS.indexOf(gameSpeed);
+  gameSpeed = SPEED_STEPS[(idx + 1) % SPEED_STEPS.length];
   playClick();
   const btn = document.getElementById('speedBtn');
   btn.textContent = gameSpeed+'×';
-  btn.classList.toggle('active', gameSpeed===2);
+  btn.classList.toggle('active', gameSpeed === 2);
+  btn.classList.toggle('turbo', gameSpeed >= 4);
 }
 
 function loadLevel(idx){
