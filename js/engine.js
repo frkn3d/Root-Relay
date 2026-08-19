@@ -16,38 +16,112 @@ setupCanvasDPR();
 window.addEventListener('resize', setupCanvasDPR);
 window.addEventListener('orientationchange', ()=>setTimeout(setupCanvasDPR,200));
 
-/* ---- Arka plan çim dokusu (bir kez üretilir) ---- */
+/* ---- Arka plan dokusu ----
+   Tema (mevsim + bitki örtüsü) değiştiğinde yeniden pişirilir.
+   Her karede yeniden çizmek pahalı olurdu; bir kez üretilip
+   önbelleğe alınır. */
 const bgCanvas = document.createElement('canvas');
 bgCanvas.width = LW; bgCanvas.height = LH;
-(function bakeGrass(){
+let bakedThemeKey = null;
+
+function bakeBackground(theme){
   const bctx = bgCanvas.getContext('2d');
+  // Varsayılan (klasik bölümler): orman/ilkbahar
+  let c1='#2f5233', c2='#213b26', decor='tree', density=1.0, tint=null;
+
+  if(theme && typeof BIOMES!=='undefined' && BIOMES[theme.biome]){
+    const b = BIOMES[theme.biome];
+    const pair = (b.base[theme.season] || b.base.spring);
+    c1 = pair[0]; c2 = pair[1];
+    decor = b.decor; density = b.decorDensity;
+    tint = (SEASONS[theme.season]||{}).tint;
+  }
+
   const g = bctx.createLinearGradient(0,0,0,LH);
-  g.addColorStop(0,'#2f5233'); g.addColorStop(1,'#213b26');
+  g.addColorStop(0,c1); g.addColorStop(1,c2);
   bctx.fillStyle = g; bctx.fillRect(0,0,LW,LH);
+
+  // Yumuşak leke katmanı (derinlik hissi)
   for(let i=0;i<160;i++){
     const x=Math.random()*LW, y=Math.random()*LH, r=14+Math.random()*40;
     bctx.beginPath(); bctx.arc(x,y,r,0,Math.PI*2);
     bctx.fillStyle = Math.random()>0.5 ? 'rgba(255,255,255,0.025)' : 'rgba(0,0,0,0.05)';
     bctx.fill();
   }
-  for(let i=0;i<70;i++){
+
+  // Bitki örtüsüne özgü dekor
+  const n = Math.round(70*density);
+  for(let i=0;i<n;i++){
     const x=Math.random()*LW, y=Math.random()*LH;
-    bctx.beginPath();
-    bctx.ellipse(x,y,3,7,Math.random()*Math.PI,0,Math.PI*2);
-    bctx.fillStyle='rgba(20,50,25,0.35)'; bctx.fill();
+    if(decor==='tree'){
+      bctx.beginPath(); bctx.ellipse(x,y,3,7,Math.random()*Math.PI,0,Math.PI*2);
+      bctx.fillStyle='rgba(20,50,25,0.35)'; bctx.fill();
+    } else if(decor==='rock'){
+      bctx.beginPath(); bctx.ellipse(x,y,4+Math.random()*4,3+Math.random()*2,0,0,Math.PI*2);
+      bctx.fillStyle='rgba(0,0,0,0.18)'; bctx.fill();
+    } else if(decor==='bush'){
+      bctx.beginPath(); bctx.arc(x,y,3+Math.random()*3,0,Math.PI*2);
+      bctx.fillStyle='rgba(30,60,25,0.30)'; bctx.fill();
+    } else if(decor==='reed'){
+      bctx.beginPath(); bctx.moveTo(x,y); bctx.lineTo(x+ (Math.random()-0.5)*4, y-8-Math.random()*6);
+      bctx.strokeStyle='rgba(25,55,35,0.35)'; bctx.lineWidth=1.4; bctx.stroke();
+    } else { // grass
+      bctx.beginPath(); bctx.moveTo(x,y); bctx.lineTo(x+1.5, y-5);
+      bctx.strokeStyle='rgba(80,80,30,0.25)'; bctx.lineWidth=1.2; bctx.stroke();
+    }
   }
+
+  // Serpiştirilmiş taşlar
   for(let i=0;i<10;i++){
     const x=Math.random()*LW, y=Math.random()*LH, r=5+Math.random()*6;
     bctx.beginPath(); bctx.ellipse(x,y,r,r*0.6,0,0,Math.PI*2);
     bctx.fillStyle='rgba(140,140,120,0.5)'; bctx.fill();
     bctx.strokeStyle='rgba(0,0,0,0.3)'; bctx.lineWidth=1; bctx.stroke();
   }
-})();
+
+  // Mevsim rengi ince bir katman olarak üstüne biner
+  if(tint){
+    bctx.save();
+    bctx.globalAlpha = theme.season==='winter' ? 0.14 : 0.07;
+    bctx.fillStyle = tint;
+    bctx.fillRect(0,0,LW,LH);
+    bctx.restore();
+  }
+
+  // Kışın hafif kar örtüsü
+  if(theme && theme.season==='winter'){
+    for(let i=0;i<120;i++){
+      const x=Math.random()*LW, y=Math.random()*LH;
+      bctx.beginPath(); bctx.arc(x,y,1+Math.random()*1.6,0,Math.PI*2);
+      bctx.fillStyle='rgba(255,255,255,0.22)'; bctx.fill();
+    }
+  }
+}
+
+/* Tema değiştiyse arka planı yeniden üret */
+function ensureBackground(){
+  const key = level && level.theme
+    ? (level.theme.season+'|'+level.theme.biome)
+    : 'default';
+  if(key === bakedThemeKey) return;
+  bakedThemeKey = key;
+  bakeBackground(level ? level.theme : null);
+}
 
 let currentLevelIdx = 0;
 let level = LEVELS[0];
-let pathTotalLen = 0;
-let pathDecor = [];
+let pathTotalLen = 0;      // en uzun yolun uzunluğu (geriye dönük uyum)
+let pathDecor = [];        // yol başına dekor dizileri
+let levelPaths = [];       // [[{x,y}...], ...] — bir veya daha fazla rota
+let pathLens = [];         // her rotanın uzunluğu
+
+/* Bir bölümün rotalarını normalize eder: hem tek yollu (level.path)
+   hem çok yollu (level.paths) tanımları aynı biçime getirir. */
+function levelRoutes(lv){
+  if(lv.paths && lv.paths.length) return lv.paths;
+  if(lv.path) return [lv.path];
+  return [];
+}
 
 function computePathLength(path){
   let len=0;
@@ -348,11 +422,25 @@ function confirmBuild(){
   closeBuildConfirm();
 }
 
+/* Üretilmiş (prosedürel) bir bölümü yükleyip oyunu başlatır.
+   LEVELS dizisine dokunmaz; geçici bir bölüm nesnesi kullanır. */
+let generatedLevel = null;
+function startGeneratedLevel(seed, levelNo){
+  generatedLevel = generateLevel(seed, levelNo);   // levelgen.js
+  loadLevel(-1);                                    // -1 = üretilmiş bölüm
+  closeStartScreen();                               // ui.js
+}
+
 function loadLevel(idx){
   currentLevelIdx = idx;
-  level = LEVELS[idx];
-  pathTotalLen = computePathLength(level.path);
-  pathDecor = buildPathDecor(level.path, pathTotalLen);
+  // idx === -1 ise prosedürel üretilmiş bölüm oynanıyor demektir
+  level = (idx === -1 && generatedLevel) ? generatedLevel : LEVELS[idx];
+  if(!level) return;
+  if(idx !== -1) generatedLevel = null;
+  levelPaths = levelRoutes(level);
+  pathLens = levelPaths.map(p=>computePathLength(p));
+  pathTotalLen = pathLens.length ? Math.max(...pathLens) : 0;
+  pathDecor = levelPaths.map((p,i)=>buildPathDecor(p, pathLens[i]));
   spots = level.spots.map(s=>({x:s.x,y:s.y,occ:null}));
   gold = level.startGold;
   lives = level.startLives;
@@ -407,15 +495,21 @@ function startWave(){
   if(waveActive||gameOver||gameWon||paused) return;
   waveIndex++;
   document.getElementById('waveVal').textContent = waveIndex;
-  const groups = generateWave(level, waveIndex);
+  const groups = level.generated
+    ? generateWaveForGenerated(level, waveIndex)   // levelgen.js
+    : generateWave(level, waveIndex);              // config.js
   const mult = statMultipliers(level, waveIndex);
   spawnTimeline=[]; let t=0;
+  let routeCursor = 0;
+  const routeCount = Math.max(1, levelPaths.length);
   groups.forEach(g=>{
     const def = ENEMY_TYPES[g.type];
     seenEnemyTypes.add(g.type);
     for(let i=0;i<g.count;i++){
       spawnTimeline.push({
         t, type:g.type,
+        // Birden çok giriş varsa düşmanlar sırayla rotalara paylaştırılır
+        pathIdx: routeCount>1 ? (routeCursor++ % routeCount) : 0,
         hp: def.hp*mult.hp, maxHp: def.hp*mult.hp,
         speed: def.speed*mult.speed,
         radius: def.radius, body:def.body, body2:def.body2, shape:def.shape, eyes:def.eyes,
@@ -482,9 +576,16 @@ function endGame(win){
   // Kazanıldıysa ve sıradaki bölüm varsa doğrudan geçiş butonu göster
   const nextBtn = document.getElementById('nextLevelBtn');
   if(nextBtn){
-    const hasNext = win && LEVELS[currentLevelIdx+1];
+    let hasNext = false, label = '';
+    if(level.generated){
+      hasNext = win && level.levelNo < GEN.TOTAL_LEVELS;
+      label = 'Bölüm ' + (level.levelNo+1) + ' →';
+    } else {
+      hasNext = win && !!LEVELS[currentLevelIdx+1];
+      if(hasNext) label = LEVELS[currentLevelIdx+1].name + ' →';
+    }
     nextBtn.style.display = hasNext ? '' : 'none';
-    if(hasNext) nextBtn.textContent = LEVELS[currentLevelIdx+1].name + ' →';
+    if(hasNext) nextBtn.textContent = label;
   }
 }
 
@@ -512,6 +613,8 @@ function update(dt){
             wobblePhase2: Math.random()*Math.PI*2,
             spin: Math.random()*Math.PI*2,
             spinDir: Math.random()<0.5 ? -1 : 1,
+            // Birden fazla giriş varsa düşmanlar rotalara dağıtılır
+            pathIdx: entry.pathIdx || 0,
           });
         }
         else pending=true;
@@ -529,8 +632,10 @@ function update(dt){
   enemies.forEach(e=>{
     const slowMult = e.slowT>0 ? e.slowFactor : 1;
     e.dist += e.speed*slowMult*dt*60;
-    const p = pointAtDistance(level.path, pathTotalLen, e.dist);
-    const p2 = pointAtDistance(level.path, pathTotalLen, e.dist+2);
+    const myPath = levelPaths[e.pathIdx || 0] || levelPaths[0];
+    const myLen  = pathLens[e.pathIdx || 0] || pathTotalLen;
+    const p = pointAtDistance(myPath, myLen, e.dist);
+    const p2 = pointAtDistance(myPath, myLen, e.dist+2);
     e.x=p.x; e.y=p.y;
     e.angle = Math.atan2(p2.y-p.y, p2.x-p.x);
 
@@ -567,11 +672,12 @@ function update(dt){
   arcs.forEach(a=>{ a.life -= dt; });
   arcs = arcs.filter(a=>a.life > 0);
 
-  const reached = enemies.filter(e=>e.dist>=pathTotalLen);
+  const reachedEnd = e => e.dist >= (pathLens[e.pathIdx||0] || pathTotalLen);
+  const reached = enemies.filter(reachedEnd);
   if(reached.length){
     let dmg=0; reached.forEach(e=>dmg+=e.dmgToLives);
     lives-=dmg; shake=Math.min(shake+8,16);
-    enemies = enemies.filter(e=>e.dist<pathTotalLen);
+    enemies = enemies.filter(e=>!reachedEnd(e));
     document.getElementById('livesVal').textContent = Math.max(lives,0);
     if(lives<=0){ endGame(false); return; }
   }

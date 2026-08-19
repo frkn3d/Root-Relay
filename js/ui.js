@@ -147,6 +147,91 @@ function isLevelUnlocked(idx){
   return getLevelProgress(prev.id).bestStars > 0;
 }
 
+/* ============================================================
+   1000 BÖLÜM — tohum seçimi ve üretilmiş bölüm listesi
+   ============================================================ */
+let genSeed = '';
+let genPage = 0;
+const GEN_PAGE_SIZE = 50;
+
+function randomSeedText(){
+  const words = ['orman','kar','kum','tas','ates','ruzgar','koku','dal','tohum','yosun','bulut','gol'];
+  const w = words[Math.floor(Math.random()*words.length)];
+  return w + '-' + Math.floor(Math.random()*9000+1000);
+}
+
+function currentSeed(){
+  const el = document.getElementById('seedInput');
+  const v = (el && el.value.trim()) || '';
+  return v || 'root';
+}
+
+/* Tohum girildikçe ilk birkaç bölümün özetini gösterir */
+function renderSeedPreview(){
+  const el = document.getElementById('seedPreview');
+  if(!el) return;
+  const seed = currentSeed();
+  const lines = [1,2,3].map(n=>{
+    const lv = generateLevel(seed, n);      // levelgen.js
+    const b = BIOMES[lv.theme.biome].name;
+    const s = SEASONS[lv.theme.season].name;
+    const r = ROAD_TYPES[lv.theme.road].name;
+    return `<b>#${n}</b> ${s} · ${b} · ${r} yol · ${lv.entries}g/${lv.exits}ç · ${lv.waveCount} dalga · ${lv.spots.length} nokta`;
+  });
+  el.innerHTML = lines.join('<br>');
+}
+
+/* Üretilmiş bölümlerin ilerlemesi tohum bazlı saklanır */
+function genLevelKey(seed, n){ return 'gen-'+seed+'-'+n; }
+
+function isGenLevelUnlocked(seed, n){
+  if(n <= 1) return true;
+  return getLevelProgress(genLevelKey(seed, n-1)).bestStars > 0;
+}
+
+function renderGenGrid(){
+  const grid = document.getElementById('genGrid');
+  const label = document.getElementById('genPageLabel');
+  const head = document.getElementById('genHead');
+  if(!grid) return;
+
+  const seed = genSeed;
+  head.textContent = 'Tohum: ' + seed;
+
+  const start = genPage*GEN_PAGE_SIZE + 1;
+  const end = Math.min(GEN.TOTAL_LEVELS, start + GEN_PAGE_SIZE - 1);
+  label.textContent = start + '–' + end;
+  document.getElementById('genPrev').disabled = genPage === 0;
+  document.getElementById('genNext').disabled = end >= GEN.TOTAL_LEVELS;
+
+  grid.innerHTML = '';
+  for(let n=start; n<=end; n++){
+    const unlocked = isGenLevelUnlocked(seed, n);
+    const prog = getLevelProgress(genLevelKey(seed, n));
+    const diff = difficultyFor(n);           // levelgen.js
+    const dots = Math.max(1, Math.min(5, Math.round(diff*5)));
+
+    const cell = document.createElement('div');
+    cell.className = 'gen-cell' + (unlocked ? '' : ' locked');
+    let d = '';
+    for(let i=0;i<5;i++) d += `<i class="${i<dots?'on':''}"></i>`;
+    cell.innerHTML = `
+      <div class="gen-no">${n}</div>
+      <div class="gen-diff">${d}</div>
+      <div class="gen-stars">${prog.bestStars>0 ? '⭐'.repeat(prog.bestStars) : ''}</div>
+    `;
+    if(unlocked){
+      cell.addEventListener('pointerup', ()=>{
+        playMenuTap();
+        startGeneratedLevel(seed, n);
+      });
+    } else {
+      cell.addEventListener('pointerup', ()=>playError());
+    }
+    grid.appendChild(cell);
+  }
+}
+
 function renderStars(n){
   let s='';
   for(let i=0;i<3;i++) s += i<n ? '⭐' : '☆';
@@ -313,7 +398,9 @@ function renderWavePreview(){
   const el = document.getElementById('wavePreview');
   const nextIdx = waveIndex+1;
   if(nextIdx > level.waveCount){ el.innerHTML='<span>Tüm dalgalar tamamlandı 🌿</span>'; return; }
-  const groups = generateWave(level, nextIdx);
+  const groups = level.generated
+    ? generateWaveForGenerated(level, nextIdx)
+    : generateWave(level, nextIdx);
   const hasBoss = groups.some(g=>ENEMY_TYPES[g.type] && ENEMY_TYPES[g.type].boss);
   const lead = hasBoss ? `<span class="wp-boss">⚠ BOSS DALGASI (D${nextIdx})</span>` : `<span>Sıradaki (D${nextIdx}):</span>`;
   el.innerHTML = lead + groups.map(g=>{

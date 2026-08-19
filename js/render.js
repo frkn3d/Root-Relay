@@ -63,74 +63,104 @@ function roundedRect(x,y,w,h,r){
   ctx.closePath();
 }
 
+/* Aktif bölümün yol renk takımı (tema varsa ondan, yoksa varsayılan) */
+function roadPalette(){
+  if(level.theme && ROAD_TYPES[level.theme.road]) return ROAD_TYPES[level.theme.road];
+  return { edge:'#c9a463', fill:'#dab876', speck:'rgba(120,80,40,0.35)' };
+}
+
 function drawPath(){
+  const pal = roadPalette();
   ctx.save();
-  ctx.strokeStyle='rgba(0,0,0,0.28)'; ctx.lineWidth=52; ctx.lineCap='round'; ctx.lineJoin='round';
-  ctx.beginPath(); level.path.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
-  ctx.strokeStyle='#c9a463'; ctx.lineWidth=42;
-  ctx.beginPath(); level.path.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
-  ctx.strokeStyle='#dab876'; ctx.lineWidth=34;
-  ctx.beginPath(); level.path.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
-  pathDecor.forEach(d=>{
-    ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2);
-    ctx.fillStyle='rgba(120,80,40,0.35)'; ctx.fill();
+  ctx.lineCap='round'; ctx.lineJoin='round';
+
+  // Her rota için üç katman: gölge, kenar, dolgu
+  levelPaths.forEach(pts=>{
+    ctx.strokeStyle='rgba(0,0,0,0.28)'; ctx.lineWidth=52;
+    ctx.beginPath(); pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
+  });
+  levelPaths.forEach(pts=>{
+    ctx.strokeStyle=pal.edge; ctx.lineWidth=42;
+    ctx.beginPath(); pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
+  });
+  levelPaths.forEach(pts=>{
+    ctx.strokeStyle=pal.fill; ctx.lineWidth=34;
+    ctx.beginPath(); pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
+  });
+
+  // Asfaltta orta şerit çizgisi
+  if(level.theme && level.theme.road==='asphalt'){
+    ctx.setLineDash([14,16]);
+    ctx.strokeStyle='rgba(240,230,180,0.35)'; ctx.lineWidth=2.5;
+    levelPaths.forEach(pts=>{
+      ctx.beginPath(); pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
+    });
+    ctx.setLineDash([]);
+  }
+
+  // Yol üstü çakıl/benek dokusu
+  pathDecor.forEach(list=>{
+    list.forEach(d=>{
+      ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2);
+      ctx.fillStyle=pal.speck; ctx.fill();
+    });
   });
   ctx.restore();
 
-  // spawn işareti
-  const start = level.path[0], end = level.path[level.path.length-1];
+  // Giriş ve çıkış işaretleri — her rotanın kendi uçları
   ctx.save();
   ctx.font='15px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.beginPath(); ctx.arc(start.x,start.y,13,0,Math.PI*2);
-  ctx.fillStyle='rgba(226,80,74,0.22)'; ctx.fill();
-  ctx.strokeStyle='rgba(226,80,74,0.7)'; ctx.lineWidth=2; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
-  ctx.fillText('💀', start.x, start.y+1);
-
-  // hedef/röle işareti
-  ctx.beginPath(); ctx.arc(end.x,end.y,13,0,Math.PI*2);
-  ctx.fillStyle='rgba(244,192,74,0.22)'; ctx.fill();
-  ctx.strokeStyle='rgba(244,192,74,0.75)'; ctx.lineWidth=2; ctx.stroke();
-  ctx.fillText('🔮', end.x, end.y+1);
+  const seenStart = [], seenEnd = [];
+  const near = (arr,p)=>arr.some(q=>Math.hypot(q.x-p.x,q.y-p.y)<24);
+  levelPaths.forEach(pts=>{
+    const s = pts[0], e = pts[pts.length-1];
+    if(!near(seenStart,s)){
+      seenStart.push(s);
+      ctx.beginPath(); ctx.arc(s.x,s.y,13,0,Math.PI*2);
+      ctx.fillStyle='rgba(226,80,74,0.22)'; ctx.fill();
+      ctx.strokeStyle='rgba(226,80,74,0.7)'; ctx.lineWidth=2; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillText('💀', s.x, s.y+1);
+    }
+    if(!near(seenEnd,e)){
+      seenEnd.push(e);
+      ctx.beginPath(); ctx.arc(e.x,e.y,13,0,Math.PI*2);
+      ctx.fillStyle='rgba(244,192,74,0.22)'; ctx.fill();
+      ctx.strokeStyle='rgba(244,192,74,0.75)'; ctx.lineWidth=2; ctx.stroke();
+      ctx.fillText('🔮', e.x, e.y+1);
+    }
+  });
   ctx.restore();
 }
 /* Yolun başına ve sonuna, gidiş yönünü belirten silik akan oklar.
    Yolun teğetine göre döner, sürekli ileri kayarak yönü belli eder. */
 function drawDirectionArrows(){
   const t0 = performance.now()/1000;
-  // Başlangıçta ve bitişte birer küme; her kümede 3 ok
-  const zones = [
-    { start: 40,                 label:'giris' },
-    { start: pathTotalLen - 150, label:'cikis' },
-  ];
   ctx.save();
-  zones.forEach(zone=>{
-    for(let i=0;i<3;i++){
-      // Okların yol boyunca sürekli ileri akması
-      const cyc = ((t0*0.45 + i/3) % 1);
-      const d = zone.start + cyc*110;
-      if(d < 0 || d > pathTotalLen) continue;
-
-      const p  = pointAtDistance(level.path, pathTotalLen, d);
-      const p2 = pointAtDistance(level.path, pathTotalLen, Math.min(d+6, pathTotalLen));
-      const ang = Math.atan2(p2.y-p.y, p2.x-p.x);
-
-      // Kümenin başında belirip sonunda sönsün
-      const fade = Math.sin(cyc*Math.PI);
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(ang);
-      ctx.globalAlpha = 0.30 * fade;
-      ctx.strokeStyle = '#fff6dd';
-      ctx.lineWidth = 3;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.beginPath();
-      ctx.moveTo(-7, -7);
-      ctx.lineTo(2, 0);
-      ctx.lineTo(-7, 7);
-      ctx.stroke();
-      ctx.restore();
-    }
+  levelPaths.forEach((pts, pi)=>{
+    const len = pathLens[pi] || 0;
+    if(len < 120) return;
+    const zones = [ 40, Math.max(60, len - 150) ];
+    zones.forEach(zStart=>{
+      for(let i=0;i<3;i++){
+        const cyc = ((t0*0.45 + i/3) % 1);
+        const d = zStart + cyc*110;
+        if(d < 0 || d > len) continue;
+        const p  = pointAtDistance(pts, len, d);
+        const p2 = pointAtDistance(pts, len, Math.min(d+6, len));
+        const ang = Math.atan2(p2.y-p.y, p2.x-p.x);
+        const fade = Math.sin(cyc*Math.PI);
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(ang);
+        ctx.globalAlpha = 0.30 * fade;
+        ctx.strokeStyle = '#fff6dd';
+        ctx.lineWidth = 3; ctx.lineCap='round'; ctx.lineJoin='round';
+        ctx.beginPath();
+        ctx.moveTo(-7,-7); ctx.lineTo(2,0); ctx.lineTo(-7,7);
+        ctx.stroke();
+        ctx.restore();
+      }
+    });
   });
   ctx.restore();
 }
@@ -1154,6 +1184,7 @@ function render(){
   ctx.save();
   if(shake>0) ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
   ctx.clearRect(-20,-20,LW+40,LH+40);
+  ensureBackground();
   ctx.drawImage(bgCanvas,0,0);
   drawPath(); drawDirectionArrows(); drawSpots();
   // Katman sırası: boss auraları ve menzil halkaları zeminde,

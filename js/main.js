@@ -224,6 +224,12 @@ canvas.addEventListener('pointerup',(e)=>{
 document.getElementById('waveBtn').addEventListener('pointerup', startWave);
 document.getElementById('overlayBtn').addEventListener('pointerup', ()=>{ playMenuTap(); loadLevel(currentLevelIdx); });
 document.getElementById('nextLevelBtn').addEventListener('pointerup', ()=>{
+  if(level && level.generated){
+    if(level.levelNo >= GEN.TOTAL_LEVELS) return;
+    playMenuTap();
+    startGeneratedLevel(level.seed, level.levelNo + 1);
+    return;
+  }
   const next = currentLevelIdx + 1;
   if(!LEVELS[next]) return;
   playMenuTap();
@@ -247,6 +253,37 @@ document.getElementById('soundBtnPause').addEventListener('pointerup', toggleSou
 
 /* ---- Ana menü gezinme ---- */
 document.getElementById('mmLevels').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuLevels'); });
+document.getElementById('mmEndless').addEventListener('pointerup', ()=>{
+  playMenuTap();
+  const inp = document.getElementById('seedInput');
+  if(!inp.value) inp.value = randomSeedText();
+  showMenuPage('menuSeed');
+  renderSeedPreview();
+});
+document.getElementById('seedRandomBtn').addEventListener('pointerup', ()=>{
+  playMenuTap();
+  document.getElementById('seedInput').value = randomSeedText();
+  renderSeedPreview();
+});
+document.getElementById('seedInput').addEventListener('input', renderSeedPreview);
+document.getElementById('seedGoBtn').addEventListener('pointerup', ()=>{
+  playMenuTap();
+  genSeed = currentSeed();
+  genPage = 0;
+  showMenuPage('menuGenLevels');
+  renderGenGrid();
+});
+document.getElementById('genPrev').addEventListener('pointerup', ()=>{
+  if(genPage<=0) return;
+  playMenuTap(); genPage--; renderGenGrid();
+});
+document.getElementById('genNext').addEventListener('pointerup', ()=>{
+  if((genPage+1)*GEN_PAGE_SIZE >= GEN.TOTAL_LEVELS) return;
+  playMenuTap(); genPage++; renderGenGrid();
+});
+document.getElementById('genBack').addEventListener('pointerup', ()=>{
+  playMenuTap(); showMenuPage('menuSeed');
+});
 document.getElementById('mmSettings').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuSettings'); });
 document.getElementById('mmAbout').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuAbout'); });
 document.getElementById('bcOk').addEventListener('pointerup', (e)=>{ e.stopPropagation(); confirmBuild(); });

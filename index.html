@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#12261b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
 <title>Root & Relay — Tower Defense</title>
-<link rel="stylesheet" href="css/style.css?v=51">
+<link rel="stylesheet" href="css/style.css?v=52">
 </head>
 <body class="in-menu">
 <div class="wrap">
@@ -42,9 +42,33 @@
           <div class="menu-list">
             <button class="menu-btn primary" id="mmContinue">▶ Devam Et</button>
             <button class="menu-btn" id="mmLevels">🗺️ Bölüm Seç</button>
+            <button class="menu-btn" id="mmEndless">🌍 1000 Bölüm</button>
             <button class="menu-btn" id="mmSettings">⚙️ Ayarlar</button>
             <button class="menu-btn" id="mmAbout">ℹ️ Hakkında</button>
           </div>
+        </div>
+
+        <div class="menu-page" id="menuSeed">
+          <div class="menu-head">1000 Bölüm</div>
+          <p class="seed-info">Bir tohum (seed) gir. Aynı tohum her zaman aynı 1000 bölümü üretir.</p>
+          <input class="seed-input" id="seedInput" type="text" maxlength="24" placeholder="tohum yaz…" autocomplete="off" spellcheck="false">
+          <div class="seed-row">
+            <button class="menu-btn" id="seedRandomBtn">🎲 Rastgele</button>
+            <button class="menu-btn primary" id="seedGoBtn">Bölümleri Gör →</button>
+          </div>
+          <div class="seed-preview" id="seedPreview"></div>
+          <button class="menu-btn back" data-back>← Geri</button>
+        </div>
+
+        <div class="menu-page" id="menuGenLevels">
+          <div class="menu-head" id="genHead">Bölümler</div>
+          <div class="gen-pager">
+            <button class="gen-page-btn" id="genPrev">‹</button>
+            <span class="gen-page-label" id="genPageLabel">1–50</span>
+            <button class="gen-page-btn" id="genNext">›</button>
+          </div>
+          <div class="gen-grid" id="genGrid"></div>
+          <button class="menu-btn back" id="genBack">← Geri</button>
         </div>
 
         <div class="menu-page" id="menuLevels">
@@ -161,13 +185,14 @@
   <div class="rotate-sub">Root &amp; Relay dikey oynanmak üzere tasarlandı.</div>
 </div>
 
-<!-- Sıra önemli: config -> progress -> audio -> engine -> render -> ui -> main -->
-<script src="js/config.js?v=51"></script>
-<script src="js/progress.js?v=51"></script>
-<script src="js/audio.js?v=51"></script>
-<script src="js/engine.js?v=51"></script>
-<script src="js/render.js?v=51"></script>
-<script src="js/ui.js?v=51"></script>
-<script src="js/main.js?v=51"></script>
+<!-- Sıra önemli: config -> levelgen -> progress -> audio -> engine -> render -> ui -> main -->
+<script src="js/config.js?v=52"></script>
+<script src="js/levelgen.js?v=52"></script>
+<script src="js/progress.js?v=52"></script>
+<script src="js/audio.js?v=52"></script>
+<script src="js/engine.js?v=52"></script>
+<script src="js/render.js?v=52"></script>
+<script src="js/ui.js?v=52"></script>
+<script src="js/main.js?v=52"></script>
 </body>
 </html>
