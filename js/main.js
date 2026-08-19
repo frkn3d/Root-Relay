@@ -18,25 +18,28 @@ function fitGameToViewport(){
   const padY = parseFloat(wrapStyle.paddingTop) + parseFloat(wrapStyle.paddingBottom);
   const padX = parseFloat(wrapStyle.paddingLeft) + parseFloat(wrapStyle.paddingRight);
 
-  const viewportH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-  const viewportW = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+  /* iOS Safari'de window.innerHeight, araç çubuklarının kapladığı alanı
+     içerir; bu yüzden içerik çubukların altında kalır. visualViewport
+     gerçekten görünen alanı verdiği için önceliklidir. */
+  const vv = window.visualViewport;
+  const viewportH = vv ? vv.height : window.innerHeight;
+  const viewportW = vv ? vv.width  : window.innerWidth;
 
-  // Menüdeyken barlar gizli (offsetHeight = 0), saha tüm alanı kullanır.
+  // Menüdeyken barlar gizli (yükseklik 0), saha tüm alanı kullanır.
   const inMenu = document.body.classList.contains('in-menu');
-  const barsH = inMenu ? 0 : (topBar.offsetHeight + dock.offsetHeight + 12 + 8);
+  // getBoundingClientRect kesirli yükseklikleri de doğru verir
+  const barsH = inMenu ? 0 :
+    (topBar.getBoundingClientRect().height + dock.getBoundingClientRect().height + 12 + 8);
 
-  const availH = Math.max(240, viewportH - padY - barsH);
-  // Çerçeve kenarlığı (2×4px) da genişliğe dahil olduğu için düşülür
-  const availW = Math.max(200, viewportW - padX - 8);
+  const availH = Math.max(200, viewportH - padY - barsH);
+  const availW = Math.max(180, viewportW - padX - 8);
 
-  // 3:5 oranını koruyarak hem genişliğe hem yüksekliğe sığdır.
-  // Önce genişliği tam sayıya yuvarla, yüksekliği ondan türet:
-  // böylece oran hatası hiç birikmez ve çerçeve tam oturur.
+  // 3:5 oranını koruyarak sığdır; genişliği tam sayıya yuvarlayıp
+  // yüksekliği ondan türet — böylece çerçevede boşluk kalmaz.
   const maxH = Math.min(availH, availW * 5 / 3);
   const w = Math.floor(maxH * 3 / 5);
   const h = Math.round(w * 5 / 3);
 
-  // Aynı ölçüde ise DOM'a hiç dokunma (gereksiz reflow/titremeyi önler)
   const key = w + 'x' + h;
   if(key === lastFitKey) return;
   lastFitKey = key;
@@ -54,10 +57,20 @@ function scheduleFit(){
 }
 
 window.addEventListener('resize', scheduleFit);
-window.addEventListener('orientationchange', ()=>setTimeout(fitGameToViewport, 250));
+window.addEventListener('orientationchange', ()=>{
+  // iOS yeni boyutları hemen bildirmez; birkaç kez tekrar ölç.
+  [60, 250, 600].forEach(ms=>setTimeout(()=>{ invalidateFit(); fitGameToViewport(); }, ms));
+});
 if(window.visualViewport){
   window.visualViewport.addEventListener('resize', scheduleFit);
+  // iOS'ta araç çubukları kayarken 'scroll' tetiklenir, 'resize' değil
+  window.visualViewport.addEventListener('scroll', scheduleFit);
 }
+// Sekmeye geri dönüldüğünde iOS bazen eski ölçüleri korur
+document.addEventListener('visibilitychange', ()=>{
+  if(!document.hidden){ invalidateFit(); scheduleFit(); }
+});
+window.addEventListener('pageshow', ()=>{ invalidateFit(); scheduleFit(); });
 // Barların yüksekliği değişirse (yazı tipi yüklenmesi, HUD içeriği vb.)
 // sahayı yeniden ölç. Kule menüsü artık düzeni itmediği için burayı
 // tetiklemez; oyun sahası menü açılırken sabit kalır.
@@ -315,7 +328,9 @@ showMenuPage('menuMain');
 fitGameToViewport();
 // Yazı tipleri yüklenince bar yükseklikleri değişebilir; yeniden ölç.
 if(document.fonts && document.fonts.ready){
-  document.fonts.ready.then(()=>fitGameToViewport());
+  document.fonts.ready.then(()=>{ invalidateFit(); fitGameToViewport(); });
 }
-window.addEventListener('load', fitGameToViewport);
+window.addEventListener('load', ()=>{ invalidateFit(); fitGameToViewport(); });
+// iOS ilk açılışta viewport ölçülerini geç bildirir — birkaç kez tazele
+[100, 400, 900].forEach(ms=>setTimeout(()=>{ invalidateFit(); fitGameToViewport(); }, ms));
 requestAnimationFrame(loop);

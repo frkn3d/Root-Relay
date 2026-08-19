@@ -15,21 +15,39 @@
 }
 
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-html,body{ height:100%; height:100dvh; margin:0; padding:0; }
+html,body{
+  margin:0; padding:0;
+  height:100%;
+  height:-webkit-fill-available;  /* eski iOS Safari için yedek */
+  height:100dvh;
+}
 body{
+  /* iOS Safari'de sayfa kaydırıldıkça araç çubukları açılıp kapanır ve
+     düzen sürekli oynar. Sayfayı sabitleyip kaydırmayı tamamen kapatmak
+     bu titremeyi ve yanlış ölçeklemeyi ortadan kaldırır — zaten her şey
+     tek ekrana sığacak şekilde ölçekleniyor. */
+  position:fixed;
+  inset:0;
+  overflow:hidden;
+  overscroll-behavior:none;
+  touch-action:manipulation;
   background:var(--bg-deep);
   color:var(--cream);
   font-family:'Space Grotesk', sans-serif;
-  overflow-x:hidden; overflow-y:auto;
-  overscroll-behavior-y:contain;
   -webkit-user-select:none; user-select:none;
+  -webkit-text-size-adjust:100%;   /* iOS'un otomatik yazı büyütmesini engelle */
 }
 
 .wrap{
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  min-height:100%;
-  min-height:100dvh;
-  padding:max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+  width:100%;
+  height:100%;
+  padding:
+    max(6px, env(safe-area-inset-top))
+    max(6px, env(safe-area-inset-right))
+    max(6px, env(safe-area-inset-bottom))
+    max(6px, env(safe-area-inset-left));
+  overflow:hidden;
   background:
     radial-gradient(ellipse at 50% -10%, rgba(244,192,74,0.08), transparent 55%),
     var(--bg-deep);
@@ -286,6 +304,8 @@ canvas{
   background:rgba(10,18,14,0.88);
   backdrop-filter:blur(3px);
   text-align:center; gap:8px; padding:20px;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
   opacity:0; visibility:hidden; pointer-events:none;
   transition:opacity .18s ease;
 }
@@ -499,6 +519,7 @@ canvas{
   opacity:1; visibility:visible; pointer-events:auto;
   transition:opacity .3s ease, visibility 0s linear 0s;
   overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
 }
 .start-screen.hide{ opacity:0; visibility:hidden; pointer-events:none; transition:opacity .3s ease, visibility 0s linear .3s; }
 
