@@ -105,3 +105,19 @@ function markSessionBuy(id){
 function sessionBuildFactor(){
   return Math.pow(0.7, getSessionBuys('buildBoost'));
 }
+
+/* Fabrika ayarlarına dön — uygulamanın kaydettiği HER ŞEYİ siler.
+   Anahtarları tek tek silmek yerine 'rr_' önekli tüm kayıtları
+   tarar; ileride yeni bir anahtar eklendiğinde burayı güncellemeyi
+   unutmak diye bir risk kalmaz. */
+function factoryReset(){
+  try{
+    const keys = [];
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && k.indexOf('rr_')===0) keys.push(k);
+    }
+    keys.forEach(k=>localStorage.removeItem(k));
+  }catch(e){}
+  resetSessionShop();
+}

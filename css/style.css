@@ -557,12 +557,40 @@ body.in-menu .frame{ border-color:transparent; box-shadow:none; }
 }
 
 
-.shopIcon{
-  background:linear-gradient(180deg,#7fb377,#3f6b47);
-  color:#0d1a0f;
-  box-shadow:0 2px 0 #23401f;
+/* Üst barın tam ortasındaki market butonu — belirgin ve büyük */
+.shopBtn{
+  flex:0 0 auto;
+  width:42px; height:36px;
+  background:linear-gradient(180deg,#f4c04a,#b9832a);
+  border:2px solid #0a0704;
+  border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:21px; line-height:1;
+  cursor:pointer; touch-action:manipulation;
+  box-shadow:0 3px 0 #7a5518;
+  padding:0;
+  /* Emoji koyu arka planda silik kalmasın diye hafif parlaklık */
+  filter:saturate(1.15) drop-shadow(0 1px 1px rgba(0,0,0,0.45));
 }
-.shopIcon:active{ transform:translateY(1px); box-shadow:0 1px 0 #23401f; }
+.shopBtn:active{ transform:translateY(2px); box-shadow:0 1px 0 #7a5518; }
+
+.gem-buy-btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  background:linear-gradient(180deg, #56b8e0, #2a6f96);
+  color:#eaf9ff;
+  border:2px solid #0a2734;
+  border-radius:11px;
+  padding:8px 16px;
+  font-family:'Baloo 2', sans-serif; font-weight:700; font-size:12.5px;
+  cursor:pointer; touch-action:manipulation;
+  box-shadow:0 3px 0 #164a63;
+}
+.gem-buy-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 #164a63; }
+.gem-buy-tag{
+  background:rgba(0,0,0,0.35); color:#bfe9ff;
+  font-family:'JetBrains Mono', monospace; font-size:8px; font-weight:400;
+  border-radius:4px; padding:1px 4px; letter-spacing:0.05em;
+}
 
 .shop-note{
   font-family:'JetBrains Mono', monospace; font-size:10px;

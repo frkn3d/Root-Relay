@@ -241,6 +241,14 @@ document.getElementById('mmSettings').addEventListener('pointerup', ()=>{ playMe
 document.getElementById('mmAbout').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuAbout'); });
 document.getElementById('shopBtn').addEventListener('pointerup', openShopOverlay);
 document.getElementById('shopCloseBtn').addEventListener('pointerup', closeShopOverlay);
+document.getElementById('gemBuyBtn').addEventListener('pointerup', ()=>{
+  // TEST SÜRÜMÜ: her dokunuşta bedava 25 elmas.
+  // İleride burası mağaza satın alması veya ödüllü reklam olacak.
+  addGems(25);
+  playCoin();
+  refreshGemDisplay();
+  renderShop();          // fiyatlar/pasiflik durumu tazelensin
+});
 document.querySelectorAll('[data-back]').forEach(btn=>{
   btn.addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuMain'); });
 });
@@ -260,24 +268,23 @@ document.getElementById('resetProgressBtn').addEventListener('pointerup', ()=>{
   playMenuTap();
   const btn = document.getElementById('resetProgressBtn');
   if(btn.dataset.confirm==='1'){
-    try{
-      localStorage.removeItem('rr_progress_v1');
-      localStorage.removeItem('rr_gems_v1');
-      localStorage.removeItem('rr_resume_v1');
-    }catch(e){}
+    factoryReset();          // progress.js — tüm 'rr_' kayıtlarını siler
+    soundEnabled = true;     // ses tercihi de varsayılana dönsün
+    syncSoundButtons();
     btn.dataset.confirm='';
     btn.textContent='✅ Sıfırlandı';
-    setTimeout(()=>{ btn.textContent='🗑️ İlerlemeyi Sıfırla'; }, 1500);
+    setTimeout(()=>{ btn.textContent='🗑️ Fabrika Ayarlarına Dön'; }, 1500);
     refreshGemDisplay();
     refreshContinueButton();
     renderStartLevelList();
+    loadLevel(0);            // oyun durumunu da başa al
   } else {
     btn.dataset.confirm='1';
     btn.textContent='⚠️ Emin misin? Tekrar bas';
     setTimeout(()=>{
       if(btn.dataset.confirm==='1'){
         btn.dataset.confirm='';
-        btn.textContent='🗑️ İlerlemeyi Sıfırla';
+        btn.textContent='🗑️ Fabrika Ayarlarına Dön';
       }
     }, 3000);
   }
