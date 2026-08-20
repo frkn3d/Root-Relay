@@ -546,6 +546,9 @@ function startWave(){
         boss: !!def.boss, label: def.label,
         auraRadius: def.auraRadius || 0, auraSlow: def.auraSlow || 0,
         healRadius: def.healRadius || 0, healPerSec: def.healPerSec || 0, healDuration: def.healDuration || 0,
+        blockArc: def.blockArc || 0,
+        broodEvery: def.broodEvery || 0, broodType: def.broodType || null, broodMax: def.broodMax || 0, broodT: 0, broodCount: 0,
+        overloadSec: def.overloadSec || 0, overloadChance: def.overloadChance || 0,
         splitsLeft: def.splits || 0,
         splitsTotal: def.splits || 0,
         baseSpeed: def.speed*mult.speed*m.enemySpeedMul,
@@ -659,6 +662,7 @@ function update(dt){
     }
   }
 
+  const newborns = [];   // Kuluçka'nın bu karede bıraktığı yavrular
   enemies.forEach(e=>{
     const slowMult = e.slowT>0 ? e.slowFactor : 1;
     e.dist += e.speed*slowMult*dt*60;
@@ -690,7 +694,40 @@ function update(dt){
 
     e.bounce += dt*e.speed*slowMult*9;
     if(e.flashT>0) e.flashT -= dt*3;
+    if(e.blockFlash>0) e.blockFlash -= dt*3;
     if(e.slowT>0) e.slowT -= dt;
+
+    /* KULUÇKA: yaşadığı sürece belirli aralıklarla yavru bırakır.
+       Öldürülünce üretim durur — "hemen indir" baskısı yaratır. */
+    if(e.broodEvery > 0 && e.broodCount < e.broodMax){
+      e.broodT += dt;
+      if(e.broodT >= e.broodEvery){
+        e.broodT = 0;
+        e.broodCount++;
+        const def = ENEMY_TYPES[e.broodType] || ENEMY_TYPES.swarm;
+        const mult = statMultipliers(level, waveIndex);
+        const m = levelMods();
+        newborns.push({
+          type:e.broodType,
+          hp: def.hp*mult.hp, maxHp: def.hp*mult.hp,
+          speed: def.speed*mult.speed*m.enemySpeedMul,
+          radius: def.radius, body:def.body, body2:def.body2, shape:def.shape, eyes:def.eyes,
+          gold: Math.max(1, Math.round(def.gold*m.goldMul)), dmgToLives: def.dmgToLives,
+          pathIdx: e.pathIdx || 0,
+          dist: Math.max(0, e.dist - 12),
+          flashT:0, slowT:0, slowFactor:1, bounce:Math.random()*10,
+          wobbleT:Math.random()*Math.PI*2, wobbleSeed:Math.random()*2.2,
+          wobbleScale:0.65+Math.random()*0.7, wobblePhase2:Math.random()*Math.PI*2,
+          spin:Math.random()*Math.PI*2, spinDir:Math.random()<0.5?-1:1,
+          splitsLeft:0, broodEvery:0, blockArc:0, overloadSec:0,
+          healRadius:0, auraRadius:0,
+        });
+        for(let i=0;i<8;i++){
+          const a=(i/8)*Math.PI*2;
+          particles.push({x:e.x,y:e.y,vx:Math.cos(a)*60,vy:Math.sin(a)*60,life:0.3,color:e.body});
+        }
+      }
+    }
     // ZEHİR: süre boyunca saniyede poisonDps kadar hasar
     if(e.poisonT > 0){
       e.poisonT -= dt;
@@ -724,6 +761,8 @@ function update(dt){
       });
     }
   }
+
+  if(newborns.length) enemies.push(...newborns);
 
   const reachedEnd = e => e.dist >= (pathLens[e.pathIdx||0] || pathTotalLen);
   const reached = enemies.filter(reachedEnd);
@@ -765,18 +804,35 @@ function update(dt){
     const st = getTowerStats(t);
     const rateMult = towerRateMultiplier(t);
     t.cooldown = Math.max(0, t.cooldown-dt);
+    if(t.overloadT > 0) t.overloadT -= dt;
+
+    /* NİŞAN ALMA: kule, ateş etmese bile menzilindeki hedefe döner.
+       Namlu/yay anlık zıplamasın diye açı yumuşatılarak takip edilir. */
+    const aimTarget = pickTarget(t, st.range);
+    if(aimTarget){
+      t.angle = Math.atan2(aimTarget.y - t.y, aimTarget.x - t.x);
+    }
+    if(t.aimAngle === undefined) t.aimAngle = t.angle !== undefined ? t.angle : -Math.PI/2;
+    if(t.angle !== undefined){
+      // En kısa yönden döndür (-π..π aralığına indirge)
+      let diff = t.angle - t.aimAngle;
+      while(diff >  Math.PI) diff -= Math.PI*2;
+      while(diff < -Math.PI) diff += Math.PI*2;
+      t.aimAngle += diff * Math.min(1, dt*7);
+    }
+
     if(t.cooldown<=0){
-      const target = pickTarget(t, st.range);
+      const target = aimTarget;
       if(target){
         const dist0 = Math.hypot(target.x-t.x, target.y-t.y);
         projectiles.push({x:t.x,y:t.y-20,target,dmg:st.dmg,splash:st.splash,kind:t.def.kind,
+          ox:t.x, oy:t.y, tower:t,
           speed:t.def.kind==='mortar'?4.2:(t.def.kind==='bolt'?11:7),travel:dist0,
           slow:t.def.slowFactor,slowDuration:st.slowDuration,
           poisonDps:st.poisonDps, poisonDuration:st.poisonDuration,
           chainCount:st.chainCount, chainFalloff:st.chainFalloff, chainRange:st.chainRange});
         t.cooldown = st.rate * rateMult;
         t.pulse = 1;
-        t.angle = Math.atan2(target.y-t.y, target.x-t.x);
         playShoot(t.def.kind);
       }
     }
@@ -799,42 +855,76 @@ function update(dt){
         shake=Math.min(shake+4,10);
         for(let i=0;i<16;i++) particles.push({x:ix,y:iy,vx:(Math.random()-0.5)*160,vy:(Math.random()-0.5)*160,life:0.4,color:'#e8a94a'});
       } else {
-        if(p.dmg > 0){
-          p.target.hp -= p.dmg; p.target.flashT=1;
-          floatTexts.push({x:p.x,y:p.y,text:'-'+Math.round(p.dmg),life:0.6,vy:-30,color:p.kind==='mage'?'#b6f0e0':'#ffe3c2'});
+        const tgt = p.target;
+
+        /* KALKAN TAŞIYICI: mermi önden geldiyse seker.
+           Kalkan hareket yönüne bakar; atış kaynağı ile hareket
+           yönü arasındaki açı dar ise darbe önden gelmiş demektir. */
+        let blocked = false;
+        if(tgt.blockArc > 0){
+          const inx = (p.ox !== undefined ? p.ox : p.x) - tgt.x;
+          const iny = (p.oy !== undefined ? p.oy : p.y) - tgt.y;
+          const il = Math.hypot(inx, iny) || 1;
+          const fx = Math.cos(tgt.angle||0), fy = Math.sin(tgt.angle||0);
+          const dot = (inx/il)*fx + (iny/il)*fy;      // 1 = tam önden
+          if(dot > Math.cos(tgt.blockArc)) blocked = true;
         }
-        if(p.slow){
-          p.target.slowT = p.slowDuration;
-          p.target.slowFactor = p.slow;
-          if(p.dmg <= 0) p.target.flashT = 0.6;
-        }
-        // ZEHİR: hedefe zamana yayılı hasar yükle (en güçlü etki geçerli)
-        if(p.poisonDps > 0){
-          if(!(p.target.poisonDps > p.poisonDps)){
-            p.target.poisonDps = p.poisonDps;
-          }
-          p.target.poisonT = Math.max(p.target.poisonT||0, p.poisonDuration);
-        }
-        // ŞİMŞEK: hedeften yakındaki düşmanlara sıçra
-        if(p.chainCount > 0){
-          let cur = p.target;
-          let dmg = p.dmg;
-          const hitSet = new Set([cur]);
-          for(let c=0;c<p.chainCount;c++){
-            let next=null, bestD=Infinity;
-            for(let i=0;i<enemies.length;i++){
-              const e = enemies[i];
-              if(hitSet.has(e)) continue;
-              const d = Math.hypot(e.x-cur.x, e.y-cur.y);
-              if(d <= p.chainRange && d < bestD){ bestD=d; next=e; }
+
+        if(blocked){
+          tgt.blockFlash = 0.35;
+          floatTexts.push({x:p.x,y:p.y,text:'BLOKE',life:0.5,vy:-24,color:'#bcd2f0'});
+          for(let i=0;i<4;i++) particles.push({x:p.x,y:p.y,vx:(Math.random()-0.5)*70,vy:(Math.random()-0.5)*70,life:0.25,color:'#dce8ff'});
+        } else {
+          if(p.dmg > 0){
+            tgt.hp -= p.dmg; tgt.flashT=1;
+            floatTexts.push({x:p.x,y:p.y,text:'-'+Math.round(p.dmg),life:0.6,vy:-30,color:p.kind==='mage'?'#b6f0e0':'#ffe3c2'});
+
+            /* YANSITICI: hasarın bir kısmını atan kuleye geri yansıtır.
+               Kule kısa süre aşırı yüklenir ve ateş edemez. */
+            if(tgt.overloadSec > 0 && p.tower && Math.random() < tgt.overloadChance){
+              const tw = p.tower;
+              if(towers.includes(tw) && tw.buildLeft <= 0){
+                tw.cooldown = Math.max(tw.cooldown, tgt.overloadSec);
+                tw.overloadT = tgt.overloadSec;
+                floatTexts.push({x:tw.x,y:tw.y-30,text:'AŞIRI YÜK',life:0.8,vy:-24,color:'#ffe066'});
+                for(let i=0;i<6;i++){
+                  const a=(i/6)*Math.PI*2;
+                  particles.push({x:tw.x,y:tw.y-10,vx:Math.cos(a)*70,vy:Math.sin(a)*70,life:0.35,color:'#fff3a8'});
+                }
+              }
             }
-            if(!next) break;
-            dmg *= p.chainFalloff;
-            next.hp -= dmg; next.flashT = 1;
-            arcs.push({x1:cur.x, y1:cur.y, x2:next.x, y2:next.y, life:0.22});
-            floatTexts.push({x:next.x,y:next.y,text:'-'+Math.round(dmg),life:0.5,vy:-26,color:'#fff3a8'});
-            hitSet.add(next);
-            cur = next;
+          }
+          if(p.slow){
+            tgt.slowT = p.slowDuration;
+            tgt.slowFactor = p.slow;
+            if(p.dmg <= 0) tgt.flashT = 0.6;
+          }
+          // ZEHİR: hedefe zamana yayılı hasar yükle (en güçlü etki geçerli)
+          if(p.poisonDps > 0){
+            if(!(tgt.poisonDps > p.poisonDps)) tgt.poisonDps = p.poisonDps;
+            tgt.poisonT = Math.max(tgt.poisonT||0, p.poisonDuration);
+          }
+          // ŞİMŞEK: hedeften yakındaki düşmanlara sıçra
+          if(p.chainCount > 0){
+            let cur = tgt;
+            let dmg = p.dmg;
+            const hitSet = new Set([cur]);
+            for(let c=0;c<p.chainCount;c++){
+              let next=null, bestD=Infinity;
+              for(let i=0;i<enemies.length;i++){
+                const e = enemies[i];
+                if(hitSet.has(e)) continue;
+                const d = Math.hypot(e.x-cur.x, e.y-cur.y);
+                if(d <= p.chainRange && d < bestD){ bestD=d; next=e; }
+              }
+              if(!next) break;
+              dmg *= p.chainFalloff;
+              next.hp -= dmg; next.flashT = 1;
+              arcs.push({x1:cur.x, y1:cur.y, x2:next.x, y2:next.y, life:0.22});
+              floatTexts.push({x:next.x,y:next.y,text:'-'+Math.round(dmg),life:0.5,vy:-26,color:'#fff3a8'});
+              hitSet.add(next);
+              cur = next;
+            }
           }
         }
         for(let i=0;i<5;i++) particles.push({x:p.x,y:p.y,vx:(Math.random()-0.5)*90,vy:(Math.random()-0.5)*90,life:0.35,

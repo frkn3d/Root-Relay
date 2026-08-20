@@ -468,18 +468,39 @@ function drawArcherTower(t){
   ctx.restore();
 
   // Seviye 1+ : ikinci bir yay belirir
-  ctx.save(); ctx.translate(x+9,y-4); ctx.rotate(0.5);
-  ctx.strokeStyle='#3a2410'; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.arc(0,0,9,-0.9,0.9); ctx.stroke();
-  ctx.strokeStyle='rgba(230,220,200,0.8)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(9*Math.cos(-0.9),9*Math.sin(-0.9)); ctx.lineTo(9*Math.cos(0.9),9*Math.sin(0.9)); ctx.stroke();
+  // Yay hedefe döner; ateş ettikten sonra kiriş gerilip boşalır
+  const aim = (t.aimAngle !== undefined) ? t.aimAngle : -Math.PI/2;
+  const draw = (t.pulse||0);          // 1 → yeni atış, 0 → dinlenme
+  ctx.save();
+  ctx.translate(x, y-4);
+  ctx.rotate(aim);
+  ctx.translate(9, 0);                // yay gövdenin önünde dursun
+  ctx.strokeStyle='#3a2410'; ctx.lineWidth=2.2;
+  ctx.beginPath(); ctx.arc(0,0,9,-1.05,1.05); ctx.stroke();
+  // kiriş: atıştan sonra geriye çekilmiş, sonra düzleşir
+  const pull = -draw*4;
+  ctx.strokeStyle='rgba(235,225,205,0.85)'; ctx.lineWidth=1.2;
+  ctx.beginPath();
+  ctx.moveTo(9*Math.cos(-1.05), 9*Math.sin(-1.05));
+  ctx.lineTo(pull, 0);
+  ctx.lineTo(9*Math.cos(1.05), 9*Math.sin(1.05));
+  ctx.stroke();
   ctx.restore();
+
   if(lvl>=1){
-    ctx.save(); ctx.translate(x-9,y-4); ctx.rotate(Math.PI-0.5);
+    // İkinci yay, gövdenin arkasında ters yöne bakar
+    ctx.save();
+    ctx.translate(x, y-4);
+    ctx.rotate(aim + Math.PI);
+    ctx.translate(8, 0);
     ctx.strokeStyle='#3a2410'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.arc(0,0,8,-0.9,0.9); ctx.stroke();
-    ctx.strokeStyle='rgba(230,220,200,0.8)'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(8*Math.cos(-0.9),8*Math.sin(-0.9)); ctx.lineTo(8*Math.cos(0.9),8*Math.sin(0.9)); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0,0,8,-0.95,0.95); ctx.stroke();
+    ctx.strokeStyle='rgba(235,225,205,0.7)'; ctx.lineWidth=1.1;
+    ctx.beginPath();
+    ctx.moveTo(8*Math.cos(-0.95), 8*Math.sin(-0.95));
+    ctx.lineTo(pull*0.7, 0);
+    ctx.lineTo(8*Math.cos(0.95), 8*Math.sin(0.95));
+    ctx.stroke();
     ctx.restore();
   }
 
@@ -497,9 +518,13 @@ function drawArcherTower(t){
   ctx.restore();
 }
 
+/* IŞIK KULESİ — Don Peykesi ile karışmasın diye tamamen farklı bir
+   form: kristal yok. Taş bir sütun üzerinde havada süzülen bir küre
+   ve onu çevreleyen eğik yörünge halkaları. */
 function drawMageTower(t){
   const {x,y}=t, pulse=1+(t.pulse||0)*0.3;
   const t0 = performance.now()/1000;
+  const lvl = t.level||0;
   ctx.save();
   drawBasePlinth(x,y,t.pulse);
 
@@ -514,56 +539,78 @@ function drawMageTower(t){
   ctx.setLineDash([]);
   ctx.restore();
 
-  const trunkGrad = ctx.createLinearGradient(x-9,y-30,x+9,y+2);
-  trunkGrad.addColorStop(0,'#3d8069'); trunkGrad.addColorStop(1,'#1f4a3b');
-  ctx.fillStyle=trunkGrad; ctx.strokeStyle='#0d241c'; ctx.lineWidth=2.5;
-  roundedRect(x-9,y-30,18,32,5); ctx.fill(); ctx.stroke();
-  ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(x-3,y-27); ctx.lineTo(x-3,y-1); ctx.stroke();
+  // taş sütun — yukarı doğru daralan
+  const colGrad = ctx.createLinearGradient(x-11,y,x+11,y);
+  colGrad.addColorStop(0,'#2f5a4b'); colGrad.addColorStop(0.5,'#79b39c'); colGrad.addColorStop(1,'#2f5a4b');
+  ctx.beginPath();
+  ctx.moveTo(x-11, y+4);
+  ctx.lineTo(x-7, y-22);
+  ctx.lineTo(x+7, y-22);
+  ctx.lineTo(x+11, y+4);
+  ctx.closePath();
+  ctx.fillStyle=colGrad; ctx.fill();
+  ctx.lineWidth=2.5; ctx.strokeStyle='#123128'; ctx.stroke();
 
-  ctx.save(); ctx.translate(x,y-30); ctx.scale(pulse,pulse);
-  const lvl = t.level||0;
-  const shards=[[0,-32,10],[-11,-15,7.5],[11,-17,7.5],[-5,-8,5],[6,-9,5]];
-  // Seviye arttıkça yeni kristaller filizlenir
-  if(lvl>=1) shards.push([-16,-24,6]);
-  if(lvl>=2) shards.push([16,-26,6]);
-  if(lvl>=3) shards.push([0,-46,7]);
-  shards.forEach(([dx,dy,s],i)=>{
-    ctx.save(); ctx.translate(dx,dy); ctx.rotate(Math.sin(t0*0.8+i)*0.05);
+  // sütun üzerinde kazınmış çizgiler
+  ctx.strokeStyle='rgba(255,255,255,0.16)'; ctx.lineWidth=1;
+  [-4,0,4].forEach(dx=>{
+    ctx.beginPath(); ctx.moveTo(x+dx, y-19); ctx.lineTo(x+dx*1.3, y+2); ctx.stroke();
+  });
+
+  // sütun üstündeki çanak
+  ctx.beginPath();
+  ctx.ellipse(x, y-22, 9.5, 3.6, 0, 0, Math.PI*2);
+  ctx.fillStyle='#3d7362'; ctx.fill();
+  ctx.lineWidth=2; ctx.strokeStyle='#123128'; ctx.stroke();
+
+  // havada süzülen küre
+  const floatY = y - 36 + Math.sin(t0*1.6)*2.5;
+  const R = (8.5 + lvl*1.1) * pulse;
+
+  // sütundan küreye uzanan enerji hattı
+  ctx.beginPath();
+  ctx.moveTo(x, y-24); ctx.lineTo(x, floatY+R*0.7);
+  ctx.strokeStyle='rgba(160,240,215,'+(0.35+(t.pulse||0)*0.4)+')';
+  ctx.lineWidth=2; ctx.setLineDash([2,4]); ctx.lineDashOffset=-t0*18;
+  ctx.stroke(); ctx.setLineDash([]);
+
+  // küreyi çevreleyen eğik yörünge halkaları (seviyeyle çoğalır)
+  const rings = 2 + Math.min(lvl,2);
+  for(let i=0;i<rings;i++){
+    const tilt = (i/rings)*Math.PI + t0*(0.5 + i*0.22);
+    ctx.save();
+    ctx.translate(x, floatY);
+    ctx.rotate(tilt);
     ctx.beginPath();
-    ctx.moveTo(0,-s); ctx.lineTo(-s*0.55,s*0.7); ctx.lineTo(s*0.55,s*0.7); ctx.closePath();
-    const g=ctx.createLinearGradient(0,-s,0,s*0.7);
-    g.addColorStop(0, brightenColor('#eafffa', lvl));
-    g.addColorStop(0.5, brightenColor('#7fe3c4', lvl));
-    g.addColorStop(1, brightenColor('#2c8067', lvl));
-    ctx.fillStyle=g; ctx.fill();
-    ctx.lineWidth = 1.8 + lvl*0.3;
-    ctx.strokeStyle = lvl>=3 ? '#f4c04a' : '#0d241c';
+    ctx.ellipse(0, 0, R+7+i*2.5, (R+7+i*2.5)*0.30, 0, 0, Math.PI*2);
+    ctx.strokeStyle = lvl>=3 ? 'rgba(244,192,74,0.75)' : 'rgba(150,235,205,0.6)';
+    ctx.lineWidth = 1.8;
     ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(-s*0.15,-s*0.6); ctx.lineTo(-s*0.1,s*0.3);
-    ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=1; ctx.stroke();
     ctx.restore();
-  });
-  // çekirdek parlaması (katmanlı) — seviye ile büyür
-  [16,10,5].forEach((r,i)=>{
-    ctx.beginPath(); ctx.arc(0,-32,r+lvl*2+((t.pulse||0)*3),0,Math.PI*2);
-    ctx.fillStyle = i===2 ? '#ffffff' : `rgba(180,255,235,${0.25-i*0.08})`;
-    ctx.fill();
-  });
-  ctx.shadowColor='#4fc3a1'; ctx.shadowBlur=18+lvl*5;
-  ctx.beginPath(); ctx.arc(0,-32,4+lvl*0.6,0,Math.PI*2); ctx.fillStyle='#eafffa'; ctx.fill();
-  ctx.shadowBlur=0;
-  ctx.restore();
-
-  // yörüngede dönen ışık zerreleri — seviye ile çoğalır
-  for(let i=0;i<3+lvl;i++){
-    const ang = t0*1.6 + i*(Math.PI*2/(3+lvl));
-    const r = 20+Math.sin(t0*2+i)*4;
-    const mx = x+Math.cos(ang)*r, my = y-30+Math.sin(ang)*r*0.6;
-    ctx.beginPath(); ctx.arc(mx,my,1.8,0,Math.PI*2);
-    ctx.fillStyle='#bdf5e4'; ctx.shadowColor='#4fc3a1'; ctx.shadowBlur=8; ctx.fill();
   }
+
+  // dış parıltı
+  const halo = ctx.createRadialGradient(x,floatY,R*0.3,x,floatY,R*2.2);
+  halo.addColorStop(0,'rgba(180,255,235,0.32)');
+  halo.addColorStop(1,'rgba(120,220,190,0)');
+  ctx.beginPath(); ctx.arc(x,floatY,R*2.2,0,Math.PI*2);
+  ctx.fillStyle=halo; ctx.fill();
+
+  // kürenin kendisi
+  const orb = ctx.createRadialGradient(x-R*0.35, floatY-R*0.4, R*0.15, x, floatY, R);
+  orb.addColorStop(0,'#ffffff');
+  orb.addColorStop(0.45, brightenColor('#7fe3c4', lvl));
+  orb.addColorStop(1, brightenColor('#227a63', lvl));
+  ctx.beginPath(); ctx.arc(x,floatY,R,0,Math.PI*2);
+  ctx.fillStyle=orb; ctx.shadowColor='#4fc3a1'; ctx.shadowBlur=16+lvl*4; ctx.fill();
   ctx.shadowBlur=0;
+  ctx.lineWidth=1.8; ctx.strokeStyle='rgba(12,45,36,0.6)'; ctx.stroke();
+
+  // küre içinde dönen çekirdek
+  ctx.beginPath();
+  ctx.ellipse(x + Math.cos(t0*2)*R*0.28, floatY + Math.sin(t0*2)*R*0.18, R*0.32, R*0.2, t0, 0, Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.fill();
+
   ctx.restore();
 }
 
@@ -723,10 +770,11 @@ function drawBoltTower(t){
     ctx.strokeStyle = lvl>=3 ? '#f4c04a' : '#c9a34a';
     ctx.lineWidth=2; ctx.stroke();
   }
-  // çatallı uçlar
+  // çatallı uçlar — hedefe doğru yelpaze açar
+  const aim = (t.aimAngle !== undefined) ? t.aimAngle : -Math.PI/2;
   const prongs = 3 + Math.min(lvl,2);
   for(let i=0;i<prongs;i++){
-    const a = -Math.PI/2 + (i-(prongs-1)/2)*0.5;
+    const a = aim + (i-(prongs-1)/2)*0.42;
     ctx.beginPath();
     ctx.moveTo(0,-14);
     ctx.lineTo(Math.cos(a)*11, -14+Math.sin(a)*11);
@@ -815,22 +863,44 @@ function drawMortarTower(t){
   ctx.strokeStyle='#2a1a0c'; ctx.lineWidth=1.4; ctx.stroke();
   ctx.restore();
 
-  // namlu — seviye arttıkça uzar ve bantları çoğalır
-  const barrelAngle = t.angle!==undefined ? t.angle : -Math.PI/2.2;
+  // namlu — hedefe döner, seviye arttıkça uzar
+  const aim = (t.aimAngle !== undefined) ? t.aimAngle : (t.angle !== undefined ? t.angle : -Math.PI/2);
   const barrelLen = 26 + lvl*3;
-  ctx.save(); ctx.translate(x,y-2); ctx.rotate(barrelAngle*0.25 - Math.PI/2.4);
+  ctx.save();
+  ctx.translate(x, y-4);
+  // Namlu varsayılan olarak yukarı bakar (-PI/2); hedef açısına döndür
+  ctx.rotate(aim + Math.PI/2);
+  // Geri tepme: ateş ettikten hemen sonra namlu içeri çekilir
+  const recoil = (t.pulse||0) * 4;
+  ctx.translate(0, recoil);
   const barrelGrad = ctx.createLinearGradient(-6,-barrelLen,6,0);
   barrelGrad.addColorStop(0,'#5c5c56'); barrelGrad.addColorStop(0.5,'#3a3a34'); barrelGrad.addColorStop(1,'#4a4a44');
   ctx.fillStyle=barrelGrad;
   ctx.strokeStyle = lvl>=3 ? '#f4c04a' : '#1a1a17';
   ctx.lineWidth = 2.5 + lvl*0.3;
   roundedRect(-6,-barrelLen,12,barrelLen,4); ctx.fill(); ctx.stroke();
+  // namlu bantları
   ctx.strokeStyle='rgba(180,150,90,0.5)'; ctx.lineWidth=2;
   for(let i=0;i<2+lvl;i++){
     const by = -18 - i*6;
     if(by > -barrelLen+3){
       ctx.beginPath(); ctx.moveTo(-6,by); ctx.lineTo(6,by); ctx.stroke();
     }
+  }
+  // namlu ağzı
+  ctx.beginPath();
+  ctx.ellipse(0, -barrelLen, 6, 2.4, 0, 0, Math.PI*2);
+  ctx.fillStyle='#22221f'; ctx.fill();
+  // ateş parlaması
+  if((t.pulse||0) > 0.55){
+    const f = (t.pulse-0.55)/0.45;
+    ctx.beginPath();
+    ctx.moveTo(-7*f, -barrelLen);
+    ctx.lineTo(0, -barrelLen - 16*f);
+    ctx.lineTo(7*f, -barrelLen);
+    ctx.closePath();
+    ctx.fillStyle='rgba(255,190,90,'+(0.85*f)+')';
+    ctx.shadowColor='#ff8a2a'; ctx.shadowBlur=14; ctx.fill(); ctx.shadowBlur=0;
   }
   ctx.restore();
 

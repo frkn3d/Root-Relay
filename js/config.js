@@ -17,6 +17,24 @@ const ENEMY_TYPES = {
               /* Nesil başına hız çarpanı (taban hıza göre):
                  1. küçülme +%50, 2. küçülme +%100, 3. küçülme +%150 */
               splitSpeedMults:[1.5, 2.0, 2.5] },
+  /* KALKAN TAŞIYICI — önünde enerji kalkanı taşır. Önden gelen
+     mermiler seker; yalnızca yandan/arkadan hasar alır. Kule
+     konumlandırmayı anlamlı hale getirir. */
+  shieldbearer:{ hp:95, speed:0.5, radius:17, gold:14, dmgToLives:1, label:'Kalkan', shape:'shield',
+                 body:'#8fa6c9', body2:'#3d4f70', eyes:2, blockArc:1.25 },
+
+  /* KULUÇKA — yaşadıkça yol boyunca yavru bırakır. Küp'ün tersi:
+     Küp ölünce çoğalır, bu yaşadıkça çoğalır. */
+  brooder:  { hp:120, speed:0.42, radius:19, gold:16, dmgToLives:1, label:'Kuluçka', shape:'brooder',
+              body:'#c98fd4', body2:'#5e3170', eyes:2,
+              broodEvery:3.2, broodType:'swarm', broodMax:8 },
+
+  /* YANSITICI — vurulduğunda hasarın bir kısmını atan kuleye geri
+     yansıtır; kule kısa süre aşırı yüklenip ateş edemez. Tek hedefe
+     kilitlenmeyi cezalandırır. */
+  reflector:{ hp:110, speed:0.52, radius:16, gold:15, dmgToLives:1, label:'Yansıtıcı', shape:'reflector',
+              body:'#e8e2a8', body2:'#8a7a3a', eyes:2, overloadSec:1.1, overloadChance:0.55 },
+
   /* ŞİŞE — öldüğünde kırılır ve yere dökülen sıvı, uzun süre
      çevredeki düşmanları iyileştirir. Öncelik sırası kurmayı
      zorunlu kılar: önce şişeyi mi yoksa etrafındakileri mi? */
