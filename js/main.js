@@ -117,6 +117,11 @@ let pressTimer = null;
 let pressStartPos = null;
 let pressTower = null;
 let longPressFired = false;
+// Kule çekmecesi açıkken canvas'ta başlayan dokunuşun izi — çekmeceyi
+// yalnızca GERÇEK bir dokunuş (az hareket) kapatsın; çekmecedeki
+// kartları kaydırmaya çalışırken parmak birkaç piksel canvas'a taşarsa
+// artık çekmece anında kapanmıyor.
+let drawerDismissStart = null;
 
 function findTowerAt(mx,my){
   let found=null, bestD=Infinity;
@@ -136,7 +141,10 @@ function canvasInputBlocked(){
 
 canvas.addEventListener('pointerdown',(e)=>{
   if(canvasInputBlocked()) return;
-  if(document.getElementById('towerDrawer').classList.contains('show')) return;
+  if(document.getElementById('towerDrawer').classList.contains('show')){
+    drawerDismissStart = {x:e.clientX, y:e.clientY};
+    return;
+  }
   const {x:mx,y:my} = pointerToLogical(e.clientX,e.clientY);
   pressStartPos = {x:mx,y:my};
   longPressFired = false;
@@ -166,7 +174,7 @@ canvas.addEventListener('pointermove',(e)=>{
 function cancelPress(){
   clearTimeout(pressTimer); pressTimer=null;
   pressStartPos=null; pressTower=null; longPressFired=false;
-  pressProgressTower=null;
+  pressProgressTower=null; drawerDismissStart=null;
 }
 canvas.addEventListener('pointercancel', cancelPress);
 canvas.addEventListener('pointerleave', ()=>{ clearTimeout(pressTimer); pressTimer=null; pressProgressTower=null; });
@@ -176,7 +184,12 @@ canvas.addEventListener('pointerup',(e)=>{
   pressProgressTower=null;
   if(canvasInputBlocked()){ cancelPress(); return; }
   if(document.getElementById('towerDrawer').classList.contains('show')){
-    closeTowerDrawer();
+    const start = drawerDismissStart;
+    const moved = start ? Math.hypot(e.clientX-start.x, e.clientY-start.y) : 0;
+    // Sadece gerçek bir dokunuşsa (sürükleme/kaydırma değilse) kapat —
+    // aksi halde çekmecedeki kartları kaydırmaya çalışan bir parmağın
+    // canvas'a birkaç piksel taşması çekmeceyi anında kapatıyordu.
+    if(moved <= MOVE_CANCEL_PX) closeTowerDrawer();
     cancelPress();
     return;
   }

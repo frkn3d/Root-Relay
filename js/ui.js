@@ -242,6 +242,16 @@ function renderTowerSelectBtn(){
   btn.innerHTML = `<span class="ts-icon">${def.icon}</span><span class="ts-cost">🪙${def.cost}</span>`;
 }
 
+/* Kart genişliği (58px) küçük ve çekmece kaydırmalı (overflow-x) olduğu
+   için, satırı kaydırmaya çalışan bir parmak sıkça komşu bir kartın
+   üzerinde bırakılıyordu — hareket miktarına bakılmadan HER pointerup
+   o kartı seçip çekmeceyi kapatıyordu. Aynı basılı-tutma/kaydırma
+   eşiğini (main.js'teki MOVE_CANCEL_PX) burada da uygulayarak, yalnızca
+   gerçek bir dokunuş (az hareket) seçim yapsın; bir kaydırmanın ucu
+   başka bir kartta bitse bile yanlışlıkla kule değiştirmesin/kapatmasın. */
+const CARD_TAP_MOVE_PX = 12;
+let cardPressStart = null;
+
 function renderTowerDrawer(){
   const el = document.getElementById('towerDrawer');
   el.innerHTML='';
@@ -249,7 +259,14 @@ function renderTowerDrawer(){
     const card=document.createElement('div');
     card.className='tower-card'+(def.id===selectedType?' active':'');
     card.innerHTML = `<div class="icon">${def.icon}</div><div class="name">${def.name}</div><div class="cost">🪙${def.cost}</div>`;
-    card.addEventListener('pointerup', ()=>{
+    card.addEventListener('pointerdown', (e)=>{
+      cardPressStart = {x:e.clientX, y:e.clientY};
+    });
+    card.addEventListener('pointerup', (e)=>{
+      const start = cardPressStart;
+      cardPressStart = null;
+      const moved = start ? Math.hypot(e.clientX-start.x, e.clientY-start.y) : 0;
+      if(moved > CARD_TAP_MOVE_PX) return;   // kaydırmaydı — seçim yapma
       selectedType = def.id;
       if(typeof closeBuildConfirm === 'function') closeBuildConfirm();
       renderTowerSelectBtn();
