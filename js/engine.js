@@ -234,11 +234,12 @@ function getTowerStats(t){
    'first'     : yola en çok ilerlemiş (çıkışa en yakın) — varsayılan
    'weakest'   : en az canı kalan
    'strongest' : en çok canı kalan */
-function pickTarget(t, range){
+function pickTargetWhere(t, range, filterFn){
   let best=null, bestScore=-Infinity;
   const mode = t.targetMode || 'first';
   for(let i=0;i<enemies.length;i++){
     const e = enemies[i];
+    if(filterFn && !filterFn(e)) continue;
     if(Math.hypot(e.x-t.x, e.y-t.y) > range) continue;
     let score;
     if(mode==='weakest')        score = -e.hp;
@@ -247,6 +248,18 @@ function pickTarget(t, range){
     if(score > bestScore){ bestScore = score; best = e; }
   }
   return best;
+}
+
+/* Don Peykesi zaten donmuş bir düşmanı tekrar hedeflemez — etkiyi
+   boşa harcamak yerine menzildeki başka bir düşmana yönelir. Menzilde
+   donmamış kimse yoksa (yani "başka biri yoksa") donuk olana da vurur,
+   böylece kule asla boşa durmaz. */
+function pickTarget(t, range){
+  if(t.def.kind === 'ice'){
+    const fresh = pickTargetWhere(t, range, e => !(e.slowT > 0));
+    if(fresh) return fresh;
+  }
+  return pickTargetWhere(t, range, null);
 }
 
 /* Boss auralarının kule üzerindeki etkisi.
