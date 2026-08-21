@@ -182,8 +182,8 @@ let birdCooldown = 8;
 function scheduleNextBird(){
   const theme = (level && level.theme) || {};
   const winter = theme.season === 'winter';
-  const lo = winter ? 100 : 32;
-  const hi = winter ? 190 : 68;
+  const lo = winter ? 65 : 20;
+  const hi = winter ? 120 : 42;
   birdCooldown = lo + Math.random()*(hi-lo);
 }
 function spawnBird(){
@@ -200,7 +200,7 @@ function spawnBird(){
   for(let i=0;i<5 && b.edge===a.edge;i++) b = edgePoint();
 
   const dist = Math.hypot(b.x-a.x, b.y-a.y);
-  const speed = 130 + Math.random()*70;   // birim/sn (LW/LH mantıksal ölçeğinde)
+  const speed = 80 + Math.random()*45;    // birim/sn (LW/LH mantıksal ölçeğinde)
   const theme = (level && level.theme) || { biome:'forest' };
   const species = (typeof BIOME_BIRDS !== 'undefined' && BIOME_BIRDS[theme.biome]) || BIOME_BIRDS.forest;
 
