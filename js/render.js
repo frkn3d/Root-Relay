@@ -336,6 +336,54 @@ function drawProps(){
   level.props.forEach(p=>drawProp(p, snowy));
 }
 
+/* Ortam kuşu — biyoma göre tür/renk. Zamanlama ve uçuş durumu
+   engine.js'te (bird, spawnBird, scheduleNextBird); burada sadece
+   biyom→görsel eşlemesi ve çizim var. */
+const BIOME_BIRDS = {
+  forest:        { body:'#8a6f42', wing:'#4a3f22', size:0.9  },  // orman serçesi
+  desert:        { body:'#d1a95c', wing:'#7a5a2c', size:1.15 },  // çöl şahini
+  mediterranean: { body:'#eef4f6', wing:'#7fa3c2', size:1.05 },  // martı
+  tundra:        { body:'#eef2f2', wing:'#b7c3c8', size:0.85 },  // kar kuşu
+  swamp:         { body:'#4a5c46', wing:'#243024', size:1.2  },  // balıkçıl
+  savanna:       { body:'#d99a4a', wing:'#8a5a24', size:1.15 },  // bozkır kartalı
+  volcanic:      { body:'#7a3a34', wing:'#241a18', size:1.0  },  // kara karga
+};
+
+function drawBird(){
+  if(!bird) return;
+  const p = Math.max(0, Math.min(1, bird.t / bird.dur));
+  const x = bird.x0 + (bird.x1-bird.x0)*p;
+  const y = bird.y0 + (bird.y1-bird.y0)*p + Math.sin(bird.t*3 + bird.bobPhase)*bird.bob;
+  const angle = Math.atan2(bird.y1-bird.y0, bird.x1-bird.x0);
+  const sp = bird.species;
+  const s = bird.size * (sp.size||1);
+  const flap = Math.sin(bird.t*bird.wingSpeed + bird.wingPhase);
+  const sweep = 2.2 + flap*2.4;
+
+  ctx.save();
+  // kuş bakışından bakıyoruz: gölgesi tam altında, zeminin üstünde
+  ctx.beginPath();
+  ctx.ellipse(x, y, 7*s, 3*s, 0, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(0,0,0,0.16)';
+  ctx.fill();
+
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.beginPath();
+  ctx.moveTo(0, -6.5*s);
+  ctx.quadraticCurveTo(-sweep*s, 0, 1.6*s, 0.6*s);
+  ctx.quadraticCurveTo(-sweep*s, 0, 0, 6.5*s);
+  ctx.strokeStyle = sp.wing;
+  ctx.lineWidth = 1.8*s;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 2.4*s, 1.4*s, 0, 0, Math.PI*2);
+  ctx.fillStyle = sp.body;
+  ctx.fill();
+  ctx.restore();
+}
+
 /* Kışın sürekli kar yağışı — ekran genelinde, hafif rüzgârlı */
 const snowFlakes = (()=>{
   const arr=[];
@@ -1631,6 +1679,7 @@ function render(){
   drawExplosions();
   drawParticles();
   drawFloatTexts();
+  drawBird();       // ortam kuşu — kardan önce, gökyüzü katmanında
   drawSnowfall();   // en üstte: kar her şeyin önünden geçer
   ctx.restore();
 }

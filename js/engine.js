@@ -172,6 +172,48 @@ let selectedType = 'archer';
 let seenEnemyTypes = new Set();
 let paused = false;
 let gameSpeed = 1;
+
+/* ---- Ortam kuşu: kuş bakışı sahneden ara sıra geçen tek bir kuş ----
+   Saf görsel/atmosferik; oynanışa hiç dokunmaz. Tür ve renk bölümün
+   biyomuna göre değişir (BIOME_BIRDS, render.js); kış mevsiminde çok
+   daha seyrek görünür. */
+let bird = null;
+let birdCooldown = 8;
+function scheduleNextBird(){
+  const theme = (level && level.theme) || {};
+  const winter = theme.season === 'winter';
+  const lo = winter ? 100 : 32;
+  const hi = winter ? 190 : 68;
+  birdCooldown = lo + Math.random()*(hi-lo);
+}
+function spawnBird(){
+  const margin = 40;
+  const edgePoint = ()=>{
+    const edge = ['top','bottom','left','right'][Math.floor(Math.random()*4)];
+    if(edge==='top')    return {x:Math.random()*LW, y:-margin, edge};
+    if(edge==='bottom') return {x:Math.random()*LW, y:LH+margin, edge};
+    if(edge==='left')   return {x:-margin, y:Math.random()*LH, edge};
+    return {x:LW+margin, y:Math.random()*LH, edge};
+  };
+  const a = edgePoint();
+  let b = edgePoint();
+  for(let i=0;i<5 && b.edge===a.edge;i++) b = edgePoint();
+
+  const dist = Math.hypot(b.x-a.x, b.y-a.y);
+  const speed = 130 + Math.random()*70;   // birim/sn (LW/LH mantıksal ölçeğinde)
+  const theme = (level && level.theme) || { biome:'forest' };
+  const species = (typeof BIOME_BIRDS !== 'undefined' && BIOME_BIRDS[theme.biome]) || BIOME_BIRDS.forest;
+
+  bird = {
+    x0:a.x, y0:a.y, x1:b.x, y1:b.y, t:0, dur: dist/speed,
+    species,
+    size: 0.85 + Math.random()*0.5,
+    wingPhase: Math.random()*Math.PI*2,
+    wingSpeed: 7 + Math.random()*3,
+    bob: 3 + Math.random()*4,
+    bobPhase: Math.random()*Math.PI*2,
+  };
+}
 let selectedTower = null;
 let towerPanelOpen = false;
 let activeTowerRing = null; // tek tıkla menzil önizlemesi (panel açmadan)
@@ -487,6 +529,7 @@ function loadLevel(idx){
   towers=[]; enemies=[]; projectiles=[]; particles=[]; floatTexts=[]; explosions=[]; arcs=[]; healZones=[];
   spawnTimeline=[]; waveElapsed=0; shake=0;
   seenEnemyTypes = new Set();
+  bird = null; scheduleNextBird();
   paused = false;
   hideWaveToast(); // ui.js
   closeBuildConfirm();
@@ -641,6 +684,18 @@ let lastTime = performance.now();
 
 function update(dt){
   if(gameOver||gameWon) return;
+
+  if(level){
+    birdCooldown -= dt;
+    if(birdCooldown <= 0){
+      if(!bird) spawnBird();
+      scheduleNextBird();
+    }
+    if(bird){
+      bird.t += dt;
+      if(bird.t >= bird.dur) bird = null;
+    }
+  }
 
   if(waveActive){
     waveElapsed += dt;
