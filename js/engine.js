@@ -501,6 +501,7 @@ function loadLevel(idx){
   document.getElementById('overlay').classList.remove('show');
   closeTowerPanel();
   if(typeof closeTowerDrawer === 'function') closeTowerDrawer();
+  if(typeof updateLevelNavVisibility === 'function') updateLevelNavVisibility();   // GEÇİCİ (main.js)
   renderWavePreview();    // ui.js
 
   // Mevsim/biyom etkisi varsa oyuncuya kısaca bildir

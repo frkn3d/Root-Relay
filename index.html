@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#12261b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
 <title>Root & Relay — Tower Defense</title>
-<link rel="stylesheet" href="css/style.css?v=64">
+<link rel="stylesheet" href="css/style.css?v=65">
 </head>
 <body class="in-menu">
 <div class="wrap">
@@ -24,6 +24,12 @@
       <button class="shopBtn" id="shopBtn" title="Market"><span class="shop-glyph">🛒</span></button>
       <div class="tb-group">
         <div class="hud-chip"><span class="ic">💀</span><b id="waveVal">0</b>/<b id="waveMax">8</b></div>
+        <!-- GEÇİCİ — 1000 Bölüm test gezinme butonları. İleride kaldırılacak:
+             bu blok + css/style.css'teki ".level-nav-btn" kuralları +
+             js/main.js'teki "GEÇİCİ" bloğu silinince özellik tamamen gider. -->
+        <div class="level-nav-btn" id="levelPrevBtn" title="Önceki bölüm">◀</div>
+        <div class="level-nav-btn" id="levelNextBtn" title="Sonraki bölüm">▶</div>
+        <!-- /GEÇİCİ -->
         <div class="pauseIcon" id="fsBtn" title="Tam ekran">⛶</div>
         <div class="pauseIcon" id="pauseBtn" title="Duraklat">⏸</div>
       </div>
@@ -273,9 +279,9 @@
 <script src="js/levelgen.js?v=63"></script>
 <script src="js/progress.js?v=63"></script>
 <script src="js/audio.js?v=63"></script>
-<script src="js/engine.js?v=64"></script>
+<script src="js/engine.js?v=65"></script>
 <script src="js/render.js?v=63"></script>
-<script src="js/ui.js?v=64"></script>
-<script src="js/main.js?v=64"></script>
+<script src="js/ui.js?v=65"></script>
+<script src="js/main.js?v=65"></script>
 </body>
 </html>

@@ -134,6 +134,25 @@ canvas{
 }
 .pauseIcon:active{ transform:translateY(1px); box-shadow:0 1px 0 #7a5518; }
 
+/* GEÇİCİ — 1000 Bölüm test gezinme butonları. Silinecekse bu kural
+   bloğunu, index.html'deki iki .level-nav-btn öğesini ve js/main.js
+   içindeki "GEÇİCİ" ile işaretli bölümü kaldırmak yeterli. */
+.level-nav-btn{
+  display:none;
+  background:linear-gradient(180deg,#f4c04a,#b9832a);
+  border:2px solid #0a0704;
+  border-radius:9px;
+  width:22px; height:28px;
+  align-items:center; justify-content:center;
+  cursor:pointer; touch-action:manipulation;
+  font-size:11px; color:#2a1c08;
+  box-shadow:0 2px 0 #7a5518;
+  flex-shrink:0;
+}
+.level-nav-btn:active{ transform:translateY(1px); box-shadow:0 1px 0 #7a5518; }
+.level-nav-btn.show{ display:flex; }
+.level-nav-btn.disabled{ opacity:0.4; pointer-events:none; }
+
 @media (max-width:400px){
   .hud-chip{ font-size:12.5px; padding:3px 6px 3px 5px; gap:3px; }
   .hud-chip .ic{ font-size:12px; }

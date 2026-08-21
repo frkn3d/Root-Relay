@@ -297,6 +297,40 @@ function playSelectedGenLevel(){
   inp.value = n;                 // sınır dışıysa düzeltilmiş hali görünsün
   startGeneratedLevel(WORLD_SEED, n);
 }
+
+/* ============================================================
+   GEÇİCİ — 1000 Bölüm test/gezinme butonları.
+   Bölümleri hızlı kontrol etmek için üst bardaki ◀ ▶ ile bir üretilmiş
+   bölümden diğerine geçiş. İleride kaldırılacak: bu blok +
+   index.html'deki iki .level-nav-btn öğesi + css/style.css'teki
+   ".level-nav-btn" kuralları silinince özellik tamamen gider
+   (engine.js'teki loadLevel() içindeki tek satırlık çağrı, fonksiyon
+   yoksa zaten sessizce hiçbir şey yapmaz).
+   ============================================================ */
+function updateLevelNavVisibility(){
+  const on = currentLevelIdx === -1 && !!generatedLevel;
+  const prevBtn = document.getElementById('levelPrevBtn');
+  const nextBtn = document.getElementById('levelNextBtn');
+  if(!prevBtn || !nextBtn) return;
+  prevBtn.classList.toggle('show', on);
+  nextBtn.classList.toggle('show', on);
+  if(!on) return;
+  prevBtn.classList.toggle('disabled', generatedLevel.levelNo <= 1);
+  nextBtn.classList.toggle('disabled', generatedLevel.levelNo >= GEN.TOTAL_LEVELS);
+}
+document.getElementById('levelPrevBtn').addEventListener('pointerup', ()=>{
+  if(!generatedLevel || generatedLevel.levelNo <= 1) return;
+  playMenuTap();
+  startGeneratedLevel(WORLD_SEED, generatedLevel.levelNo - 1);
+  showWaveToast('Bölüm ' + generatedLevel.levelNo);
+});
+document.getElementById('levelNextBtn').addEventListener('pointerup', ()=>{
+  if(!generatedLevel || generatedLevel.levelNo >= GEN.TOTAL_LEVELS) return;
+  playMenuTap();
+  startGeneratedLevel(WORLD_SEED, generatedLevel.levelNo + 1);
+  showWaveToast('Bölüm ' + generatedLevel.levelNo);
+});
+/* /GEÇİCİ */
 document.getElementById('mmHowTo').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuHowTo'); });
 document.getElementById('mmSettings').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuSettings'); });
 document.getElementById('mmAbout').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuAbout'); });
