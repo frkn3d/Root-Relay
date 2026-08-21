@@ -528,6 +528,43 @@ body.in-menu .top-bar,
 body.in-menu .bottom-dock{ display:none; }
 body.in-menu .frame{ border-color:transparent; box-shadow:none; }
 
+/* --- Ana ekran arka planında sürekli düşen yaprak partikülleri ---
+   Menü kapalıyken animation-play-state:paused ile tamamen durur,
+   böylece oynanış sırasında hiçbir performans maliyeti olmaz. */
+.leaf-particles{
+  position:absolute; inset:0;
+  z-index:-1;
+  overflow:hidden;
+  pointer-events:none;
+}
+.leaf-particles .leaf{
+  position:absolute;
+  top:-10%;
+  display:block;
+  line-height:1;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35));
+  animation-name:leaf-fall, leaf-sway;
+  animation-timing-function:linear, ease-in-out;
+  animation-iteration-count:infinite, infinite;
+  animation-play-state:paused, paused;
+  will-change:transform;
+}
+.leaf-particles .leaf.rev{ animation-name:leaf-fall, leaf-sway-rev; }
+body.in-menu .leaf-particles .leaf{ animation-play-state:running, running; }
+
+@keyframes leaf-fall{
+  0%{ top:-10%; }
+  100%{ top:110%; }
+}
+@keyframes leaf-sway{
+  0%,100%{ transform:translateX(-14px) rotate(-12deg); }
+  50%{ transform:translateX(14px) rotate(10deg); }
+}
+@keyframes leaf-sway-rev{
+  0%,100%{ transform:translateX(14px) rotate(12deg); }
+  50%{ transform:translateX(-14px) rotate(-10deg); }
+}
+
 /* --- Menü sayfaları: aynı anda yalnızca biri görünür --- */
 .menu-page{
   display:none;
