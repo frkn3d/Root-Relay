@@ -334,7 +334,7 @@ document.getElementById('levelNextBtn').addEventListener('pointerup', ()=>{
 /* /GEÇİCİ */
 document.getElementById('mmHowTo').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuHowTo'); });
 document.getElementById('mmSettings').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuSettings'); });
-document.getElementById('mmAbout').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuAbout'); });
+document.getElementById('settingsAboutBtn').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuAbout'); });
 document.getElementById('bcOk').addEventListener('pointerup', (e)=>{ e.stopPropagation(); confirmBuild(); });
 document.getElementById('bcCancel').addEventListener('pointerup', (e)=>{ e.stopPropagation(); playMenuTap(); closeBuildConfirm(); });
 document.getElementById('shopBtn').addEventListener('pointerup', openShopOverlay);
@@ -348,7 +348,7 @@ document.getElementById('gemBuyBtn').addEventListener('pointerup', ()=>{
   renderShop();          // fiyatlar/pasiflik durumu tazelensin
 });
 document.querySelectorAll('[data-back]').forEach(btn=>{
-  btn.addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuMain'); });
+  btn.addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage(btn.dataset.back || 'menuMain'); });
 });
 
 document.getElementById('mmContinue').addEventListener('pointerup', ()=>{

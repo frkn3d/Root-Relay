@@ -68,7 +68,6 @@
             <button class="menu-btn" id="mmEndless">🌍 1000 Bölüm</button>
             <button class="menu-btn" id="mmHowTo">❓ Nasıl Oynanır?</button>
             <button class="menu-btn" id="mmSettings">⚙️ Ayarlar</button>
-            <button class="menu-btn" id="mmAbout">ℹ️ Hakkında</button>
           </div>
         </div>
 
@@ -170,6 +169,7 @@
           <div class="menu-head">Ayarlar</div>
           <div class="menu-list">
             <button class="menu-btn sound-toggle-btn" id="soundBtn">🔊 Ses</button>
+            <button class="menu-btn" id="settingsAboutBtn">ℹ️ Hakkında</button>
             <button class="menu-btn danger" id="resetProgressBtn">🗑️ Fabrika Ayarlarına Dön</button>
           </div>
           <button class="menu-btn back" data-back>← Geri</button>
@@ -182,7 +182,7 @@
             <div class="about-title">Root &amp; Relay</div>
             <div class="about-line">Bu bir LOGSPACE oyunudur.</div>
           </div>
-          <button class="menu-btn back" data-back>← Geri</button>
+          <button class="menu-btn back" data-back="menuSettings">← Geri</button>
         </div>
 
       </div>
@@ -260,10 +260,10 @@
       <div class="next-wave-preview" id="wavePreview"></div>
       <div class="tower-drawer" id="towerDrawer"></div>
       <div class="dock-row">
-        <button class="tower-select-btn" id="towerSelectBtn"></button>
         <button class="speed-btn" id="speedBtn">1×</button>
         <button class="pause-toggle-btn" id="pauseToggleBtn" title="Duraklat">⏸</button>
         <button class="wave-btn" id="waveBtn">Dalga<br>Başlat</button>
+        <button class="tower-select-btn" id="towerSelectBtn"></button>
       </div>
     </div>
   </div>
@@ -283,6 +283,6 @@
 <script src="js/engine.js?v=68"></script>
 <script src="js/render.js?v=65"></script>
 <script src="js/ui.js?v=65"></script>
-<script src="js/main.js?v=66"></script>
+<script src="js/main.js?v=67"></script>
 </body>
 </html>
