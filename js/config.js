@@ -8,7 +8,7 @@ const ENEMY_TYPES = {
   swarm:    { hp:12,  speed:1.1,  radius:9,  gold:3,  dmgToLives:1, label:'Sürü',    shape:'blob',   body:'#c9e07a', body2:'#7a9c3a', eyes:1 },
   sprinter: { hp:19,  speed:1.6,  radius:12, gold:4,  dmgToLives:1, label:'Koşucu',  shape:'runner', body:'#ffbf6b', body2:'#d98a2e', eyes:2 },
   husk:     { hp:60,  speed:0.62, radius:17, gold:9,  dmgToLives:1, label:'Kabuklu', shape:'brute',  body:'#c9b483', body2:'#8a6f42', eyes:2 },
-  brute:    { hp:178, speed:0.48, radius:21, gold:13, dmgToLives:2, label:'Ur',      shape:'brute',  body:'#b25bc9', body2:'#6f2f88', eyes:2 },
+  brute:    { hp:178, speed:0.48, radius:21, gold:13, dmgToLives:1, label:'Ur',      shape:'brute',  body:'#b25bc9', body2:'#6f2f88', eyes:2 },
   /* KÜP — öldüğünde ikiye bölünür. Çocuklar ebeveynin canının ve
      boyutunun %40'ı kadar olur. splitsLeft tükenene dek bölünmeye
      devam eder. Yolda zikzak çizerek "deli gibi" ilerler. */
@@ -43,7 +43,7 @@ const ENEMY_TYPES = {
   /* BÜYÜK BOSS — çok yavaş, çok dayanıklı. Etrafında bir don fırtınası
      taşır: auraRadius içindeki kulelerin atış hızını auraSlow oranında
      düşürür (0.5 = %50 yavaş). */
-  frostlord:{ hp:2600, speed:0.26, radius:24, gold:120, dmgToLives:5, label:'Don Efendisi', shape:'boss',
+  frostlord:{ hp:2600, speed:0.26, radius:24, gold:120, dmgToLives:1, label:'Don Efendisi', shape:'boss',
               body:'#7fd4ea', body2:'#2d5f80', eyes:2, boss:true, auraRadius:83, auraSlow:0.5 },
 };
 
