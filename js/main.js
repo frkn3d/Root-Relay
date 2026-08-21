@@ -284,6 +284,7 @@ function playSelectedGenLevel(){
   inp.value = n;                 // sınır dışıysa düzeltilmiş hali görünsün
   startGeneratedLevel(WORLD_SEED, n);
 }
+document.getElementById('mmHowTo').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuHowTo'); });
 document.getElementById('mmSettings').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuSettings'); });
 document.getElementById('mmAbout').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuAbout'); });
 document.getElementById('bcOk').addEventListener('pointerup', (e)=>{ e.stopPropagation(); confirmBuild(); });

@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#12261b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
 <title>Root & Relay — Tower Defense</title>
-<link rel="stylesheet" href="css/style.css?v=62">
+<link rel="stylesheet" href="css/style.css?v=63">
 </head>
 <body class="in-menu">
 <div class="wrap">
@@ -43,6 +43,7 @@
             <button class="menu-btn primary" id="mmContinue">▶ Devam Et</button>
             <button class="menu-btn" id="mmLevels">🗺️ Bölüm Seç</button>
             <button class="menu-btn" id="mmEndless">🌍 1000 Bölüm</button>
+            <button class="menu-btn" id="mmHowTo">❓ Nasıl Oynanır?</button>
             <button class="menu-btn" id="mmSettings">⚙️ Ayarlar</button>
             <button class="menu-btn" id="mmAbout">ℹ️ Hakkında</button>
           </div>
@@ -63,6 +64,82 @@
         <div class="menu-page" id="menuLevels">
           <div class="menu-head">Bölüm Seç</div>
           <div class="ss-levels" id="ssLevelList"></div>
+          <button class="menu-btn back" data-back>← Geri</button>
+        </div>
+
+        <div class="menu-page" id="menuHowTo">
+          <div class="menu-head">Nasıl Oynanır?</div>
+          <div class="howto-scroll">
+
+            <!-- Animasyonlu gösterim: kuleye basılı tutma -->
+            <div class="howto-demo">
+              <div class="hd-stage">
+                <div class="hd-tower">🏹</div>
+                <svg class="hd-ring" viewBox="0 0 100 100">
+                  <circle class="hd-ring-bg" cx="50" cy="50" r="42"></circle>
+                  <circle class="hd-ring-fg" cx="50" cy="50" r="42"></circle>
+                </svg>
+                <div class="hd-finger">👆</div>
+                <div class="hd-panel">
+                  <div class="hd-panel-row"><span>💥 Hasar</span><b>9</b></div>
+                  <div class="hd-panel-row"><span>🎯 Menzil</span><b>150</b></div>
+                  <div class="hd-panel-btns">
+                    <span class="hd-up">Yükselt</span><span class="hd-sell">Sat</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="howto-cap">Kuleye <b>1 saniye basılı tut</b> → yükseltme menüsü açılır</div>
+
+            <div class="howto-sec">
+              <div class="howto-title">🏗️ Temel oynanış</div>
+              <p>Boş bir toprak alana <b>dokun</b>, çıkan onay penceresinden ✓ ile kuleni kur. Kule kurulurken kısa bir <b>inşa süresi</b> vardır ve o sırada ateş edemez — dalganın ortasında kurmak risklidir.</p>
+              <p>Bir kuleye <b>tek dokunuş</b> menzilini gösterir. <b>1 saniye basılı tutmak</b> yükseltme panelini açar: buradan seviye atlatabilir, satabilir veya <b>atış önceliğini</b> değiştirebilirsin.</p>
+              <p>Her yükseltme hasarı, menzili ve atış hızını artırır; kule gözle görülür şekilde <b>büyür ve rengi parlar</b>. 3. seviyede altın kenarlık kazanır.</p>
+            </div>
+
+            <div class="howto-sec">
+              <div class="howto-title">🎯 Atış önceliği</div>
+              <p><b>Öncü:</b> çıkışa en yakın düşmanı vurur — sızmayı önlemek için varsayılan seçim.</p>
+              <p><b>Zayıf:</b> en az canı kalanı vurur — kalabalığı hızlı eritir, altını çabuk toplar.</p>
+              <p><b>Güçlü:</b> en çok canı kalanı vurur — Ur ve boss gibi ağır birimlere odaklanır.</p>
+            </div>
+
+            <div class="howto-sec">
+              <div class="howto-title">🗓️ Mevsim ve arazi dinamikleri</div>
+              <p>Her bölümün bir <b>mevsimi</b> ve <b>bitki örtüsü</b> vardır; bunlar sadece görsel değildir, oynanışı değiştirir. Etkiler bölüm başında ekranda yazar.</p>
+              <p><b>❄️ Kış:</b> Don Peykesi <b>+2 sn</b> daha uzun yavaşlatır, düşmanlar %8 yavaşlar — ama havan %10 zayıflar.</p>
+              <p><b>🏜️ Çöl:</b> Buz çabuk erir (<b>−1 sn</b>) ve düşmanlar %10 hızlanır. Burada yavaşlatmaya güvenme, hasara yatırım yap.</p>
+              <p><b>🍂 Sonbahar:</b> Düşmanlardan %12 fazla altın düşer — erken yatırım için ideal.</p>
+              <p><b>🌿 Bataklık:</b> Çamur düşmanları %10 yavaşlatır, zehir %15 daha etkilidir.</p>
+              <p><b>🌾 Savan:</b> Açık arazi; menziller %8 artar ama düşmanlar da %8 hızlanır.</p>
+              <p><b>🌋 Volkanik:</b> Havan %15 güçlenir, buz zayıflar.</p>
+              <p><b>🌲 Orman:</b> Okçular kendi evinde, %12 fazla hasar verir.</p>
+            </div>
+
+            <div class="howto-sec">
+              <div class="howto-title">🧠 Strateji</div>
+              <p><b>Virajlara kur.</b> Yolun döndüğü noktalarda düşmanlar menzil içinde daha uzun kalır. Tek bir kule iki koridoru birden dövebilir.</p>
+              <p><b>Rolleri karıştır.</b> Don Peykesi hasar vermez ama düşmanları yavaşlatarak diğer kulelerin ateş penceresini uzatır. Bir yavaşlatıcı + iki vurucu, üç vurucudan çoğu zaman daha iyidir.</p>
+              <p><b>Kalabalığa alan hasarı.</b> Mantar Havanı ve Şimşek Direği yığınları temizler; Zehir Sarmaşığı yüksek canlı hedeflerde birikerek etkilidir.</p>
+              <p><b>Çift girişe dikkat.</b> Bazı bölümlerde 2 giriş veya 2 çıkış vardır. Tüm kuleleri tek yola yığarsan diğer yol savunmasız kalır — kavşak noktaları en verimli yerlerdir.</p>
+              <p><b>Yükseltmek mi, yenisini kurmak mı?</b> Erken oyunda yeni kule genelde daha verimlidir; alan dolduğunda yükseltmeye geç.</p>
+              <p><b>Şişeyi yerinde kır.</b> Şişe öldüğünde yere 45 saniyelik iyileştirme birikintisi bırakır. Onu savunmanın <b>gerisinde</b> öldürmek, sonraki dalgaların o gölcükten faydalanmasına yol açar.</p>
+              <p><b>2× hız.</b> Dalgalar arası ve kolay dalgalarda hızlandır; zor anlarda 1×'e dön, böylece tepki verecek zamanın olur.</p>
+            </div>
+
+            <div class="howto-sec">
+              <div class="howto-title">💎 Elmas ve market</div>
+              <p>Bölümleri yıldızla bitirdikçe <b>elmas</b> kazanırsın. Oyun içindeki 🛒 butonundan altın, can ve inşa hızı takviyesi alabilirsin. <b>Bu alımlar yalnızca o bölüm için geçerlidir</b> — bölümü yeniden başlatırsan sıfırlanır.</p>
+            </div>
+
+            <div class="howto-sec">
+              <div class="howto-title">⭐ Yıldızlar</div>
+              <p>Bölüm sonunda kalan canına göre 1–3 yıldız alırsın. Canının %80'i kalırsa 3, %40'ı kalırsa 2 yıldız. Yıldız başına 5 elmas kazanırsın — ama yalnızca <b>ilk kez</b> kazandığın yıldızlar için.</p>
+            </div>
+
+          </div>
           <button class="menu-btn back" data-back>← Geri</button>
         </div>
 
@@ -175,13 +252,13 @@
 </div>
 
 <!-- Sıra önemli: config -> levelgen -> progress -> audio -> engine -> render -> ui -> main -->
-<script src="js/config.js?v=62"></script>
-<script src="js/levelgen.js?v=62"></script>
-<script src="js/progress.js?v=62"></script>
-<script src="js/audio.js?v=62"></script>
-<script src="js/engine.js?v=62"></script>
-<script src="js/render.js?v=62"></script>
-<script src="js/ui.js?v=62"></script>
-<script src="js/main.js?v=62"></script>
+<script src="js/config.js?v=63"></script>
+<script src="js/levelgen.js?v=63"></script>
+<script src="js/progress.js?v=63"></script>
+<script src="js/audio.js?v=63"></script>
+<script src="js/engine.js?v=63"></script>
+<script src="js/render.js?v=63"></script>
+<script src="js/ui.js?v=63"></script>
+<script src="js/main.js?v=63"></script>
 </body>
 </html>

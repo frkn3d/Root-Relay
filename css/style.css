@@ -818,3 +818,122 @@ body.in-menu .frame{ border-color:transparent; box-shadow:none; }
 }
 .seed-preview b{ color:var(--gold); }
 
+
+/* ============================================================
+   NASIL OYNANIR
+   ============================================================ */
+.howto-scroll{
+  width:100%; max-width:320px;
+  max-height:58vh; overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  text-align:left; padding-right:4px;
+}
+
+/* --- Animasyonlu gösterim: kuleye basılı tutma --- */
+.howto-demo{
+  width:100%;
+  background:linear-gradient(180deg,#2f5233,#213b26);
+  border:2px solid var(--line);
+  border-radius:14px;
+  padding:10px;
+  margin-bottom:8px;
+}
+.hd-stage{
+  position:relative;
+  height:150px;
+  display:flex; align-items:center; justify-content:center;
+}
+.hd-tower{
+  position:absolute; left:50%; top:78px;
+  transform:translate(-50%,-50%);
+  width:44px; height:44px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #8fc482, #446f3f);
+  border:2px solid #22391d;
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px;
+  box-shadow:0 3px 0 rgba(0,0,0,0.35);
+}
+/* Basılı tutma ilerleme halkası */
+.hd-ring{
+  position:absolute; left:50%; top:78px;
+  transform:translate(-50%,-50%) rotate(-90deg);
+  width:62px; height:62px;
+  pointer-events:none;
+}
+.hd-ring-bg{ fill:none; stroke:rgba(0,0,0,0.35); stroke-width:7; }
+.hd-ring-fg{
+  fill:none; stroke:var(--gold); stroke-width:7; stroke-linecap:round;
+  stroke-dasharray:264; stroke-dashoffset:264;
+  animation:hd-fill 5s ease-in-out infinite;
+}
+@keyframes hd-fill{
+  0%,18%   { stroke-dashoffset:264; opacity:0; }
+  20%      { stroke-dashoffset:264; opacity:1; }
+  52%      { stroke-dashoffset:0;   opacity:1; }
+  60%,100% { stroke-dashoffset:0;   opacity:0; }
+}
+/* Parmak: sağdan gelir, basar, kalkar */
+.hd-finger{
+  position:absolute; left:50%; top:78px;
+  font-size:26px;
+  transform:translate(30px, 34px);
+  animation:hd-finger 5s ease-in-out infinite;
+}
+@keyframes hd-finger{
+  0%       { transform:translate(60px, 60px) scale(1);   opacity:0; }
+  12%      { transform:translate(6px, 22px)  scale(1);   opacity:1; }
+  20%      { transform:translate(2px, 16px)  scale(0.86); opacity:1; }
+  52%      { transform:translate(2px, 16px)  scale(0.86); opacity:1; }
+  60%      { transform:translate(6px, 24px)  scale(1);   opacity:1; }
+  72%      { transform:translate(50px, 56px) scale(1);   opacity:0; }
+  100%     { transform:translate(60px, 60px) scale(1);   opacity:0; }
+}
+/* Açılan yükseltme paneli */
+.hd-panel{
+  position:absolute; left:50%; top:6px;
+  transform:translate(-50%,-6px) scale(0.9);
+  width:170px;
+  background:rgba(12,20,13,0.94);
+  border:2px solid var(--gold);
+  border-radius:10px;
+  padding:7px 8px;
+  opacity:0;
+  animation:hd-panel 5s ease-in-out infinite;
+}
+@keyframes hd-panel{
+  0%,52%   { opacity:0; transform:translate(-50%,4px) scale(0.9); }
+  60%      { opacity:1; transform:translate(-50%,-6px) scale(1); }
+  86%      { opacity:1; transform:translate(-50%,-6px) scale(1); }
+  94%,100% { opacity:0; transform:translate(-50%,-10px) scale(0.95); }
+}
+.hd-panel-row{
+  display:flex; justify-content:space-between;
+  font-family:'JetBrains Mono', monospace; font-size:9px;
+  color:var(--cream-dim); padding:1px 0;
+}
+.hd-panel-row b{ color:var(--cream); }
+.hd-panel-btns{ display:flex; gap:4px; margin-top:5px; }
+.hd-up, .hd-sell{
+  flex:1; text-align:center; border-radius:6px; padding:4px 0;
+  font-family:'Baloo 2', sans-serif; font-weight:700; font-size:9px;
+}
+.hd-up{ background:linear-gradient(180deg,#7fb377,#3f6b47); color:#0d1a0f; }
+.hd-sell{ background:linear-gradient(180deg,#e2504a,#a5312c); color:#fff; }
+
+.howto-cap{
+  font-family:'JetBrains Mono', monospace; font-size:10px;
+  color:var(--gold); text-align:center; margin-bottom:12px; line-height:1.5;
+}
+.howto-cap b{ color:var(--cream); }
+
+.howto-sec{ margin-bottom:14px; }
+.howto-title{
+  font-family:'Baloo 2', sans-serif; font-weight:700;
+  font-size:13.5px; color:var(--gold); margin-bottom:5px;
+}
+.howto-sec p{
+  margin:0 0 6px;
+  font-family:'JetBrains Mono', monospace;
+  font-size:10px; line-height:1.65; color:var(--cream-dim);
+}
+.howto-sec p b{ color:var(--cream); }
