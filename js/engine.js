@@ -173,17 +173,17 @@ let seenEnemyTypes = new Set();
 let paused = false;
 let gameSpeed = 1;
 
-/* ---- Ortam kuşu: kuş bakışı sahneden ara sıra geçen tek bir kuş ----
+/* ---- Ortam kuşu: kuş bakışı sahneden ara sıra geçen küçük bir sürü ----
    Saf görsel/atmosferik; oynanışa hiç dokunmaz. Tür ve renk bölümün
    biyomuna göre değişir (BIOME_BIRDS, render.js); kış mevsiminde çok
    daha seyrek görünür. */
-let bird = null;
+let birds = [];
 let birdCooldown = 8;
 function scheduleNextBird(){
   const theme = (level && level.theme) || {};
   const winter = theme.season === 'winter';
-  const lo = winter ? 65 : 20;
-  const hi = winter ? 120 : 42;
+  const lo = winter ? 45 : 14;
+  const hi = winter ? 85 : 30;
   birdCooldown = lo + Math.random()*(hi-lo);
 }
 function spawnBird(){
@@ -201,18 +201,31 @@ function spawnBird(){
 
   const dist = Math.hypot(b.x-a.x, b.y-a.y);
   const speed = 80 + Math.random()*45;    // birim/sn (LW/LH mantıksal ölçeğinde)
+  const dur = dist/speed;
   const theme = (level && level.theme) || { biome:'forest' };
   const species = (typeof BIOME_BIRDS !== 'undefined' && BIOME_BIRDS[theme.biome]) || BIOME_BIRDS.forest;
 
-  bird = {
-    x0:a.x, y0:a.y, x1:b.x, y1:b.y, t:0, dur: dist/speed,
-    species,
-    size: 0.85 + Math.random()*0.5,
-    wingPhase: Math.random()*Math.PI*2,
-    wingSpeed: 7 + Math.random()*3,
-    bob: 3 + Math.random()*4,
-    bobPhase: Math.random()*Math.PI*2,
-  };
+  // Uçuş yönüne dik birim vektör — sürüyü yan yana/gevşek V diye dizmek için
+  const nx = -(b.y-a.y)/dist, ny = (b.x-a.x)/dist;
+  const count = Math.random() < 0.5 ? 3 : 5;
+  const spacing = 20 + Math.random()*12;
+
+  birds = [];
+  for(let i=0;i<count;i++){
+    const off = (i - (count-1)/2) * spacing;             // simetrik yanal dizilim
+    const stagger = Math.abs(i - (count-1)/2) * 0.14;     // kanatlar hafif geriden gelsin
+    birds.push({
+      x0:a.x+nx*off, y0:a.y+ny*off,
+      x1:b.x+nx*off, y1:b.y+ny*off,
+      t:-stagger, dur,
+      species,
+      size: 0.85 + Math.random()*0.5,
+      wingPhase: Math.random()*Math.PI*2,
+      wingSpeed: 7 + Math.random()*3,
+      bob: 3 + Math.random()*4,
+      bobPhase: Math.random()*Math.PI*2,
+    });
+  }
 }
 let selectedTower = null;
 let towerPanelOpen = false;
@@ -529,14 +542,14 @@ function loadLevel(idx){
   towers=[]; enemies=[]; projectiles=[]; particles=[]; floatTexts=[]; explosions=[]; arcs=[]; healZones=[];
   spawnTimeline=[]; waveElapsed=0; shake=0;
   seenEnemyTypes = new Set();
-  bird = null; scheduleNextBird();
+  birds = []; scheduleNextBird();
   paused = false;
   hideWaveToast(); // ui.js
   closeBuildConfirm();
   document.getElementById('shopOverlay').classList.remove('show');
   setWaveBtnReady(true); // ui.js — ilk dalgaya davet
   document.getElementById('pauseOverlay').classList.remove('show');
-  document.getElementById('pauseBtn').textContent = '⏸';
+  syncPauseToggleBtn();
   document.getElementById('goldVal').textContent = gold;
   document.getElementById('livesVal').textContent = lives;
   document.getElementById('waveVal').textContent = waveIndex;
@@ -553,13 +566,40 @@ function loadLevel(idx){
   }
 }
 
-function togglePause(){
+function syncPauseToggleBtn(){
+  const btn = document.getElementById('pauseToggleBtn');
+  if(btn) btn.textContent = paused ? '▶' : '⏸';
+}
+
+/* Alt bardaki saf duraklat/devam — MENÜ AÇMAZ. Oyuncu simülasyonu
+   durdurup ekrana bakarak strateji kurabilsin diye; bir önceki
+   tasarımda duraklatma her zaman menüyü de açıp görüşü kapatıyordu. */
+function toggleSimPause(){
   if(gameOver||gameWon) return;
   paused = !paused;
   playMenuTap();
-  document.getElementById('pauseOverlay').classList.toggle('show', paused);
-  document.getElementById('pauseBtn').textContent = paused ? '▶' : '⏸';
+  if(!paused) document.getElementById('pauseOverlay').classList.remove('show');
+  syncPauseToggleBtn();
   if(!paused) lastTime = performance.now();
+}
+
+/* Üst bardaki ☰ artık menü butonu: her zaman duraklatıp pause menüsünü
+   açar (menüye basmak = duraklatmak, bu ikisi ayrılmaz). */
+function openPauseMenu(){
+  if(gameOver||gameWon) return;
+  playMenuTap();
+  paused = true;
+  document.getElementById('pauseOverlay').classList.add('show');
+  syncPauseToggleBtn();
+}
+
+/* Pause menüsündeki "Devam Et" — hem menüyü kapatır hem devam ettirir. */
+function resumeFromMenu(){
+  playMenuTap();
+  paused = false;
+  document.getElementById('pauseOverlay').classList.remove('show');
+  syncPauseToggleBtn();
+  lastTime = performance.now();
 }
 
 function goToMainMenu(){
@@ -570,7 +610,7 @@ function goToMainMenu(){
   document.getElementById('pauseOverlay').classList.remove('show');
   document.getElementById('overlay').classList.remove('show');
   paused = true;
-  document.getElementById('pauseBtn').textContent = '▶';
+  syncPauseToggleBtn();
   closeTowerPanel();
   if(typeof closeTowerDrawer === 'function') closeTowerDrawer();
   openStartScreen(); // ui.js
@@ -688,12 +728,12 @@ function update(dt){
   if(level){
     birdCooldown -= dt;
     if(birdCooldown <= 0){
-      if(!bird) spawnBird();
+      if(!birds.length) spawnBird();
       scheduleNextBird();
     }
-    if(bird){
-      bird.t += dt;
-      if(bird.t >= bird.dur) bird = null;
+    if(birds.length){
+      birds.forEach(b=>{ b.t += dt; });
+      birds = birds.filter(b=>b.t < b.dur);
     }
   }
 

@@ -455,6 +455,20 @@ canvas{
   box-shadow:0 2px 0 #7a3010;
 }
 
+.pause-toggle-btn{
+  flex:0 0 auto;
+  background:linear-gradient(180deg, #2c1c10, #1a1109);
+  color:var(--cream-dim);
+  border:2px solid #0a0704;
+  border-radius:10px;
+  width:36px; height:44px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:15px;
+  cursor:pointer; touch-action:manipulation;
+  box-shadow:0 2px 0 rgba(0,0,0,0.4);
+}
+.pause-toggle-btn:active{ transform:translateY(1px); box-shadow:0 1px 0 rgba(0,0,0,0.4); }
+
 .wave-btn{
   flex:1 1 auto; min-width:0;
   background:linear-gradient(180deg, #f4c04a, #b9832a);

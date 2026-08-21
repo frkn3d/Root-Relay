@@ -336,8 +336,8 @@ function drawProps(){
   level.props.forEach(p=>drawProp(p, snowy));
 }
 
-/* Ortam kuşu — biyoma göre tür/renk. Zamanlama ve uçuş durumu
-   engine.js'te (bird, spawnBird, scheduleNextBird); burada sadece
+/* Ortam kuşu sürüsü — biyoma göre tür/renk. Zamanlama ve uçuş durumu
+   engine.js'te (birds, spawnBird, scheduleNextBird); burada sadece
    biyom→görsel eşlemesi ve çizim var. */
 const BIOME_BIRDS = {
   forest:        { body:'#8a6f42', wing:'#4a3f22', size:0.9  },  // orman serçesi
@@ -349,8 +349,11 @@ const BIOME_BIRDS = {
   volcanic:      { body:'#7a3a34', wing:'#241a18', size:1.0  },  // kara karga
 };
 
-function drawBird(){
-  if(!bird) return;
+function drawBirds(){
+  birds.forEach(drawOneBird);
+}
+function drawOneBird(bird){
+  if(bird.t < 0) return;   // sürüde henüz sırası gelmedi (kenarın hemen dışında bekliyor)
   const p = Math.max(0, Math.min(1, bird.t / bird.dur));
   const x = bird.x0 + (bird.x1-bird.x0)*p;
   const y = bird.y0 + (bird.y1-bird.y0)*p + Math.sin(bird.t*3 + bird.bobPhase)*bird.bob;
@@ -1679,7 +1682,7 @@ function render(){
   drawExplosions();
   drawParticles();
   drawFloatTexts();
-  drawBird();       // ortam kuşu — kardan önce, gökyüzü katmanında
+  drawBirds();      // ortam kuşu sürüsü — kardan önce, gökyüzü katmanında
   drawSnowfall();   // en üstte: kar her şeyin önünden geçer
   ctx.restore();
 }

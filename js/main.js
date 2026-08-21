@@ -250,8 +250,9 @@ document.getElementById('nextLevelBtn').addEventListener('pointerup', ()=>{
   saveResume(next, 0);
 });
 document.getElementById('restartBtnPause').addEventListener('pointerup', ()=>{ playMenuTap(); loadLevel(currentLevelIdx); });
-document.getElementById('pauseBtn').addEventListener('pointerup', togglePause);
-document.getElementById('resumeBtn').addEventListener('pointerup', togglePause);
+document.getElementById('menuBtn').addEventListener('pointerup', openPauseMenu);
+document.getElementById('pauseToggleBtn').addEventListener('pointerup', toggleSimPause);
+document.getElementById('resumeBtn').addEventListener('pointerup', resumeFromMenu);
 document.getElementById('speedBtn').addEventListener('pointerup', toggleSpeed);
 document.getElementById('towerSelectBtn').addEventListener('pointerup', toggleTowerDrawer);
 document.getElementById('tpUpgradeBtn').addEventListener('pointerup', doUpgradeTower);
