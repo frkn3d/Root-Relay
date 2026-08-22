@@ -277,9 +277,10 @@ let pressProgressStart = 0;     // basılı tutmanın başladığı zaman damgas
 const LONG_PRESS_MS = 500;      // yükseltme panelini açmak için gereken basılı tutma süresi
 let sellConfirmPending = false;
 
-// level0->1, level1->2, level2->3. İlk seviyeye zam yok; 2. seviyeye
-// +%50 (0.9 -> 1.35), son seviyeye +%75 (1.3 -> 2.275).
-const UPGRADE_COST_MULT = [0.6, 0.9*1.5, 1.3*1.75];
+// Yükseltme maliyetleri anaparanın (TOWER_TYPES.cost) katları:
+// level0->1 = x1.4, level1->2 = x2, level2->3 (son seviye) = x4.
+// Şu an son seviye 3 olduğu için 4. bir yükseltme yok; olsaydı x5 olurdu.
+const UPGRADE_COST_MULT = [1.4, 2.0, 4.0];
 
 /* İnşa/yükseltme süreleri (saniye).
    BUILD_TIMES[0] = ilk kurulum, [1] = 2. seviye, [2] = 3. seviye.
@@ -298,14 +299,11 @@ function buildCost(def){
   return def.cost;
 }
 
-// Düz zam: tüm yükseltmelere +10 altın, son (2->3) yükseltmeye +200 altın.
-const UPGRADE_COST_FLAT_ADD = [10, 10, 200];
 function upgradeCost(t){
   const lvl = t.level||0;
   if(lvl>=3) return null;
   // Fiyatlar her zaman 5'in katı olsun — okunması kolay, tutarlı sayılar
-  const base = Math.round(t.def.cost * UPGRADE_COST_MULT[lvl] / 5) * 5;
-  return base + UPGRADE_COST_FLAT_ADD[lvl];
+  return Math.round(t.def.cost * UPGRADE_COST_MULT[lvl] / 5) * 5;
 }
 /* Aktif bölümün mevsim/biyom etkileri. Klasik bölümlerde tema
    olmadığı için nötr değerler döner. */
