@@ -360,45 +360,117 @@ const BIOME_BIRDS = {
   volcanic:      { body:'#7a3a34', wing:'#241a18', size:1.0  },  // kara karga
 };
 
-/* Üç evreli uçuş yolu — yaklaşma (düz) / süzülme (elips turu) / çıkış
-   (düz). t, bird.dur içinde herhangi bir an olabilir; hangi evrede
-   olduğunu approachDur/loopDur sınırlarına bakarak bulur. */
-function birdPositionAt(b, t){
-  const loopX = b.cx + Math.cos(b.angle)*b.rx, loopY = b.cy + Math.sin(b.angle)*b.ry;
-  if(t <= b.approachDur){
-    const p = b.approachDur>0 ? t/b.approachDur : 1;
-    // bob genliği uçların (kalkış / döngüye giriş) TAM SIFIR olması için
-    // sin(p*PI) ile fade in/out yapılıyor — aksi halde döngüye devrederken
-    // konum bir anda zıplıyordu (elips sınırında süreksizlik).
-    return {
-      x: b.x0 + (loopX-b.x0)*p,
-      y: b.y0 + (loopY-b.y0)*p + Math.sin(t*3+b.bobPhase)*b.bob*Math.sin(p*Math.PI),
-    };
-  }
-  const tLoop = t - b.approachDur;
-  if(tLoop <= b.loopDur){
-    const p = b.loopDur>0 ? tLoop/b.loopDur : 1;
-    const ang = b.angle + b.dir*p*b.loops*Math.PI*2;
-    return { x: b.cx + Math.cos(ang)*b.rx, y: b.cy + Math.sin(ang)*b.ry };
-  }
-  const tDep = tLoop - b.loopDur;
-  const p = b.departDur>0 ? tDep/b.departDur : 1;
-  return {
-    x: loopX + (b.x1-loopX)*p,
-    y: loopY + (b.y1-loopY)*p + Math.sin(t*3+b.bobPhase)*b.bob*Math.sin(p*Math.PI),
-  };
+/* Üç evreli uçuş yolu — yaklaşma / süzülme (elips turu) / çıkış.
+   Evre sınırlarında KONUM eşleşiyordu ama düz çizginin yönü elipsin o
+   noktadaki teğetiyle örtüşmediği için kuş sınırda birden "kırılıyordu"
+   (denendi: iki evrenin konumunu pencerede harmanlamak konumu düzeltse
+   de aradaki farkı tek karede kapatmaya çalıştığından yön sıçraması
+   sürüyordu). Gerçek çözüm: yaklaşma/çıkış düz çizgi DEĞİL, ucu tam
+   elipsin o andaki teğet yönünü hedefleyen ikinci dereceden bir Bézier
+   eğrisi — böylece yön, sınırda cebirsel olarak zaten eşleşiyor. */
+function bezierPt(p0, p1, p2, p){
+  const q = 1-p;
+  return { x: q*q*p0.x + 2*q*p*p1.x + p*p*p2.x, y: q*q*p0.y + 2*q*p*p1.y + p*p*p2.y };
+}
+function ellipseTangentDir(rx, ry, theta, dir){
+  const tx = -rx*Math.sin(theta), ty = ry*Math.cos(theta);
+  const s = dir<0 ? -1 : 1;
+  const len = Math.hypot(tx,ty) || 1;
+  return { x: s*tx/len, y: s*ty/len };
 }
 
-function drawBirds(){
-  birds.forEach(drawOneBird);
+/* Teğet yönü, düz çizginin doğal yönüyle (neredeyse) ters düşerse — kuş
+   döngüden neredeyse geri dönerek giriyor/çıkıyormuş gibi — tam teğet
+   eşleşmesi eğriyi S şekline sokup ortada bir "durma noktası" yaratıyordu
+   (hız sıfıra yaklaşınca yön belirsizleşip aniden sıçrıyordu). Hizasızlık
+   arttıkça teğet etkisini (k'yı) azaltarak bunu önlüyoruz — iyi hizalanmış
+   çoğunluk durumda tam yumuşak geçiş, kötü hizalanmış nadir durumda düz
+   çizgiye yakın (küçük bir sıçrama pahasına, ama S kavisi/durma yok). */
+function tangentBlendK(dist, tangent, chordDir){
+  const align = tangent.x*chordDir.x + tangent.y*chordDir.y;
+  const kScale = Math.max(0, align) ** 2;   // hizasız/ters durumda 0'a insin — S kavisi/durma noktası oluşmasın
+  return Math.max(8, dist*0.35) * kScale;
 }
-function drawOneBird(bird){
+
+function birdApproachPos(b, t){
+  const p = b.approachDur>0 ? Math.max(0, Math.min(1, t/b.approachDur)) : 1;
+  const p0 = { x:b.x0, y:b.y0 };
+  const p2 = { x: b.cx+Math.cos(b.angle)*b.rx, y: b.cy+Math.sin(b.angle)*b.ry };
+  const dist = Math.hypot(p2.x-p0.x, p2.y-p0.y) || 1;
+  const chordDir = { x:(p2.x-p0.x)/dist, y:(p2.y-p0.y)/dist };
+  const tin = ellipseTangentDir(b.rx, b.ry, b.angle, b.dir);
+  const k = tangentBlendK(dist, tin, chordDir);
+  const p1 = { x: p2.x - tin.x*k, y: p2.y - tin.y*k };
+  const bez = bezierPt(p0, p1, p2, p);
+  // bob genliği uçların (kalkış / döngüye giriş) TAM SIFIR olması için
+  // sin(p*PI) ile fade in/out yapılıyor.
+  return { x: bez.x, y: bez.y + Math.sin(t*3+b.bobPhase)*b.bob*Math.sin(p*Math.PI) };
+}
+function birdLoopPos(b, tLoop){
+  const p = b.loopDur>0 ? tLoop/b.loopDur : 1;
+  const ang = b.angle + b.dir*p*b.loops*Math.PI*2;
+  return { x: b.cx + Math.cos(ang)*b.rx, y: b.cy + Math.sin(ang)*b.ry };
+}
+function birdDepartPos(b, tDep){
+  const p = b.departDur>0 ? Math.max(0, Math.min(1, tDep/b.departDur)) : 1;
+  const angEnd = b.angle + b.dir*b.loops*Math.PI*2;
+  const p0 = { x: b.cx+Math.cos(angEnd)*b.rx, y: b.cy+Math.sin(angEnd)*b.ry };
+  const p2 = { x: b.x1, y: b.y1 };
+  const dist = Math.hypot(p2.x-p0.x, p2.y-p0.y) || 1;
+  const chordDir = { x:(p2.x-p0.x)/dist, y:(p2.y-p0.y)/dist };
+  const tout = ellipseTangentDir(b.rx, b.ry, angEnd, b.dir);
+  const k = tangentBlendK(dist, tout, chordDir);
+  const p1 = { x: p0.x + tout.x*k, y: p0.y + tout.y*k };
+  const bez = bezierPt(p0, p1, p2, p);
+  const tAbs = tDep + b.approachDur + b.loopDur;   // bob dalgası mutlak zamana göre ilerler
+  return { x: bez.x, y: bez.y + Math.sin(tAbs*3+b.bobPhase)*b.bob*Math.sin(p*Math.PI) };
+}
+
+function birdPositionAt(b, t){
+  if(t <= b.approachDur) return birdApproachPos(b, t);
+  const tLoop = t - b.approachDur;
+  if(tLoop <= b.loopDur) return birdLoopPos(b, tLoop);
+  return birdDepartPos(b, tLoop - b.loopDur);
+}
+
+let lastBirdFrameT = null;
+function drawBirds(){
+  const now = performance.now()/1000;
+  const fdt = (lastBirdFrameT===null) ? 0 : Math.max(0, Math.min(0.1, now-lastBirdFrameT));
+  lastBirdFrameT = now;
+  birds.forEach(b=>drawOneBird(b, fdt));
+}
+const BIRD_MAX_TURN_RATE = Math.PI*1.6;   // rad/sn — normal döngü dönüşünün kat kat üstünde
+function drawOneBird(bird, fdt){
   if(bird.t < 0) return;   // sürüde henüz sırası gelmedi (kenarın hemen dışında bekliyor)
   const t = Math.max(0, Math.min(bird.dur, bird.t));
   const pos = birdPositionAt(bird, t);
-  const posNext = birdPositionAt(bird, Math.min(bird.dur, t+0.05));
   const x = pos.x, y = pos.y;
-  const angle = Math.atan2(posNext.y-pos.y, posNext.x-pos.x);
+  // Uçuşun tam son karesinde ileri bakış bird.dur'a takılıp konum
+  // donduğundan yön sıfıra kilitleniyordu — sona yakınken geriye
+  // bakışla hesaplanıyor ki son anda da yön doğru kalsın.
+  const lookFwd = (t + 0.05 <= bird.dur);
+  const refT = lookFwd ? t + 0.05 : Math.max(0, t - 0.05);
+  const ref = birdPositionAt(bird, refT);
+  const rawAngle = lookFwd
+    ? Math.atan2(ref.y-pos.y, ref.x-pos.x)
+    : Math.atan2(pos.y-ref.y, pos.x-ref.x);
+  // Konum eğrisi matematiksel olarak sürekli olsa da (yaklaşma/elips/çıkış
+  // arasında), evre sınırlarına yakın nadir açılarda anlık hız çok düşüp
+  // yön ölçümü gürültülü kalabiliyordu. Görsel dönüşü bir üst limitle
+  // (BIRD_MAX_TURN_RATE) sınırlayarak — normal elips dönüşünün çok
+  // üstünde bir hız olduğundan doğal manevrayı KISMAMIYOR ama olası bir
+  // ani sıçramayı kısa bir yumuşak dönüşe çeviriyor.
+  let angle = rawAngle;
+  if(fdt>0 && bird.dispAngle!==undefined){
+    let diff = rawAngle - bird.dispAngle;
+    while(diff>Math.PI) diff -= Math.PI*2;
+    while(diff<-Math.PI) diff += Math.PI*2;
+    const maxStep = BIRD_MAX_TURN_RATE*fdt;
+    if(diff>maxStep) diff=maxStep; else if(diff<-maxStep) diff=-maxStep;
+    angle = bird.dispAngle + diff;
+  }
+  bird.dispAngle = angle;
   const sp = bird.species;
   const s = bird.size * (sp.size||1);
   const flap = Math.sin(bird.t*bird.wingSpeed + bird.wingPhase);

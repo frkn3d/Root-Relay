@@ -90,6 +90,10 @@ function loop(now){
   const raw = Math.min((now-lastTime)/1000, 0.05);
   lastTime = now;
   if(!paused){
+    // Kuşlar (ve zaten performance.now() tabanlı çalışan kar yağışı)
+    // gameSpeed çarpanından bağımsız — gerçek dt ile ilerler, aksi
+    // halde 2x/4x'te fırlayıp çirkin görünüyorlardı.
+    updateBirds(raw);
     // Yüksek hızlarda tek karede büyük dt sıçraması, düşmanların
     // kule menzillerini atlamasına yol açar. Bu yüzden simülasyon
     // sabit tavanlı alt adımlara bölünerek çalıştırılır.

@@ -214,9 +214,14 @@ function spawnBird(){
   const baseRy = 35 + Math.random()*35;
   const loops = Math.random() < 0.5 ? 1 : 2;
   const dir = Math.random() < 0.5 ? 1 : -1;
-  const baseAngle = Math.random()*Math.PI*2;
-  const basePeriod = 2.6 + Math.random()*1.6;   // tur başına saniye (süzülme temposu)
-
+  // Giriş açısı tamamen rastgele seçilirse, elipsin o noktadaki teğeti
+  // genel a→b uçuş yönüyle sık sık ters düşüyor; render.js bunu düz
+  // çizgiyle teğeti eşleştiren bir eğriyle bağlıyor, ama teğet ters
+  // yöndeyse eğri neredeyse durma noktasına inip yön aniden sıçrıyordu.
+  // Açıyı, o noktadaki teğet zaten genel uçuş yönüne yakın olacak
+  // şekilde seçip üstüne sınırlı bir rastgelelik ekliyoruz.
+  const travelAngle = Math.atan2(b.y-a.y, b.x-a.x);
+  const baseAngle = travelAngle - dir*(Math.PI/2) + (Math.random()-0.5)*0.7;
   const ab = Math.hypot(b.x-a.x, b.y-a.y) || 1;
   const nx = -(b.y-a.y)/ab, ny = (b.x-a.x)/ab;   // uçuş eksenine dik — formasyon açıklığı için
   const count = Math.random() < 0.5 ? 3 : 5;
@@ -233,14 +238,21 @@ function spawnBird(){
     const rx = baseRx * (0.9 + Math.random()*0.2);
     const ry = baseRy * (0.9 + Math.random()*0.2);
     const angle = baseAngle + (i-(count-1)/2)*0.06 + (Math.random()-0.5)*0.12;
-    const period = basePeriod * (0.94 + Math.random()*0.12);
     const stagger = Math.abs(i-(count-1)/2)*0.035 + (Math.random()-0.5)*0.02;
 
     const loopX = cx + Math.cos(angle)*rx, loopY = cy + Math.sin(angle)*ry;
     const x0 = a.x+nx*off, y0 = a.y+ny*off;
     const x1 = b.x+nx*off, y1 = b.y+ny*off;
     const approachDur = Math.hypot(loopX-x0, loopY-y0) / speed;
-    const loopDur = period * loops;
+    // Döngü süresi bağımsız rastgele bir "period"dan DEĞİL, elipsin
+    // çevresinden hesaplanıyor — aksi halde tur hızı düz uçuş hızından
+    // (speed) tamamen kopuk oluyordu (~120-150 birim/sn'ye çıkabiliyordu,
+    // düz uçuşun 16-25 birim/sn'sine karşı) ve sınırda ani bir "hızlanma"
+    // sıçraması oluyordu. Ramanujan yaklaşık elips çevresi / speed ile
+    // tur hızı düz uçuşla aynı kalıyor.
+    const h = Math.pow((rx-ry)/(rx+ry), 2);
+    const circumference = Math.PI*(rx+ry)*(1 + 3*h/(10+Math.sqrt(4-3*h)));
+    const loopDur = (circumference*loops) / speed;
     const departDur = Math.hypot(x1-loopX, y1-loopY) / speed;
 
     birds.push({
@@ -766,20 +778,26 @@ function endGame(win){
 /* ---- Update (delta-time tabanlı) ---- */
 let lastTime = performance.now();
 
+/* Ortam kuşu sürüsü — 1x/2x/4x hız çarpanından bilerek bağımsız tutulur.
+   update(dt), main.js'teki döngüde gameSpeed ile ölçeklenmiş adımlarla
+   çağrılıyor; kuşlar da o dt'yi kullansaydı hızlandırmada fırlıyorlardı.
+   Bu yüzden main.js her karede, hızdan bağımsız GERÇEK dt ile ayrıca
+   çağırıyor (yalnızca oyun duraklı değilken, dondurma davranışı aynı). */
+function updateBirds(dt){
+  if(!level) return;
+  birdCooldown -= dt;
+  if(birdCooldown <= 0){
+    if(!birds.length) spawnBird();
+    scheduleNextBird();
+  }
+  if(birds.length){
+    birds.forEach(b=>{ b.t += dt; });
+    birds = birds.filter(b=>b.t < b.dur);
+  }
+}
+
 function update(dt){
   if(gameOver||gameWon) return;
-
-  if(level){
-    birdCooldown -= dt;
-    if(birdCooldown <= 0){
-      if(!birds.length) spawnBird();
-      scheduleNextBird();
-    }
-    if(birds.length){
-      birds.forEach(b=>{ b.t += dt; });
-      birds = birds.filter(b=>b.t < b.dur);
-    }
-  }
 
   if(waveActive){
     waveElapsed += dt;
