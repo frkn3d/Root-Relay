@@ -91,11 +91,14 @@ const ROAD_TYPES = {
 const GEN = {
   W: 600, H: 1000,                 // mantıksal saha ölçüsü
   MARGIN: 60,                      // kenar boşluğu
-  MAX_PATH_RATIO: 4.2,             // yol uzunluğu / ekran yüksekliği tavanı
-  MIN_SPOT_TO_PATH: 46,            // kule–yol asgari mesafesi (kaos önleme)
+  MAX_PATH_RATIO: 5.2,             // yol uzunluğu / ekran yüksekliği tavanı
+  MIN_SPOT_TO_PATH: 60,            // kule–yol asgari mesafesi (kaos önleme) — eskisinden (46) %30 fazla
   MIN_SPOT_TO_SPOT: 74,            // kule–kule asgari mesafesi
   SPOTS_PER_LEN: 1/150,            // yol uzunluğu başına asgari nokta
   TOTAL_LEVELS: 1000,
+  MIN_WAVES: 9,                    // bölüm başına asgari dalga sayısı
+  MAX_WAVES: 15,                   // bölüm başına azami dalga sayısı
+  LONG_PATH_CHANCE: 0.8,           // bölümlerin bu oranı uzun/karmaşık yol alır
 };
 
 /* ---------- Zorluk eğrisi ----------
@@ -265,8 +268,17 @@ function buildRoutes(rng, diff, budgetScale){
   const multi = (layout !== '1-1');
   const lenScale = scale * (multi ? 0.62 : 1);
 
-  const minCells = Math.max(6, Math.round((8 + diff*4) * lenScale));
-  const maxCells = Math.max(minCells+2, Math.min(26, Math.round((13 + diff*9) * lenScale)));
+  // Bölümlerin GEN.LONG_PATH_CHANCE kadarı (varsayılan %80) uzun ve
+  // karmaşık bir yol hedefler; geri kalanı daha kısa/basit kalıp
+  // dalgalanmaya nefes payı bırakır.
+  const wantsLongPath = rng() < GEN.LONG_PATH_CHANCE;
+  const cellBase    = wantsLongPath ? 14 : 8;
+  const cellPerDiff  = wantsLongPath ? 6  : 4;
+  const cellMaxBase  = wantsLongPath ? 22 : 13;
+  const cellMaxPerDiff = wantsLongPath ? 12 : 9;
+
+  const minCells = Math.max(6, Math.round((cellBase + diff*cellPerDiff) * lenScale));
+  const maxCells = Math.max(minCells+2, Math.min(30, Math.round((cellMaxBase + diff*cellMaxPerDiff) * lenScale)));
 
   const EDGES = ['top','bottom','left','right'];
   const opposite = { top:'bottom', bottom:'top', left:'right', right:'left' };
@@ -505,8 +517,11 @@ function pickArchetype(rng, diff){
 
 /* ---------- Dalga üretimi ---------- */
 function buildWaves(rng, diff, levelNo){
-  // KURAL 3: ilk bölümler az dalga
-  const waveCount = Math.max(4, Math.min(14, Math.round(4 + diff*9 + rnd(rng,-0.5,0.5))));
+  // Dalga sayısı her zaman GEN.MIN_WAVES–GEN.MAX_WAVES aralığında; zorlukla
+  // birlikte bu aralıkta yükselir. İlk bölümlerin kolaylığı artık dalga
+  // SAYISI ile değil (KURAL 3), düşman havuzu/sayısı/gücüyle sağlanıyor.
+  const waveCount = Math.max(GEN.MIN_WAVES, Math.min(GEN.MAX_WAVES,
+    Math.round(GEN.MIN_WAVES + diff*(GEN.MAX_WAVES-GEN.MIN_WAVES) + rnd(rng,-0.5,0.5))));
 
   // Düşman havuzu zorlukla açılır
   const pool = ['spore','swarm'];

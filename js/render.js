@@ -349,15 +349,45 @@ const BIOME_BIRDS = {
   volcanic:      { body:'#7a3a34', wing:'#241a18', size:1.0  },  // kara karga
 };
 
+/* Üç evreli uçuş yolu — yaklaşma (düz) / süzülme (elips turu) / çıkış
+   (düz). t, bird.dur içinde herhangi bir an olabilir; hangi evrede
+   olduğunu approachDur/loopDur sınırlarına bakarak bulur. */
+function birdPositionAt(b, t){
+  const loopX = b.cx + Math.cos(b.angle)*b.rx, loopY = b.cy + Math.sin(b.angle)*b.ry;
+  if(t <= b.approachDur){
+    const p = b.approachDur>0 ? t/b.approachDur : 1;
+    // bob genliği uçların (kalkış / döngüye giriş) TAM SIFIR olması için
+    // sin(p*PI) ile fade in/out yapılıyor — aksi halde döngüye devrederken
+    // konum bir anda zıplıyordu (elips sınırında süreksizlik).
+    return {
+      x: b.x0 + (loopX-b.x0)*p,
+      y: b.y0 + (loopY-b.y0)*p + Math.sin(t*3+b.bobPhase)*b.bob*Math.sin(p*Math.PI),
+    };
+  }
+  const tLoop = t - b.approachDur;
+  if(tLoop <= b.loopDur){
+    const p = b.loopDur>0 ? tLoop/b.loopDur : 1;
+    const ang = b.angle + b.dir*p*b.loops*Math.PI*2;
+    return { x: b.cx + Math.cos(ang)*b.rx, y: b.cy + Math.sin(ang)*b.ry };
+  }
+  const tDep = tLoop - b.loopDur;
+  const p = b.departDur>0 ? tDep/b.departDur : 1;
+  return {
+    x: loopX + (b.x1-loopX)*p,
+    y: loopY + (b.y1-loopY)*p + Math.sin(t*3+b.bobPhase)*b.bob*Math.sin(p*Math.PI),
+  };
+}
+
 function drawBirds(){
   birds.forEach(drawOneBird);
 }
 function drawOneBird(bird){
   if(bird.t < 0) return;   // sürüde henüz sırası gelmedi (kenarın hemen dışında bekliyor)
-  const p = Math.max(0, Math.min(1, bird.t / bird.dur));
-  const x = bird.x0 + (bird.x1-bird.x0)*p;
-  const y = bird.y0 + (bird.y1-bird.y0)*p + Math.sin(bird.t*3 + bird.bobPhase)*bird.bob;
-  const angle = Math.atan2(bird.y1-bird.y0, bird.x1-bird.x0);
+  const t = Math.max(0, Math.min(bird.dur, bird.t));
+  const pos = birdPositionAt(bird, t);
+  const posNext = birdPositionAt(bird, Math.min(bird.dur, t+0.05));
+  const x = pos.x, y = pos.y;
+  const angle = Math.atan2(posNext.y-pos.y, posNext.x-pos.x);
   const sp = bird.species;
   const s = bird.size * (sp.size||1);
   const flap = Math.sin(bird.t*bird.wingSpeed + bird.wingPhase);

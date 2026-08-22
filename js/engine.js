@@ -186,6 +186,10 @@ function scheduleNextBird(){
   const hi = winter ? 85 : 30;
   birdCooldown = lo + Math.random()*(hi-lo);
 }
+/* Uçuş üç evreli: kenardan ekranın ortasına yaklaşma (düz), orta
+   noktada 1-2 tur elips çizme (süzülme), sonra bir kenardan çıkış
+   (düz). approachDur/loopDur/departDur toplamı bird.dur'u oluşturur;
+   render.js bu üç evreyi bird.t'ye göre ayrı ayrı konumlandırır. */
 function spawnBird(){
   const margin = 40;
   const edgePoint = ()=>{
@@ -199,25 +203,51 @@ function spawnBird(){
   let b = edgePoint();
   for(let i=0;i<5 && b.edge===a.edge;i++) b = edgePoint();
 
-  const dist = Math.hypot(b.x-a.x, b.y-a.y);
-  const speed = 80 + Math.random()*45;    // birim/sn (LW/LH mantıksal ölçeğinde)
-  const dur = dist/speed;
   const theme = (level && level.theme) || { biome:'forest' };
   const species = (typeof BIOME_BIRDS !== 'undefined' && BIOME_BIRDS[theme.biome]) || BIOME_BIRDS.forest;
 
-  // Uçuş yönüne dik birim vektör — sürüyü yan yana/gevşek V diye dizmek için
-  const nx = -(b.y-a.y)/dist, ny = (b.x-a.x)/dist;
+  // Ekranın ortasına yakın, hafif kaymış bir elips merkezi — sürü
+  // buraya gelip 1-2 tur atıp sonra yoluna devam eder.
+  const cx = LW*0.5 + (Math.random()-0.5)*LW*0.28;
+  const cy = LH*0.45 + (Math.random()-0.5)*LH*0.22;
+  const baseRx = 55 + Math.random()*45;
+  const baseRy = 35 + Math.random()*35;
+  const loops = Math.random() < 0.5 ? 1 : 2;
+  const dir = Math.random() < 0.5 ? 1 : -1;
+  const baseAngle = Math.random()*Math.PI*2;
+  const basePeriod = 2.6 + Math.random()*1.6;   // tur başına saniye (süzülme temposu)
+
+  const ab = Math.hypot(b.x-a.x, b.y-a.y) || 1;
+  const nx = -(b.y-a.y)/ab, ny = (b.x-a.x)/ab;   // uçuş eksenine dik — formasyon açıklığı için
   const count = Math.random() < 0.5 ? 3 : 5;
-  const spacing = 20 + Math.random()*12;
+  const spacing = 16 + Math.random()*10;
 
   birds = [];
   for(let i=0;i<count;i++){
-    const off = (i - (count-1)/2) * spacing;             // simetrik yanal dizilim
-    const stagger = Math.abs(i - (count-1)/2) * 0.14;     // kanatlar hafif geriden gelsin
+    const off = (i - (count-1)/2) * spacing;
+
+    // Eskisinden ÇOK daha yavaş düz uçuş (~%80 azaltıldı) + her kuşta
+    // ufak farklar (yarıçap/açı/tempo/hız/zamanlama) — sürü aynı
+    // manevrayı yapar ama robotik biçimde birebir aynı değildir.
+    const speed = 16 + Math.random()*9;
+    const rx = baseRx * (0.9 + Math.random()*0.2);
+    const ry = baseRy * (0.9 + Math.random()*0.2);
+    const angle = baseAngle + (i-(count-1)/2)*0.06 + (Math.random()-0.5)*0.12;
+    const period = basePeriod * (0.94 + Math.random()*0.12);
+    const stagger = Math.abs(i-(count-1)/2)*0.035 + (Math.random()-0.5)*0.02;
+
+    const loopX = cx + Math.cos(angle)*rx, loopY = cy + Math.sin(angle)*ry;
+    const x0 = a.x+nx*off, y0 = a.y+ny*off;
+    const x1 = b.x+nx*off, y1 = b.y+ny*off;
+    const approachDur = Math.hypot(loopX-x0, loopY-y0) / speed;
+    const loopDur = period * loops;
+    const departDur = Math.hypot(x1-loopX, y1-loopY) / speed;
+
     birds.push({
-      x0:a.x+nx*off, y0:a.y+ny*off,
-      x1:b.x+nx*off, y1:b.y+ny*off,
-      t:-stagger, dur,
+      x0, y0, x1, y1,
+      cx, cy, rx, ry, angle, loops, dir, loopDur, approachDur, departDur,
+      dur: approachDur + loopDur + departDur,
+      t: -stagger,
       species,
       size: 0.85 + Math.random()*0.5,
       wingPhase: Math.random()*Math.PI*2,
