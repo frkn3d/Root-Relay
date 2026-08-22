@@ -277,7 +277,8 @@ let pressProgressStart = 0;     // basılı tutmanın başladığı zaman damgas
 const LONG_PRESS_MS = 500;      // yükseltme panelini açmak için gereken basılı tutma süresi
 let sellConfirmPending = false;
 
-const UPGRADE_COST_MULT = [0.6, 0.9, 1.3]; // level0->1, level1->2, level2->3
+// level0->1, level1->2, level2->3 (son seviye yükseltmesine +%75 zam: 1.3 -> 2.275)
+const UPGRADE_COST_MULT = [0.6, 0.9, 1.3*1.75];
 
 /* İnşa/yükseltme süreleri (saniye).
    BUILD_TIMES[0] = ilk kurulum, [1] = 2. seviye, [2] = 3. seviye.
