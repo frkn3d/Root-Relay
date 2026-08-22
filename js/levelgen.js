@@ -498,19 +498,19 @@ function pickTheme(rng, levelNo){
    ve ritmi değişir. */
 const WAVE_ARCHETYPES = [
   { id:'dengeli',  name:'Dengeli',
-    shares:{spore:0.42, swarm:0.34, sprinter:0.28, husk:0.16, brute:0.12, flask:0.10, cocoon:0.08, swarmqueen:0.06}, pace:1.00 },
+    shares:{spore:0.42, swarm:0.34, sprinter:0.28, husk:0.16, brute:0.12, flask:0.10, cocoon:0.08, swarmqueen:0.06, cube:0.14}, pace:1.00 },
   { id:'akin',     name:'Akın',            // çok sayıda küçük, hızlı akış
-    shares:{spore:0.30, swarm:0.95, sprinter:0.55, husk:0.05, brute:0.03, flask:0.06, cocoon:0.04, swarmqueen:0.05}, pace:0.62 },
+    shares:{spore:0.30, swarm:0.95, sprinter:0.55, husk:0.05, brute:0.03, flask:0.06, cocoon:0.04, swarmqueen:0.05, cube:0.08}, pace:0.62 },
   { id:'kusatma',  name:'Kuşatma',         // az sayıda ağır, yavaş baskı
-    shares:{spore:0.14, swarm:0.08, sprinter:0.10, husk:0.55, brute:0.42, flask:0.16, cocoon:0.10, swarmqueen:0.04}, pace:1.65 },
+    shares:{spore:0.14, swarm:0.08, sprinter:0.10, husk:0.55, brute:0.42, flask:0.16, cocoon:0.10, swarmqueen:0.04, cube:0.18}, pace:1.65 },
   { id:'kosu',     name:'Koşu',            // hız odaklı
-    shares:{spore:0.18, swarm:0.30, sprinter:0.95, husk:0.10, brute:0.06, flask:0.06, cocoon:0.04, swarmqueen:0.05}, pace:0.70 },
+    shares:{spore:0.18, swarm:0.30, sprinter:0.95, husk:0.10, brute:0.06, flask:0.06, cocoon:0.04, swarmqueen:0.05, cube:0.08}, pace:0.70 },
   { id:'kalabalik',name:'Kalabalık',       // ekranı dolduran yığın
-    shares:{spore:0.85, swarm:0.75, sprinter:0.30, husk:0.14, brute:0.08, flask:0.08, cocoon:0.05, swarmqueen:0.07}, pace:0.75 },
+    shares:{spore:0.85, swarm:0.75, sprinter:0.30, husk:0.14, brute:0.08, flask:0.08, cocoon:0.05, swarmqueen:0.07, cube:0.10}, pace:0.75 },
   { id:'zirhli',   name:'Zırhlı',          // dayanıklılık sınavı
-    shares:{spore:0.20, swarm:0.15, sprinter:0.14, husk:0.70, brute:0.22, flask:0.18, cocoon:0.08, swarmqueen:0.04}, pace:1.35 },
+    shares:{spore:0.20, swarm:0.15, sprinter:0.14, husk:0.70, brute:0.22, flask:0.18, cocoon:0.08, swarmqueen:0.04, cube:0.20}, pace:1.35 },
   { id:'dalgali',  name:'Dalgalı',         // gruplar arası belirgin boşluk
-    shares:{spore:0.50, swarm:0.45, sprinter:0.35, husk:0.22, brute:0.16, flask:0.12, cocoon:0.10, swarmqueen:0.06}, pace:1.45 },
+    shares:{spore:0.50, swarm:0.45, sprinter:0.35, husk:0.22, brute:0.16, flask:0.12, cocoon:0.10, swarmqueen:0.06, cube:0.14}, pace:1.45 },
 ];
 
 function pickArchetype(rng, diff){
@@ -531,6 +531,11 @@ function buildWaves(rng, diff, levelNo){
   const waveCount = Math.max(GEN.MIN_WAVES, Math.min(GEN.MAX_WAVES,
     Math.round(GEN.MIN_WAVES + diff*(GEN.MAX_WAVES-GEN.MIN_WAVES) + rnd(rng,-0.5,0.5))));
 
+  // Son 7 bölüm (994-1000): final gauntlet — havuz karıştırılmadan
+  // (bkz. aşağı) tam haliyle kullanılır, dalga yoğunluğu da ayrıca
+  // generateWaveForGenerated'te %80 artırılır.
+  const isFinaleLevel = levelNo > GEN.TOTAL_LEVELS - 7;
+
   // Düşman havuzu zorlukla açılır
   const pool = ['spore','swarm'];
   if(diff > 0.14) pool.push('sprinter');
@@ -538,23 +543,26 @@ function buildWaves(rng, diff, levelNo){
   if(diff > 0.38) pool.push('flask');   // destek birimi: iyileştirme birikintisi
   if(diff > 0.46) pool.push('brute');
   if(diff > 0.30) pool.push('cocoon');  // kamikaze — yalnızca son dalgalarda görünür (bkz. isVeryLateWave)
+  // KÜP artık kendi başına ayrı bir dalga değil — diğer türlerle
+  // karışık gelsin diye normal havuzun bir parçası.
+  if(diff > 0.34) pool.push('cube');
   // SÜRÜ ANASI: ilk 8 bölümde kesinlikle yok; sonrasında bölüm başına
   // %35 ihtimalle havuza girer (tohuma bağlı, o yüzden aynı bölüm
   // numarası her zaman aynı sonucu verir — "rastgele ama deterministik").
   if(levelNo > 8 && rng() < 0.35) pool.push('swarmqueen');
 
   // Havuzdan bazen bir tür çıkarılır — aynı havuz her bölümde
-  // aynı hissi vermesin diye. (En az 2 tür kalır.)
-  if(pool.length >= 4 && rng() < 0.35){
+  // aynı hissi vermesin diye. (En az 2 tür kalır.) Son 7 bölümde bu
+  // kısıtlama hiç uygulanmaz — hepsi karışsın istendi.
+  if(!isFinaleLevel && pool.length >= 4 && rng() < 0.35){
     const dropIdx = rndInt(rng, 1, pool.length-2);   // ilk ve son korunur
     pool.splice(dropIdx, 1);
   }
 
   const archetype = pickArchetype(rng, diff);
-  const allowCube = diff > 0.34;
   const allowBoss = diff > 0.55;
 
-  return { waveCount, pool, allowCube, allowBoss, archetype };
+  return { waveCount, pool, allowBoss, archetype };
 }
 
 /* ---------- Manzara dekoru ----------
@@ -734,7 +742,6 @@ function generateLevel(seed, levelNo){
     startGold, startLives,
     enemyPool: waves.pool,
     archetype: waves.archetype,
-    allowCube: waves.allowCube,
     allowBoss: waves.allowBoss,
     // Klasik bölümlerle uyum için zorluk parametreleri
     difficulty:{
@@ -765,25 +772,22 @@ function generateWaveForGenerated(level, waveIndex){
     ];
   }
 
-  // Küp dalgası: izinliyse ortalarda bir yerde
-  const cubeWave = level.allowCube && waveIndex === Math.max(3, Math.round(level.waveCount*0.55));
-  if(cubeWave){
-    return [
-      {type:'cube', count: Math.round(8+diff*14), interval: 3.6},
-      {type:'swarm', count: Math.round(12+diff*16), interval:0.5},
-    ];
-  }
-
   // lateWaveBoost (config.js): 8. dalgadan sonra her dalga giderek
   // daha kalabalık olsun diye ek doğrusal çarpan (9. dalga +%10, ...)
   const mult = (1 + waveIndex*0.16) * lateWaveBoost(waveIndex);
   const arch = level.archetype || WAVE_ARCHETYPES[0];
-  const count = Math.round((p.countBase + waveIndex*p.countGrowth) * mult * 0.55);
+  // Son 7 bölüm (994-1000): final gauntlet — dalga başına düşman
+  // yoğunluğu %80 artırılır (bkz. buildWaves'teki havuz-karıştırma
+  // kısıtının da bu bölümlerde devre dışı bırakılması).
+  const isFinaleLevel = level.levelNo > GEN.TOTAL_LEVELS - 7;
+  const finaleMult = isFinaleLevel ? 1.80 : 1;
+  const count = Math.round((p.countBase + waveIndex*p.countGrowth) * mult * 0.55 * finaleMult);
   const groups = [];
   const pool = level.enemyPool;
 
-  // Arketip, hangi türün ağır basacağını ve ritmi belirler
-  const baseIntervals = { swarm:0.40, sprinter:0.75, spore:0.75, husk:1.20, brute:1.70, flask:1.50, cocoon:2.2, swarmqueen:1.8 };
+  // Arketip, hangi türün ağır basacağını ve ritmi belirler. KÜP artık
+  // ayrı bir dalga değil — diğer türlerle birlikte normal havuzdan gelir.
+  const baseIntervals = { swarm:0.40, sprinter:0.75, spore:0.75, husk:1.20, brute:1.70, flask:1.50, cocoon:2.2, swarmqueen:1.8, cube:3.2 };
   // ŞİŞE yalnızca son 3 dalgada görünür — her dalgada çıkması hem
   // tekrara düşürüyor hem de erken dalgaları gereksiz zorlaştırıyordu.
   const isLateWave = waveIndex > level.waveCount - 3;

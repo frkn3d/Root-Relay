@@ -15,7 +15,13 @@ const ENEMY_TYPES = {
   /* Denge güncellemesi: bölünmemiş küp +%10, ilk bölünme (orta boy)
      +%15, en küçüğe bölünenler (2. ve 3. küçülme — ikisi de minRadius'a
      kenetlendiği için ekranda aynı boyda görünür) +%35 hızlandırıldı. */
-  cube:     { hp:130, speed:0.07975, radius:20, gold:8,  dmgToLives:1, label:'Küp',     shape:'cube',   body:'#ff9f43', body2:'#b5541a', eyes:2,
+  /* Küp artık her dalgaya karışık düşebildiğinden (bkz. levelgen.js
+     buildWaves) toplam bölünme ağacından gelen altın da önceki
+     dedike-dalga tasarımına göre çok daha sık kazanılıyordu; bu yüzden
+     taban altın %50 düşürüldü (8 -> 4). Çocuklar zaten ebeveynin
+     %50'sini aldığından bu, tüm zincirin toplam getirisini orantılı
+     olarak yarıya indiriyor. */
+  cube:     { hp:130, speed:0.07975, radius:20, gold:4,  dmgToLives:1, label:'Küp',     shape:'cube',   body:'#ff9f43', body2:'#b5541a', eyes:2,
               splits:3, splitHpFactor:0.40, splitSizeFactor:0.40, minRadius:6, wobble:26,
               /* Nesil başına hız çarpanı (taban hıza göre):
                  1. küçülme +%50 → +%15 ek, 2. küçülme +%100 → +%35 ek,
@@ -107,8 +113,8 @@ const LEVELS = [
     ],
     difficulty:{ hpGrowth:0.16, speedGrowth:0.025, speedCap:1.5, countBase:7, countGrowth:1.85 },
     waveOverrides:{
-      // KÜP DALGASI — bölünen kaotik dalga
-      6:[ {type:'cube', count:14, interval:4.2}, {type:'swarm', count:20, interval:0.5} ],
+      // KÜP artık tek başına değil, diğer birimlerle karışık geliyor
+      6:[ {type:'cube', count:14, interval:4.2}, {type:'swarm', count:20, interval:0.5}, {type:'sprinter', count:10, interval:0.6} ],
       9:[ {type:'swarm', count:40, interval:0.42}, {type:'sprinter', count:40, interval:0.5}, {type:'flask', count:4, interval:2.2}, {type:'husk', count:23, interval:1.35}, {type:'brute', count:21, interval:2.0} ],
       // BOSS DALGASI: tek Don Efendisi + maiyeti
       10:[ {type:'frostlord', count:1, interval:1.0}, {type:'flask', count:5, interval:2.4}, {type:'husk', count:10, interval:1.6}, {type:'sprinter', count:16, interval:0.7} ]
@@ -132,8 +138,8 @@ const LEVELS = [
     ],
     difficulty:{ hpGrowth:0.21, speedGrowth:0.03, speedCap:1.65, countBase:8, countGrowth:2.15 },
     waveOverrides:{
-      // KÜP DALGASI — bölünen kaotik dalga
-      7:[ {type:'cube', count:20, interval:4.0}, {type:'swarm', count:26, interval:0.45}, {type:'sprinter', count:14, interval:0.6} ],
+      // KÜP artık tek başına değil, diğer birimlerle karışık geliyor
+      7:[ {type:'cube', count:20, interval:4.0}, {type:'swarm', count:26, interval:0.45}, {type:'sprinter', count:14, interval:0.6}, {type:'husk', count:6, interval:1.3} ],
       11:[ {type:'swarm', count:44, interval:0.39}, {type:'sprinter', count:44, interval:0.42}, {type:'spore', count:35, interval:0.55}, {type:'flask', count:6, interval:2.0}, {type:'husk', count:26, interval:1.25}, {type:'brute', count:22, interval:1.8} ],
       // BOSS DALGASI: iki Don Efendisi + maiyeti
       12:[ {type:'frostlord', count:2, interval:9.0}, {type:'flask', count:7, interval:2.2}, {type:'brute', count:12, interval:1.8}, {type:'husk', count:16, interval:1.3}, {type:'sprinter', count:24, interval:0.6} ]

@@ -164,7 +164,7 @@ function buildPathDecor(path, totalLen){
 
 let gold, lives, waveIndex, waveActive, gameOver, gameWon;
 let startLivesEffective = 10;
-let towers, enemies, projectiles, particles, floatTexts, explosions, arcs, healZones;
+let towers, enemies, projectiles, particles, floatTexts, explosions, arcs, healZones, debris;
 let spawnTimeline, waveElapsed;
 let shake = 0;
 let spots = [];
@@ -581,7 +581,7 @@ function loadLevel(idx){
   resetSessionShop();            // progress.js — bölüm içi alımlar sıfırlanır
   waveIndex = 0;
   waveActive=false; gameOver=false; gameWon=false;
-  towers=[]; enemies=[]; projectiles=[]; particles=[]; floatTexts=[]; explosions=[]; arcs=[]; healZones=[];
+  towers=[]; enemies=[]; projectiles=[]; particles=[]; floatTexts=[]; explosions=[]; arcs=[]; healZones=[]; debris=[];
   spawnTimeline=[]; waveElapsed=0; shake=0;
   seenEnemyTypes = new Set();
   birds = []; scheduleNextBird();
@@ -599,6 +599,7 @@ function loadLevel(idx){
   document.getElementById('overlay').classList.remove('show');
   closeTowerPanel();
   if(typeof closeTowerDrawer === 'function') closeTowerDrawer();
+  if(typeof resetTowerDrawerHint === 'function') resetTowerDrawerHint();   // ui.js — kayma ipucu her bölümde bir kez tekrar oynasın
   if(typeof updateLevelNavVisibility === 'function') updateLevelNavVisibility();   // GEÇİCİ (main.js)
   renderWavePreview();    // ui.js
 
@@ -931,6 +932,12 @@ function update(dt){
   arcs.forEach(a=>{ a.life -= dt; });
   arcs = arcs.filter(a=>a.life > 0);
 
+  /* KÜP ENKAZI (bkz. "KÜP BÖLÜNMESİ") — yalnızca görsel, oynanışa etkisi yok */
+  if(debris.length){
+    debris.forEach(d=>{ d.life -= dt; });
+    debris = debris.filter(d=>d.life > 0);
+  }
+
   /* İYİLEŞTİRME BİRİKİNTİLERİ (kırılan şişelerden)
      Üst üste binen birikintiler toplanmaz; en güçlüsü uygulanır.
      Aksi halde birkaç şişe yan yana kırıldığında bölüm kilitlenir. */
@@ -1181,6 +1188,16 @@ function update(dt){
           const ang=(i/10)*Math.PI*2;
           particles.push({x:e.x,y:e.y,vx:Math.cos(ang)*100,vy:Math.sin(ang)*100,life:0.35,color:e.body});
         }
+
+        // ENKAZ: kırılan şişenin yere döktüğü sıvı gibi, küpün
+        // parçaları da bir süre yerde saçılı kalır (yalnızca görsel).
+        const pieces = [];
+        const pieceCount = 6 + Math.floor(Math.random()*3);
+        for(let i=0;i<pieceCount;i++){
+          const a = Math.random()*Math.PI*2, d = 6 + Math.random()*(e.radius*0.9);
+          pieces.push({ dx:Math.cos(a)*d, dy:Math.sin(a)*d, rot:Math.random()*Math.PI, size:3+Math.random()*4 });
+        }
+        debris.push({ x:e.x, y:e.y, life:1.6, maxLife:1.6, color:e.body, color2:e.body2, pieces });
       }
 
       // ŞİŞE KIRILMASI: yere dökülen sıvı uzun süre iyileştirir

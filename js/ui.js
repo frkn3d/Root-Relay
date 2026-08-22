@@ -360,20 +360,20 @@ function updateTowerDrawerThumb(){
   thumb.style.left = (travel * (row.scrollLeft / maxScroll)) + '%';
 }
 
-/* İlk kez açılışta: kaydırılabilir olduğunu anlatmak için çekmece
-   bir anlığına en sağa atlar, sonra 1 saniyede yumuşakça sola kayıp
-   normal başlangıç konumuna yerleşir. Sadece bir kez (cihaz başına)
-   gösterilir ve gerçekten kaydıracak içerik varsa çalışır. */
-const TOWER_DRAWER_HINT_KEY = 'rr_td_hint_v1';
+/* Çekmece ilk açılışta kaydırılabilir olduğunu anlatmak için bir
+   anlığına en sağa atlar, sonra 1 saniyede yumuşakça sola kayıp normal
+   başlangıç konumuna yerleşir. Artık cihaz başına bir kez değil, HER
+   YENİ BÖLÜM başladığında bir kez tekrar gösteriliyor — bkz.
+   resetTowerDrawerHint(), loadLevel()'den çağrılıyor (engine.js). */
+let towerDrawerHintShown = false;
+function resetTowerDrawerHint(){ towerDrawerHintShown = false; }
 function maybePlayTowerDrawerHint(){
   const row = document.getElementById('towerDrawerRow');
   if(!row) return;
   const maxScroll = row.scrollWidth - row.clientWidth;
   if(maxScroll <= 1) return;
-  let seen = false;
-  try{ seen = !!localStorage.getItem(TOWER_DRAWER_HINT_KEY); }catch(e){}
-  if(seen) return;
-  try{ localStorage.setItem(TOWER_DRAWER_HINT_KEY, '1'); }catch(e){}
+  if(towerDrawerHintShown) return;
+  towerDrawerHintShown = true;
 
   row.scrollLeft = maxScroll;
   const start = performance.now();

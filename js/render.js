@@ -1642,6 +1642,31 @@ function drawCocoonEnemy(e){
 }
 
 /* Kırılan şişelerin bıraktığı iyileştirme birikintisi */
+/* Bölünen küplerden geriye kalan enkaz — kırılan şişenin sıvısı gibi,
+   yerde bir süre saçılı duran küçük parçalar. Yalnızca görsel. */
+function drawDebris(){
+  if(!debris || !debris.length) return;
+  ctx.save();
+  debris.forEach(d=>{
+    const fade = Math.max(0, Math.min(1, d.life / d.maxLife));
+    ctx.globalAlpha = fade;
+    d.pieces.forEach(p=>{
+      ctx.save();
+      ctx.translate(d.x+p.dx, d.y+p.dy);
+      ctx.rotate(p.rot);
+      const g = ctx.createLinearGradient(-p.size,-p.size,p.size,p.size);
+      g.addColorStop(0, d.color); g.addColorStop(1, d.color2);
+      ctx.fillStyle = g;
+      ctx.strokeStyle = 'rgba(36,26,16,0.6)'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.rect(-p.size/2, -p.size/2, p.size, p.size);
+      ctx.fill(); ctx.stroke();
+      ctx.restore();
+    });
+  });
+  ctx.restore();
+}
+
 function drawHealZones(){
   if(!healZones || !healZones.length) return;
   const t0 = performance.now()/1000;
@@ -1895,6 +1920,7 @@ function render(){
   // Katman sırası: boss auraları ve menzil halkaları zeminde,
   // sonra düşmanlar, en üstte kuleler — kuleler arkada kalmasın.
   enemies.forEach(drawBossAura);
+  drawDebris();             // zeminde: küp enkazı düşmanların altında
   drawHealZones();          // zeminde: birikintiler düşmanların altında
   towers.forEach(drawTowerRange);
   enemies.forEach(drawEnemy);
