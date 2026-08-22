@@ -94,12 +94,12 @@ const GEN = {
   MAX_PATH_RATIO: 5.2,             // yol uzunluğu / ekran yüksekliği tavanı
   MIN_SPOT_TO_PATH: 60,            // kule–yol asgari mesafesi (kaos önleme) — eskisinden (46) %30 fazla
   MIN_SPOT_TO_SPOT: 74,            // kule–kule asgari mesafesi
-  SPOTS_PER_LEN: 1/150,            // yol uzunluğu başına asgari nokta
+  SPOTS_PER_LEN: 1/175,            // yol uzunluğu başına asgari nokta (175 birime 1 kule)
   TOTAL_LEVELS: 1000,
   MIN_WAVES: 13,                   // bölüm başına asgari dalga sayısı
   MAX_WAVES: 23,                   // bölüm başına azami dalga sayısı
   LONG_PATH_CHANCE: 0.8,           // bölümlerin bu oranı uzun/karmaşık yol alır
-  MAX_SPOTS: 20,                   // kule dikme noktası üst sınırı — hiçbir bölüm bunu aşamaz
+  MAX_SPOTS: 18,                   // kule dikme noktası üst sınırı — hiçbir bölüm bunu aşamaz
 };
 
 /* ---------- Zorluk eğrisi ----------
@@ -149,6 +149,24 @@ function cellCenter(cx, cy){
   const cw = GEN.W / GRID_COLS;
   const ch = GEN.H / GRID_ROWS;
   return { x: cw*(cx+0.5), y: ch*(cy+0.5) };
+}
+
+/* Kule noktaları için, yolun kullandığı GRID_COLS×GRID_ROWS ızgarasının
+   3 katı sıklıkta bir ALT ızgara (her çizgisi yol ızgarasıyla çakışır,
+   aralarına ekstra çizgiler eklenir). Kuleler bu adaylardan seçilerek
+   yerleştirilir — sonuç, saf rastgele dağılımdan farklı olarak yolun
+   hizasına uyan düzenli sıra/sütunlar halinde durur. */
+const SPOT_GRID_COLS = GRID_COLS * 3;
+const SPOT_GRID_ROWS = GRID_ROWS * 3;
+function spotGridCandidates(){
+  const cw = GEN.W / SPOT_GRID_COLS, ch = GEN.H / SPOT_GRID_ROWS;
+  const pts = [];
+  for(let cx=0; cx<SPOT_GRID_COLS; cx++){
+    for(let cy=0; cy<SPOT_GRID_ROWS; cy++){
+      pts.push({ x: cw*(cx+0.5), y: ch*(cy+0.5) });
+    }
+  }
+  return pts;
 }
 
 /* Bir kenardan rastgele giriş/çıkış hücresi seçer */
@@ -411,7 +429,7 @@ function distToPath(px, py, pts){
 }
 
 function placeSpots(rng, paths, diff, totalLen){
-  const {W,H,MARGIN,MIN_SPOT_TO_PATH,MIN_SPOT_TO_SPOT,MAX_SPOTS} = GEN;
+  const {MIN_SPOT_TO_PATH,MIN_SPOT_TO_SPOT,MAX_SPOTS} = GEN;
 
   // KURAL 5: yol uzunluğuna göre asgari nokta sayısı
   const minBySize = Math.ceil(totalLen * GEN.SPOTS_PER_LEN);
@@ -425,51 +443,46 @@ function placeSpots(rng, paths, diff, totalLen){
   const target = Math.min(rawTarget, MAX_SPOTS);
   const minTarget = Math.min(minBySize, MAX_SPOTS);
 
-  const spots = [];
-  let attempts = 0;
-  const MAX_ATTEMPTS = 4000;
-
-  while(spots.length < target && attempts < MAX_ATTEMPTS){
-    attempts++;
-    const x = rnd(rng, MARGIN*0.5, W - MARGIN*0.5);
-    const y = rnd(rng, MARGIN*0.6, H - MARGIN*0.6);
-
-    // KURAL 7: yola çok yakın olamaz (ama menzil içinde kalmalı)
-    let dp = Infinity;
-    for(const p of paths) dp = Math.min(dp, distToPath(x,y,p));
-    if(dp < MIN_SPOT_TO_PATH) continue;
-    if(dp > 165) continue;                 // yoldan tamamen kopuk olmasın
-
-    // Noktalar birbirine binmesin
-    let ok = true;
-    for(const s of spots){
-      if(Math.hypot(s.x-x, s.y-y) < MIN_SPOT_TO_SPOT){ ok=false; break; }
-    }
-    if(!ok) continue;
-
-    spots.push({x:Math.round(x), y:Math.round(y)});
+  // Kuleler artık serbest rastgele koordinatlarda değil, yolun kullandığı
+  // ızgaranın 3 katı sıklıkta bir ALT IZGARA üzerindeki adaylardan seçilir
+  // — böylece dağınık değil, yolla aynı hizada düzenli sıra/sütunlar
+  // halinde dururlar. Tohumlu Fisher–Yates ile karıştırılıp sırayla
+  // denenir (deterministik ama bölüm başına farklı bir sırayla).
+  const candidates = spotGridCandidates();
+  for(let i=candidates.length-1;i>0;i--){
+    const j = Math.floor(rng()*(i+1));
+    [candidates[i],candidates[j]] = [candidates[j],candidates[i]];
   }
 
-  // Hedefe ulaşılamadıysa kısıtı kademeli gevşeterek tamamla
+  const spots = [];
+  function tryAdd(x, y, minPath, maxPath, minGap){
+    let dp = Infinity;
+    for(const p of paths) dp = Math.min(dp, distToPath(x,y,p));
+    if(dp < minPath || dp > maxPath) return false;   // KURAL 7: yola çok yakın/kopuk olamaz
+    for(const s of spots){
+      if(Math.hypot(s.x-x, s.y-y) < minGap) return false;   // noktalar birbirine binmesin
+    }
+    spots.push({x:Math.round(x), y:Math.round(y)});
+    return true;
+  }
+
+  candidates.forEach(c=>{
+    if(spots.length >= target) return;
+    tryAdd(c.x, c.y, MIN_SPOT_TO_PATH, 165, MIN_SPOT_TO_SPOT);
+  });
+
+  // Hedefe ulaşılamadıysa (aday ızgarası bu kısıtlarla yetersiz kaldıysa)
+  // kısıtı kademeli gevşetip aynı aday listesini tekrar dener.
   // (minTarget zaten MAX_SPOTS'a kırpılı — bu döngü de üst sınırı asla aşamaz)
   let relax = 0;
   while(spots.length < minTarget && relax < 3){
     relax++;
     const minGap = MIN_SPOT_TO_SPOT - relax*12;
     const minPath = MIN_SPOT_TO_PATH - relax*6;
-    let tries = 0;
-    while(spots.length < minTarget && tries < 1500){
-      tries++;
-      const x = rnd(rng, MARGIN*0.5, W - MARGIN*0.5);
-      const y = rnd(rng, MARGIN*0.6, H - MARGIN*0.6);
-      let dp = Infinity;
-      for(const p of paths) dp = Math.min(dp, distToPath(x,y,p));
-      if(dp < minPath || dp > 190) continue;
-      let ok = true;
-      for(const s of spots){ if(Math.hypot(s.x-x,s.y-y) < minGap){ ok=false; break; } }
-      if(!ok) continue;
-      spots.push({x:Math.round(x), y:Math.round(y)});
-    }
+    candidates.forEach(c=>{
+      if(spots.length >= minTarget) return;
+      tryAdd(c.x, c.y, minPath, 190, minGap);
+    });
   }
 
   return spots;
@@ -618,6 +631,49 @@ function placeProps(rng, paths, spots, biomeId, seasonId){
   return props;
 }
 
+/* Boş kalan geniş alanları biyoma uygun EK nesnelerle doldurur.
+   placeProps() saf rastgele dağıtım yaptığından bazı geniş alanlar
+   şans eseri boş kalabiliyor; bu geçiş özellikle yoldan, kule
+   noktalarından ve mevcut nesnelerden uzak — gerçekten "boş" — hücreleri
+   tarar. Böyle bir boşluk yoksa hiçbir şey eklemez, yani her bölümde
+   tetiklenmek zorunda değildir. */
+function fillEmptyAreas(rng, paths, spots, props, biomeId){
+  const table = BIOME_PROPS[biomeId] || BIOME_PROPS.forest;
+  const cols = 8, rows = 13;
+  const cw = GEN.W/cols, ch = GEN.H/rows;
+  const extra = [];
+  for(let cx=0; cx<cols; cx++){
+    for(let cy=0; cy<rows; cy++){
+      const x = cw*(cx+0.5), y = ch*(cy+0.5);
+
+      let dPath = Infinity;
+      for(const p of paths) dPath = Math.min(dPath, distToPath(x,y,p));
+      if(dPath < 75) continue;                 // yola yakınsa "boş alan" sayılmaz
+
+      let near = false;
+      for(const s of spots){ if(Math.hypot(s.x-x,s.y-y) < 70){ near=true; break; } }
+      if(near) continue;
+      for(const q of props){ if(Math.hypot(q.x-x,q.y-y) < 55){ near=true; break; } }
+      if(near) continue;
+      for(const q of extra){ if(Math.hypot(q.x-x,q.y-y) < 55){ near=true; break; } }
+      if(near) continue;
+
+      // Gerçekten boş bir bölge bulundu — her zaman değil, organik
+      // görünsün diye %65 ihtimalle bir nesne ekle.
+      if(rng() < 0.65){
+        extra.push({
+          x: Math.round(x), y: Math.round(y),
+          type: pickWeighted(rng, table),
+          s: 0.75 + rng()*0.6,
+          f: rng() < 0.5 ? -1 : 1,
+          t: rng(),
+        });
+      }
+    }
+  }
+  return extra;
+}
+
 /* ============================================================
    BÖLÜM TWIST'LERİ
 
@@ -636,11 +692,17 @@ const LEVEL_TWISTS = [
     note:'Yağmurda Şimşek Direği %20 daha güçlü çarpar, Don Peykesi\'nin etkisi biraz daha kısa sürer.',
     dmgMul:{ bolt:1.20 },
     iceSlowBonus:-1.1,
+    // Zaten kar yağan (kış) bölümlerde yağmur anlamsız; çölde de
+    // yağmur olmaz.
+    excludeSeasons:['winter'],
+    excludeBiomes:['desert'],
   },
 ];
 
-function pickTwist(rng){
+function pickTwist(rng, theme){
   for(const tw of LEVEL_TWISTS){
+    if(tw.excludeSeasons && tw.excludeSeasons.includes(theme.season)) continue;
+    if(tw.excludeBiomes && tw.excludeBiomes.includes(theme.biome)) continue;
     if(rng() < tw.chance) return tw;
   }
   return null;
@@ -744,12 +806,13 @@ function generateLevel(seed, levelNo){
   const rng = makeRng(hashSeed(seed + '#' + levelNo + '#rest'));
   const spots = placeSpots(rng, routes.paths, diff, totalLen);
   const theme = pickTheme(rng, levelNo);
-  const props = placeProps(rng, routes.paths, spots, theme.biome, theme.season);
+  const baseProps = placeProps(rng, routes.paths, spots, theme.biome, theme.season);
+  const props = baseProps.concat(fillEmptyAreas(rng, routes.paths, spots, baseProps, theme.biome));
   const waves = buildWaves(rng, diff, levelNo);
 
   // Twist: mevsim/biyom %15 tavanının DIŞINDA uygulanır — bkz. LEVEL_TWISTS.
   const mods = buildMods(theme);
-  const twist = pickTwist(rng);
+  const twist = pickTwist(rng, theme);
   if(twist){
     Object.keys(twist.dmgMul || {}).forEach(k=>{
       mods.dmgMul[k] = (mods.dmgMul[k] || 1) * twist.dmgMul[k];
