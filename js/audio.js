@@ -65,6 +65,10 @@ function playShoot(kind){
   else if(kind==='mage') blip(780,0.14,'sine',0.13,1100);
   else if(kind==='mortar') blip(140,0.16,'square',0.15,90);
   else if(kind==='ice') blip(900,0.10,'sine',0.11,1300);
+  // Zehir: diğer atışlardan bilinçli olarak kısık — sürekli tekrarlayan
+  // bir efekt olduğundan yüksek sesli olursa rahatsız edici olurdu.
+  else if(kind==='poison') blip(300,0.13,'sawtooth',0.05,150);
+  else if(kind==='bolt') blip(1500,0.05,'sawtooth',0.12,2400);
 }
 function playCoin(){ if(!throttleSound('coin',35)) return; blip(1050,0.09,'square',0.09,1400); }
 
@@ -93,6 +97,16 @@ function playKill(){
   if(!throttleSound('kill',55)) return;
   blip(880,0.07,'triangle',0.10,1300);
   setTimeout(()=>blip(1320,0.09,'triangle',0.11,1760), 45);
+}
+
+/* Bir düşman röleye ulaşıp can götürdüğünde — önceden yalnızca kamera
+   sarsıntısı vardı, sesi yoktu. İki düşük/pes "tok-tok" darbe; kısa
+   playError()'dan (menü/inşa reddi) kasıtlı olarak ayrışsın diye daha
+   uzun ve iki vuruşlu. */
+function playLifeLoss(){
+  if(!throttleSound('lifeloss',80)) return;
+  blip(150,0.16,'sawtooth',0.13,80);
+  setTimeout(()=>blip(110,0.20,'sawtooth',0.11,55), 90);
 }
 function playPlace(){ blip(300,0.10,'triangle',0.16,520); }
 function playError(){ blip(140,0.18,'sawtooth',0.13,90); }

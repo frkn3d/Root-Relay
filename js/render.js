@@ -152,9 +152,23 @@ function drawPath(){
 /* Yolun başına ve sonuna, gidiş yönünü belirten silik akan oklar.
    Yolun teğetine göre döner, sürekli ileri kayarak yönü belli eder.
    Giriş ucundakiler kırmızı, çıkış (röle) ucundakiler mavi ve daha
-   belirgin — girişle çıkışı renkle ayırıp çıkışı daha vurguluyor. */
+   belirgin — girişle çıkışı renkle ayırıp çıkışı daha vurguluyor.
+   Koyu dış kontur yalnızca DURAKLIYKEN ya da bölüm hiç başlamamışken
+   (ilk dalga atılmadan önce) tam görünür — oyun başlayınca 0.5 saniye
+   içinde sıfıra iner, aksiyon sırasında dikkat dağıtmasın diye. Rengin
+   kendisi (kontursuz ok) her zaman aynı kalır. */
+let arrowOutlineAlpha = 1;
+let lastArrowFrameT = null;
 function drawDirectionArrows(){
   const t0 = performance.now()/1000;
+  const fdt = (lastArrowFrameT===null) ? 0 : Math.max(0, Math.min(0.1, t0-lastArrowFrameT));
+  lastArrowFrameT = t0;
+  const boldPhase = paused || (waveIndex===0 && !waveActive);
+  const target = boldPhase ? 1 : 0;
+  const step = fdt/0.5;   // 0.5 saniyede tam geçiş
+  if(arrowOutlineAlpha < target) arrowOutlineAlpha = Math.min(target, arrowOutlineAlpha+step);
+  else if(arrowOutlineAlpha > target) arrowOutlineAlpha = Math.max(target, arrowOutlineAlpha-step);
+
   ctx.save();
   levelPaths.forEach((pts, pi)=>{
     const len = pathLens[pi] || 0;
@@ -179,12 +193,14 @@ function drawDirectionArrows(){
         // Koyu bir dış kontur önce çizilip üstüne renk basılıyor —
         // altındaki zemin açık ya da koyu olsun fark etmeksizin okun
         // her zeminde net seçilmesini sağlıyor.
-        ctx.globalAlpha = Math.min(1, zone.alpha*1.1) * fade;
-        ctx.strokeStyle = 'rgba(20,16,10,0.85)';
-        ctx.lineWidth = 6.5;
-        ctx.beginPath();
-        ctx.moveTo(-9,-8); ctx.lineTo(3,0); ctx.lineTo(-9,8);
-        ctx.stroke();
+        if(arrowOutlineAlpha > 0.001){
+          ctx.globalAlpha = Math.min(1, zone.alpha*1.1) * fade * arrowOutlineAlpha;
+          ctx.strokeStyle = 'rgba(20,16,10,0.85)';
+          ctx.lineWidth = 6.5;
+          ctx.beginPath();
+          ctx.moveTo(-9,-8); ctx.lineTo(3,0); ctx.lineTo(-9,8);
+          ctx.stroke();
+        }
         ctx.globalAlpha = zone.alpha * fade;
         ctx.strokeStyle = `rgb(${zone.color})`;
         ctx.lineWidth = 4;

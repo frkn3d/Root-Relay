@@ -940,6 +940,7 @@ function update(dt){
   if(reached.length){
     let dmg=0; reached.forEach(e=>dmg+=e.dmgToLives);
     lives-=dmg; shake=Math.min(shake+8,16);
+    playLifeLoss();
     enemies = enemies.filter(e=>!reachedEnd(e));
     document.getElementById('livesVal').textContent = Math.max(lives,0);
     if(lives<=0){ endGame(false); return; }
