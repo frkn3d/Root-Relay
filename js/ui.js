@@ -78,6 +78,7 @@ function openShopOverlay(){
   refreshGemDisplay();
   renderShop();
   document.getElementById('shopOverlay').classList.add('show');
+  syncPauseToggleBtn();                // engine.js — alt bardaki ikon/yanıp sönme senkron kalsın
 }
 function closeShopOverlay(){
   playMenuTap();
@@ -86,6 +87,7 @@ function closeShopOverlay(){
     paused = false;
     lastTime = performance.now();      // duraklama süresi dt'ye yansımasın
   }
+  syncPauseToggleBtn();                // engine.js
 }
 let shopWasPaused = false;
 

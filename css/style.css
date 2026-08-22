@@ -507,6 +507,13 @@ canvas{
   box-shadow:0 2px 0 rgba(0,0,0,0.4);
 }
 .pause-toggle-btn:active{ transform:translateY(1px); box-shadow:0 1px 0 rgba(0,0,0,0.4); }
+.pause-toggle-btn.blinking{
+  animation:pause-blink 1.1s ease-in-out infinite;
+}
+@keyframes pause-blink{
+  0%, 100%{ opacity:1; }
+  50%{ opacity:0.32; }
+}
 
 .wave-btn{
   flex:1 1 auto; min-width:0;

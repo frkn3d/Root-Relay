@@ -598,7 +598,12 @@ function loadLevel(idx){
 
 function syncPauseToggleBtn(){
   const btn = document.getElementById('pauseToggleBtn');
-  if(btn) btn.textContent = paused ? '▶' : '⏸';
+  if(!btn) return;
+  btn.textContent = paused ? '▶' : '⏸';
+  // Duraklatınca oynat ikonu yanıp sönsün — üst bar/alt bar hiçbir
+  // overlay ile kapanmadığı için bu, oyuncunun hâlâ durduğunu
+  // fark etmesinin tek sürekli görsel ipucu.
+  btn.classList.toggle('blinking', paused);
 }
 
 /* Alt bardaki saf duraklat/devam — MENÜ AÇMAZ. Oyuncu simülasyonu
@@ -606,6 +611,10 @@ function syncPauseToggleBtn(){
    tasarımda duraklatma her zaman menüyü de açıp görüşü kapatıyordu. */
 function toggleSimPause(){
   if(gameOver||gameWon) return;
+  // Market açıkken bu buton oyunu devam ettirmesin — üst/alt bar
+  // hiçbir overlay tarafından kapatılmadığı için market açıkken bile
+  // tıklanabiliyor, ama market açıkken oyun HER ZAMAN duraklı kalmalı.
+  if(document.getElementById('shopOverlay').classList.contains('show')) return;
   paused = !paused;
   playMenuTap();
   if(!paused) document.getElementById('pauseOverlay').classList.remove('show');
@@ -623,13 +632,18 @@ function openPauseMenu(){
   syncPauseToggleBtn();
 }
 
-/* Pause menüsündeki "Devam Et" — hem menüyü kapatır hem devam ettirir. */
+/* Pause menüsündeki "Devam Et" — hem menüyü kapatır hem devam ettirir.
+   İSTİSNA: market menü üzerinden açılıp arkada kalmışsa (☰ market
+   açıkken de basılabiliyor) devam ettirme — market kapanana kadar
+   oyun duraklı kalmalı, yoksa market açıkken oyun arkada koşuyordu. */
 function resumeFromMenu(){
   playMenuTap();
-  paused = false;
   document.getElementById('pauseOverlay').classList.remove('show');
+  if(!document.getElementById('shopOverlay').classList.contains('show')){
+    paused = false;
+    lastTime = performance.now();
+  }
   syncPauseToggleBtn();
-  lastTime = performance.now();
 }
 
 function goToMainMenu(){

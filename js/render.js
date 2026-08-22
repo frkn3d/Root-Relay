@@ -119,11 +119,15 @@ function drawPath(){
   });
   ctx.restore();
 
-  // Giriş ve çıkış işaretleri — her rotanın kendi uçları
+  // Giriş ve çıkış işaretleri — her rotanın kendi uçları.
+  // Giriş (düşman doğuşu) kırmızı, çıkış (röleye ulaşılan uç) mavi —
+  // çıkış ayrıca nabız gibi atan bir dış halkayla daha vurgulu.
   ctx.save();
   ctx.font='15px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
   const seenStart = [], seenEnd = [];
   const near = (arr,p)=>arr.some(q=>Math.hypot(q.x-p.x,q.y-p.y)<24);
+  const tGlow = performance.now()/1000;
+  const pulse = 0.5 + 0.5*Math.sin(tGlow*2.4);
   levelPaths.forEach(pts=>{
     const s = pts[0], e = pts[pts.length-1];
     if(!near(seenStart,s)){
@@ -135,27 +139,34 @@ function drawPath(){
     }
     if(!near(seenEnd,e)){
       seenEnd.push(e);
+      ctx.beginPath(); ctx.arc(e.x,e.y,17+pulse*3,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(86,184,224,${0.28+pulse*0.22})`; ctx.lineWidth=2; ctx.stroke();
       ctx.beginPath(); ctx.arc(e.x,e.y,13,0,Math.PI*2);
-      ctx.fillStyle='rgba(244,192,74,0.22)'; ctx.fill();
-      ctx.strokeStyle='rgba(244,192,74,0.75)'; ctx.lineWidth=2; ctx.stroke();
+      ctx.fillStyle='rgba(86,184,224,0.25)'; ctx.fill();
+      ctx.strokeStyle='rgba(86,184,224,0.85)'; ctx.lineWidth=2; ctx.stroke();
       ctx.fillText('🔮', e.x, e.y+1);
     }
   });
   ctx.restore();
 }
 /* Yolun başına ve sonuna, gidiş yönünü belirten silik akan oklar.
-   Yolun teğetine göre döner, sürekli ileri kayarak yönü belli eder. */
+   Yolun teğetine göre döner, sürekli ileri kayarak yönü belli eder.
+   Giriş ucundakiler kırmızı, çıkış (röle) ucundakiler mavi ve daha
+   belirgin — girişle çıkışı renkle ayırıp çıkışı daha vurguluyor. */
 function drawDirectionArrows(){
   const t0 = performance.now()/1000;
   ctx.save();
   levelPaths.forEach((pts, pi)=>{
     const len = pathLens[pi] || 0;
     if(len < 120) return;
-    const zones = [ 40, Math.max(60, len - 150) ];
-    zones.forEach(zStart=>{
+    const zones = [
+      { start: 40,                            color:'226,80,74',  alpha:0.30 }, // giriş
+      { start: Math.max(60, len - 150),       color:'86,184,224', alpha:0.42 }, // çıkış — daha vurgulu
+    ];
+    zones.forEach(zone=>{
       for(let i=0;i<3;i++){
         const cyc = ((t0*0.45 + i/3) % 1);
-        const d = zStart + cyc*110;
+        const d = zone.start + cyc*110;
         if(d < 0 || d > len) continue;
         const p  = pointAtDistance(pts, len, d);
         const p2 = pointAtDistance(pts, len, Math.min(d+6, len));
@@ -164,8 +175,8 @@ function drawDirectionArrows(){
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(ang);
-        ctx.globalAlpha = 0.30 * fade;
-        ctx.strokeStyle = '#fff6dd';
+        ctx.globalAlpha = zone.alpha * fade;
+        ctx.strokeStyle = `rgb(${zone.color})`;
         ctx.lineWidth = 3; ctx.lineCap='round'; ctx.lineJoin='round';
         ctx.beginPath();
         ctx.moveTo(-7,-7); ctx.lineTo(2,0); ctx.lineTo(-7,7);
