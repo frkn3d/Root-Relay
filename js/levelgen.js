@@ -781,7 +781,9 @@ function generateWaveForGenerated(level, waveIndex){
   // kısıtının da bu bölümlerde devre dışı bırakılması).
   const isFinaleLevel = level.levelNo > GEN.TOTAL_LEVELS - 7;
   const finaleMult = isFinaleLevel ? 1.80 : 1;
-  const count = Math.round((p.countBase + waveIndex*p.countGrowth) * mult * 0.55 * finaleMult);
+  // EXTRA_DENSITY_BOOST (config.js): genel +%30 yoğunluk artışı — klasik
+  // bölümlerdeki waveCountMultiplier ile aynı çarpanı kullanır.
+  const count = Math.round((p.countBase + waveIndex*p.countGrowth) * mult * 0.55 * finaleMult * EXTRA_DENSITY_BOOST);
   const groups = [];
   const pool = level.enemyPool;
 

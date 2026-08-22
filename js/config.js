@@ -156,12 +156,27 @@ const LEVELS = [
 const GLOBAL_COUNT_BOOST = 1.30;
 const WAVE_EXTRA_MULT = { 8: 1.30 };  // 8. dalga ayrıca +%30
 
+// Ek genel yoğunluk artışı (+%30) — düşman sayısını hem klasik
+// bölümlerde (waveCountMultiplier) hem de 1000 Bölüm üreticisinde
+// (generateWaveForGenerated, levelgen.js) yükseltir.
+const EXTRA_DENSITY_BOOST = 1.30;
+
 /* 8. dalgadan sonra dalgalar giderek kalabalıklaşsın diye doğrusal
    ek çarpan: 9. dalga +%10, 10. dalga +%20, 11. dalga +%30, ...
    Klasik bölümler (generateWave) ve 1000 Bölüm üretici
    (generateWaveForGenerated, levelgen.js) ikisi de kullanır. */
 function lateWaveBoost(waveIndex){
   return waveIndex > 8 ? 1 + 0.10*(waveIndex-8) : 1;
+}
+
+/* Dalga sayısının yarısından itibaren düşmanlar birbirine daha yakın
+   (daha sık) gelsin diye spawn aralığı kısaltılır — böylece kuleler
+   onları tek tek rahatça temizleyemez, bölümün ikinci yarısı belirgin
+   şekilde zorlaşır. (Ör: 13 dalgalı bir bölümde 6. dalgadan itibaren.)
+   startWave() (engine.js) hem klasik hem 1000 Bölüm dalgaları için
+   spawn zaman çizelgesini kurarken kullanır. */
+function bunchIntervalMult(waveIndex, waveCount){
+  return waveIndex >= Math.floor(waveCount/2) ? 0.6 : 1;
 }
 
 function waveCountMultiplier(waveIndex){
@@ -171,7 +186,7 @@ function waveCountMultiplier(waveIndex){
   else if(waveIndex === 3) m = 2.0;
   else if(waveIndex <= 6) m = 2.5;
   else m = 2.5 * 1.7;
-  return m * GLOBAL_COUNT_BOOST * (WAVE_EXTRA_MULT[waveIndex] || 1) * lateWaveBoost(waveIndex);
+  return m * GLOBAL_COUNT_BOOST * EXTRA_DENSITY_BOOST * (WAVE_EXTRA_MULT[waveIndex] || 1) * lateWaveBoost(waveIndex);
 }
 
 /* Spawn aralıkları: düşman sayısı arttıkça dalganın tek seferde

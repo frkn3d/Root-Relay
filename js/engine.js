@@ -683,6 +683,9 @@ function startWave(){
     : generateWave(level, waveIndex);              // config.js
   const mult = statMultipliers(level, waveIndex);
   const m = levelMods();
+  // bunchIntervalMult (config.js): bölümün ikinci yarısından itibaren
+  // düşmanlar birbirine daha yakın gelsin diye spawn aralığı kısaltılır.
+  const bunch = bunchIntervalMult(waveIndex, level.waveCount);
   spawnTimeline=[]; let t=0;
   let routeCursor = 0;
   const routeCount = Math.max(1, levelPaths.length);
@@ -715,9 +718,9 @@ function startWave(){
         minRadius: def.minRadius || 6,
         wobbleAmp: def.wobble || 0,
       });
-      t += g.interval;
+      t += g.interval * bunch;
     }
-    t += GROUP_GAP; // config.js — gruplar arası nefes payı
+    t += GROUP_GAP * bunch; // config.js — gruplar arası nefes payı
   });
   waveElapsed=0; waveActive=true;
   setWaveBtnReady(false); // ui.js
