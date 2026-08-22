@@ -558,6 +558,40 @@ function drawSnowfall(){
   ctx.restore();
 }
 
+/* Yağmur twist'i (levelgen.js LEVEL_TWISTS): kar gibi sabit bir
+   damla havuzu, sadece çok daha hızlı ve hafif eğik düşer. Görünürlüğü
+   level.twist==='rain' ile kapılı — kışın karıyla aynı anda bile
+   çıkabilir, bu kasıtlı olarak özel bir durum sayılmadı (çok nadir). */
+const rainDrops = (()=>{
+  const arr=[];
+  for(let i=0;i<70;i++){
+    arr.push({
+      x: Math.random()*LW,
+      y: Math.random()*LH,
+      len: 10 + Math.random()*14,
+      sp: 420 + Math.random()*260,
+    });
+  }
+  return arr;
+})();
+function drawRain(){
+  if(!(level.twist === 'rain')) return;
+  const t0 = performance.now()/1000;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(190,215,255,0.4)';
+  ctx.lineWidth = 1.5;
+  ctx.lineCap = 'round';
+  rainDrops.forEach(d=>{
+    const y = ((d.y + t0*d.sp) % (LH+40)) - 20;
+    const x = ((d.x + t0*d.sp*0.18) % (LW+40)) - 20;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x - d.len*0.3, y - d.len);
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
 function drawSpots(){
   const t0 = performance.now()/1000;
   spots.forEach(s=>{
@@ -1934,5 +1968,6 @@ function render(){
   drawFloatTexts();
   drawBirds();      // ortam kuşu sürüsü — kardan önce, gökyüzü katmanında
   drawSnowfall();   // en üstte: kar her şeyin önünden geçer
+  drawRain();       // en üstte: yağmur twist'i (nadir)
   ctx.restore();
 }

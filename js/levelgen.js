@@ -619,6 +619,34 @@ function placeProps(rng, paths, spots, biomeId, seasonId){
 }
 
 /* ============================================================
+   BÖLÜM TWIST'LERİ
+
+   Mevsim/biyom her bölümde vardır ve dengeli kalsın diye etkileri
+   %15 ile sınırlıdır (bkz. buildMods). Twist'ler bunun tersi: NADİR
+   ama BELİRGİN — hatta biraz sert — özel durumlar. "Bu bölüm
+   farklıydı" hissi versin diye o %15 tavanının tamamen DIŞINDA
+   uygulanır (bkz. generateLevel). Aynı anda en fazla bir twist aktif
+   olur; havuzda birden fazla twist varsa sırayla denenir, ilk tutan
+   kazanır (tohuma bağlı, deterministik).
+   ============================================================ */
+const LEVEL_TWISTS = [
+  {
+    id:'rain', name:'Yağmur', chance:0.03,
+    label:'🌧️ Yağmur',
+    note:'Yağmurda Şimşek Direği %20 daha güçlü çarpar, Don Peykesi\'nin etkisi biraz daha kısa sürer.',
+    dmgMul:{ bolt:1.20 },
+    iceSlowBonus:-1.1,
+  },
+];
+
+function pickTwist(rng){
+  for(const tw of LEVEL_TWISTS){
+    if(rng() < tw.chance) return tw;
+  }
+  return null;
+}
+
+/* ============================================================
    MEVSİM & BİYOM ETKİLERİ
 
    Tema sadece görsel değil, taktiksel bir katman: her mevsim ve
@@ -719,6 +747,18 @@ function generateLevel(seed, levelNo){
   const props = placeProps(rng, routes.paths, spots, theme.biome, theme.season);
   const waves = buildWaves(rng, diff, levelNo);
 
+  // Twist: mevsim/biyom %15 tavanının DIŞINDA uygulanır — bkz. LEVEL_TWISTS.
+  const mods = buildMods(theme);
+  const twist = pickTwist(rng);
+  if(twist){
+    Object.keys(twist.dmgMul || {}).forEach(k=>{
+      mods.dmgMul[k] = (mods.dmgMul[k] || 1) * twist.dmgMul[k];
+    });
+    mods.iceSlowBonus += (twist.iceSlowBonus || 0);
+    mods.labels = mods.labels.concat(twist.label);
+    mods.notes = mods.notes.concat(twist.note);
+  }
+
   // Ekonomi: zorlukla birlikte biraz artan başlangıç kaynakları
   const startGold  = Math.round((150 + diff*120) / 10) * 10;
   const startLives = Math.max(6, Math.round(12 - diff*5));
@@ -730,7 +770,8 @@ function generateLevel(seed, levelNo){
     name: 'Bölüm ' + levelNo,
     difficulty01: diff,
     theme,
-    mods: buildMods(theme),
+    mods,
+    twist: twist ? twist.id : null,
     layout: routes.layout,
     style: routes.style,
     entries: routes.entries,
