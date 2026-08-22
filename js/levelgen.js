@@ -531,10 +531,10 @@ function buildWaves(rng, diff, levelNo){
   const waveCount = Math.max(GEN.MIN_WAVES, Math.min(GEN.MAX_WAVES,
     Math.round(GEN.MIN_WAVES + diff*(GEN.MAX_WAVES-GEN.MIN_WAVES) + rnd(rng,-0.5,0.5))));
 
-  // Son 7 bölüm (994-1000): final gauntlet — havuz karıştırılmadan
-  // (bkz. aşağı) tam haliyle kullanılır, dalga yoğunluğu da ayrıca
-  // generateWaveForGenerated'te %80 artırılır.
-  const isFinaleLevel = levelNo > GEN.TOTAL_LEVELS - 7;
+  // 50. bölümden 1000. bölüme kadar hepsi "zor bölge": havuz
+  // karıştırılmadan (bkz. aşağı) tam haliyle kullanılır, dalga
+  // yoğunluğu da ayrıca generateWaveForGenerated'te %80 artırılır.
+  const isHardZone = levelNo >= 50;
 
   // Düşman havuzu zorlukla açılır
   const pool = ['spore','swarm'];
@@ -552,9 +552,9 @@ function buildWaves(rng, diff, levelNo){
   if(levelNo > 8 && rng() < 0.35) pool.push('swarmqueen');
 
   // Havuzdan bazen bir tür çıkarılır — aynı havuz her bölümde
-  // aynı hissi vermesin diye. (En az 2 tür kalır.) Son 7 bölümde bu
-  // kısıtlama hiç uygulanmaz — hepsi karışsın istendi.
-  if(!isFinaleLevel && pool.length >= 4 && rng() < 0.35){
+  // aynı hissi vermesin diye. (En az 2 tür kalır.) 50-1000 arası "zor
+  // bölge"de bu kısıtlama hiç uygulanmaz — hepsi karışsın istendi.
+  if(!isHardZone && pool.length >= 4 && rng() < 0.35){
     const dropIdx = rndInt(rng, 1, pool.length-2);   // ilk ve son korunur
     pool.splice(dropIdx, 1);
   }
@@ -776,14 +776,14 @@ function generateWaveForGenerated(level, waveIndex){
   // daha kalabalık olsun diye ek doğrusal çarpan (9. dalga +%10, ...)
   const mult = (1 + waveIndex*0.16) * lateWaveBoost(waveIndex);
   const arch = level.archetype || WAVE_ARCHETYPES[0];
-  // Son 7 bölüm (994-1000): final gauntlet — dalga başına düşman
+  // 50. bölümden 1000. bölüme kadar "zor bölge": dalga başına düşman
   // yoğunluğu %80 artırılır (bkz. buildWaves'teki havuz-karıştırma
   // kısıtının da bu bölümlerde devre dışı bırakılması).
-  const isFinaleLevel = level.levelNo > GEN.TOTAL_LEVELS - 7;
-  const finaleMult = isFinaleLevel ? 1.80 : 1;
+  const isHardZone = level.levelNo >= 50;
+  const hardZoneMult = isHardZone ? 1.80 : 1;
   // EXTRA_DENSITY_BOOST (config.js): genel +%30 yoğunluk artışı — klasik
   // bölümlerdeki waveCountMultiplier ile aynı çarpanı kullanır.
-  const count = Math.round((p.countBase + waveIndex*p.countGrowth) * mult * 0.55 * finaleMult * EXTRA_DENSITY_BOOST);
+  const count = Math.round((p.countBase + waveIndex*p.countGrowth) * mult * 0.55 * hardZoneMult * EXTRA_DENSITY_BOOST);
   const groups = [];
   const pool = level.enemyPool;
 
