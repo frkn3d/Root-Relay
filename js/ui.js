@@ -91,6 +91,48 @@ function closeShopOverlay(){
 }
 let shopWasPaused = false;
 
+/* ---- Pause menüsündeki bölüm bilgisi kartı ----
+   Zorluk/Macera/Boss'u ortak bir 5 noktalı ölçeğe indiriyor; klasik
+   bölümlerde (LEVELS) doğrudan bir "zorluk01" alanı olmadığından
+   dizideki konumu (0 = ilk bölüm, 1 = son bölüm) zorluk vekili olarak
+   kullanılıyor — kampanya bölümleri zaten artan zorlukla sıralı. */
+function pauseLevelDots(lvl){
+  const generated = !!lvl.generated;
+  const diff01 = generated
+    ? lvl.difficulty01
+    : (LEVELS.length > 1 ? currentLevelIdx / (LEVELS.length-1) : 0.5);
+  const diffDots = Math.max(1, Math.min(5, Math.ceil(diff01*5)));
+
+  // Macera: dalga sayısı — bölüm ne kadar uzun sürüyorsa o kadar
+  // "macera". 1000 Bölüm modunda dalgalar 9-15 arasında; klasik
+  // bölümler de benzer aralıkta, o yüzden aynı 8-16 skalası kullanılıyor.
+  const waveCount = lvl.waveCount || 10;
+  const advDots = Math.max(1, Math.min(5, Math.round(1 + (waveCount-8)/8*4)));
+
+  let hasBoss;
+  if(generated) hasBoss = !!lvl.allowBoss;
+  else hasBoss = !!(lvl.waveOverrides && Object.values(lvl.waveOverrides).some(groups=>
+    groups.some(g=>ENEMY_TYPES[g.type] && ENEMY_TYPES[g.type].boss)));
+  const bossDots = hasBoss ? Math.max(1, Math.min(5, Math.round(1 + Math.max(0,diff01-0.5)/0.5*4))) : 0;
+
+  return { diffDots, advDots, bossDots };
+}
+function renderDots(el, count){
+  if(!el) return;
+  let html = '';
+  for(let i=0;i<5;i++) html += `<i class="${i<count?'on':''}"></i>`;
+  el.innerHTML = html;
+}
+function renderPauseLevelInfo(){
+  const box = document.getElementById('pauseLevelInfo');
+  if(!box || !level) return;
+  document.getElementById('pliName').textContent = level.name;
+  const dots = pauseLevelDots(level);
+  renderDots(document.getElementById('pliDiff'), dots.diffDots);
+  renderDots(document.getElementById('pliAdv'), dots.advDots);
+  renderDots(document.getElementById('pliBoss'), dots.bossDots);
+}
+
 /* ---- Menü sayfası gezinme ---- */
 function showMenuPage(id){
   document.querySelectorAll('.menu-page').forEach(p=>{

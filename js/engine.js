@@ -642,6 +642,7 @@ function openPauseMenu(){
   paused = true;
   document.getElementById('pauseOverlay').classList.add('show');
   syncPauseToggleBtn();
+  renderPauseLevelInfo(); // ui.js — bölüm adı + zorluk/macera/boss noktaları
 }
 
 /* Pause menüsündeki "Devam Et" — hem menüyü kapatır hem devam ettirir.

@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#12261b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
 <title>Root & Relay — Tower Defense</title>
-<link rel="stylesheet" href="css/style.css?v=69">
+<link rel="stylesheet" href="css/style.css?v=70">
 </head>
 <body class="in-menu">
 <div class="wrap">
@@ -221,6 +221,12 @@
 
       <div class="overlay pause-overlay" id="pauseOverlay">
         <h2>⏸ Duraklatıldı</h2>
+        <div class="pause-level-info" id="pauseLevelInfo">
+          <div class="pli-name" id="pliName">Bölüm</div>
+          <div class="pli-row"><span class="pli-label">Zorluk</span><span class="pli-dots" id="pliDiff"></span></div>
+          <div class="pli-row"><span class="pli-label">Macera</span><span class="pli-dots" id="pliAdv"></span></div>
+          <div class="pli-row"><span class="pli-label">Boss</span><span class="pli-dots" id="pliBoss"></span></div>
+        </div>
         <div class="pause-menu-list">
           <button class="btn pause-menu-btn primary" id="resumeBtn">▶ Devam Et</button>
           <button class="btn pause-menu-btn" id="restartBtnPause">🔄 Yeniden Başlat</button>
@@ -282,9 +288,9 @@
 <script src="js/levelgen.js?v=64"></script>
 <script src="js/progress.js?v=63"></script>
 <script src="js/audio.js?v=65"></script>
-<script src="js/engine.js?v=73"></script>
+<script src="js/engine.js?v=74"></script>
 <script src="js/render.js?v=70"></script>
-<script src="js/ui.js?v=67"></script>
+<script src="js/ui.js?v=68"></script>
 <script src="js/main.js?v=70"></script>
 </body>
 </html>
