@@ -197,6 +197,21 @@ function playMenuTap(){
 function playVictory(){
   [520,660,780,1040].forEach((f,i)=>setTimeout(()=>blip(f,0.22,'triangle',0.15),i*110));
 }
+
+/* Bölüm tamamlanamadan biterse (röle düşünce) — playVictory()'nin tam
+   tersi: inişli, ~3 saniyelik bir "başarısız oldun" teması. Yalnızca
+   endGame(false)'da bir kez çalındığı için throttle uzun tutulabilir. */
 function playDefeat(){
-  [400,320,240,160].forEach((f,i)=>setTimeout(()=>blip(f,0.28,'sawtooth',0.11),i*130));
+  if(!throttleSound('defeat', 1000)) return;
+  const notes = [392, 349.2, 311.1, 261.6, 220, 174.6];
+  notes.forEach((f,i)=>setTimeout(()=>blip(f, i===notes.length-1?0.9:0.42, 'sawtooth', 0.12, f*0.65), i*430));
+}
+
+/* Bir dalga (bölümün tamamı değil) başarıyla bitince — kısa, yükselen
+   bir "başarı" ezgisi. playVictory()'den (bölüm sonu) kasıtlı olarak
+   daha hafif/kısa tutuldu çünkü bu her dalgada tekrar çalınacak. */
+function playWaveComplete(){
+  if(!throttleSound('wavecomplete', 400)) return;
+  const notes = [523.25, 659.25, 784.0, 1046.5, 1318.5];
+  notes.forEach((f,i)=>setTimeout(()=>blip(f, i===notes.length-1?0.5:0.16, 'triangle', 0.12, f*1.1), i*150));
 }

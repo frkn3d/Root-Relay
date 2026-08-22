@@ -699,6 +699,7 @@ function startWave(){
         gold: Math.max(1, Math.round(def.gold*m.goldMul)), dmgToLives: def.dmgToLives,
         boss: !!def.boss, label: def.label,
         auraRadius: def.auraRadius || 0, auraSlow: def.auraSlow || 0,
+        allyBuffTypes: def.allyBuffTypes || null, allySpeedBuff: def.allySpeedBuff || 0, allyDmgResist: def.allyDmgResist || 0,
         healRadius: def.healRadius || 0, healPerSec: def.healPerSec || 0, healDuration: def.healDuration || 0,
         blockArc: def.blockArc || 0,
         broodEvery: def.broodEvery || 0, broodType: def.broodType || null, broodMax: def.broodMax || 0, broodT: 0, broodCount: 0,
@@ -828,16 +829,35 @@ function update(dt){
     if(!pending && enemies.length===0){
       waveActive=false;
       if(waveIndex>=level.waveCount){ endGame(true); return; }
+      playWaveComplete();   // audio.js — dalga başarıyla bitince kısa bir başarı ezgisi
       showWaveToast(`Dalga ${waveIndex} Tamamlandı!`); // ui.js
       setWaveBtnReady(true); // ui.js
       renderWavePreview();   // ui.js
     }
   }
 
+  /* SÜRÜ ANASI AURASI: yarıçapındaki müttefik türlere (Spor/Sürü gibi)
+     hız ve hasar direnci verir — Don Efendisi'nin tam tersi, kuleleri
+     değil düşmanları güçlendirir. Onu öncelikli öldürmek dalgayı
+     belirgin şekilde kolaylaştırır çünkü buff'lı birimler onunla
+     birlikte yeteneklerini kaybeder. */
+  enemies.forEach(e=>{ e.queenSpeedBuff = 0; e.queenDmgResist = 0; });
+  enemies.forEach(q=>{
+    if(!q.allyBuffTypes || !q.allyBuffTypes.length) return;
+    enemies.forEach(e=>{
+      if(e===q || !q.allyBuffTypes.includes(e.type)) return;
+      if(Math.hypot(e.x-q.x, e.y-q.y) <= q.auraRadius){
+        if(q.allySpeedBuff > e.queenSpeedBuff) e.queenSpeedBuff = q.allySpeedBuff;
+        if(q.allyDmgResist > e.queenDmgResist) e.queenDmgResist = q.allyDmgResist;
+      }
+    });
+  });
+
   const newborns = [];   // Kuluçka'nın bu karede bıraktığı yavrular
   enemies.forEach(e=>{
     const slowMult = e.slowT>0 ? e.slowFactor : 1;
-    e.dist += e.speed*slowMult*dt*60;
+    const queenMult = 1 + (e.queenSpeedBuff||0);
+    e.dist += e.speed*slowMult*queenMult*dt*60;
     const myPath = levelPaths[e.pathIdx || 0] || levelPaths[0];
     const myLen  = pathLens[e.pathIdx || 0] || pathTotalLen;
     const p = pointAtDistance(myPath, myLen, e.dist);
@@ -903,7 +923,7 @@ function update(dt){
     // ZEHİR: süre boyunca saniyede poisonDps kadar hasar
     if(e.poisonT > 0){
       e.poisonT -= dt;
-      e.hp -= (e.poisonDps||0) * dt;
+      e.hp -= (e.poisonDps||0) * dt * (1-(e.queenDmgResist||0));
       if(e.poisonT <= 0){ e.poisonT = 0; e.poisonDps = 0; }
     }
   });
@@ -1022,7 +1042,7 @@ function update(dt){
       if(p.splash>0){
         enemies.forEach(e=>{
           if(Math.hypot(e.x-ix,e.y-iy)<=p.splash){
-            e.hp -= p.dmg; e.flashT=1;
+            e.hp -= p.dmg * (1-(e.queenDmgResist||0)); e.flashT=1;
             playHit(e.radius, e.boss);
           }
         });
@@ -1051,7 +1071,7 @@ function update(dt){
           for(let i=0;i<4;i++) particles.push({x:p.x,y:p.y,vx:(Math.random()-0.5)*70,vy:(Math.random()-0.5)*70,life:0.25,color:'#dce8ff'});
         } else {
           if(p.dmg > 0){
-            tgt.hp -= p.dmg; tgt.flashT=1;
+            tgt.hp -= p.dmg * (1-(tgt.queenDmgResist||0)); tgt.flashT=1;
             if(p.kind==='bolt') playElectricHit(tgt.radius, tgt.boss); else playHit(tgt.radius, tgt.boss);
             floatTexts.push({x:p.x,y:p.y,text:'-'+Math.round(p.dmg),life:0.6,vy:-30,color:p.kind==='mage'?'#b6f0e0':'#ffe3c2'});
 
@@ -1095,7 +1115,7 @@ function update(dt){
               }
               if(!next) break;
               dmg *= p.chainFalloff;
-              next.hp -= dmg; next.flashT = 1;
+              next.hp -= dmg * (1-(next.queenDmgResist||0)); next.flashT = 1;
               playElectricHit(next.radius, next.boss);
               arcs.push({x1:cur.x, y1:cur.y, x2:next.x, y2:next.y, life:0.22});
               floatTexts.push({x:next.x,y:next.y,text:'-'+Math.round(dmg),life:0.5,vy:-26,color:'#fff3a8'});

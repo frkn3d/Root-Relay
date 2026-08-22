@@ -99,6 +99,7 @@ const GEN = {
   MIN_WAVES: 13,                   // bölüm başına asgari dalga sayısı
   MAX_WAVES: 23,                   // bölüm başına azami dalga sayısı
   LONG_PATH_CHANCE: 0.8,           // bölümlerin bu oranı uzun/karmaşık yol alır
+  MAX_SPOTS: 20,                   // kule dikme noktası üst sınırı — hiçbir bölüm bunu aşamaz
 };
 
 /* ---------- Zorluk eğrisi ----------
@@ -410,13 +411,19 @@ function distToPath(px, py, pts){
 }
 
 function placeSpots(rng, paths, diff, totalLen){
-  const {W,H,MARGIN,MIN_SPOT_TO_PATH,MIN_SPOT_TO_SPOT} = GEN;
+  const {W,H,MARGIN,MIN_SPOT_TO_PATH,MIN_SPOT_TO_SPOT,MAX_SPOTS} = GEN;
 
   // KURAL 5: yol uzunluğuna göre asgari nokta sayısı
   const minBySize = Math.ceil(totalLen * GEN.SPOTS_PER_LEN);
-  // KURAL 4: zorluğa göre ±1 oynama
+  // KURAL 4: zorluğa göre ±1 oynama (taban biraz azaltıldı — çok uzun
+  // yollu bölümlerde nokta sayısı fazla kalabalık görünüyordu)
   const wobble = rndInt(rng, -1, 1);
-  const target = Math.max(minBySize, 8 + Math.round(diff*8) + wobble);
+  const rawTarget = Math.max(minBySize, 7 + Math.round(diff*7) + wobble);
+  // Üst sınır: kule dikme noktası hiçbir şekilde MAX_SPOTS'u aşamaz.
+  // Uzun yollu bölümlerde minBySize tek başına bu sınırı aşabildiğinden
+  // hem hedef hem de aşağıdaki gevşetme geri dönüşü buna göre kırpılır.
+  const target = Math.min(rawTarget, MAX_SPOTS);
+  const minTarget = Math.min(minBySize, MAX_SPOTS);
 
   const spots = [];
   let attempts = 0;
@@ -444,13 +451,14 @@ function placeSpots(rng, paths, diff, totalLen){
   }
 
   // Hedefe ulaşılamadıysa kısıtı kademeli gevşeterek tamamla
+  // (minTarget zaten MAX_SPOTS'a kırpılı — bu döngü de üst sınırı asla aşamaz)
   let relax = 0;
-  while(spots.length < minBySize && relax < 3){
+  while(spots.length < minTarget && relax < 3){
     relax++;
     const minGap = MIN_SPOT_TO_SPOT - relax*12;
     const minPath = MIN_SPOT_TO_PATH - relax*6;
     let tries = 0;
-    while(spots.length < minBySize && tries < 1500){
+    while(spots.length < minTarget && tries < 1500){
       tries++;
       const x = rnd(rng, MARGIN*0.5, W - MARGIN*0.5);
       const y = rnd(rng, MARGIN*0.6, H - MARGIN*0.6);
@@ -490,19 +498,19 @@ function pickTheme(rng, levelNo){
    ve ritmi değişir. */
 const WAVE_ARCHETYPES = [
   { id:'dengeli',  name:'Dengeli',
-    shares:{spore:0.42, swarm:0.34, sprinter:0.28, husk:0.16, brute:0.12, flask:0.10, cocoon:0.08}, pace:1.00 },
+    shares:{spore:0.42, swarm:0.34, sprinter:0.28, husk:0.16, brute:0.12, flask:0.10, cocoon:0.08, swarmqueen:0.06}, pace:1.00 },
   { id:'akin',     name:'Akın',            // çok sayıda küçük, hızlı akış
-    shares:{spore:0.30, swarm:0.95, sprinter:0.55, husk:0.05, brute:0.03, flask:0.06, cocoon:0.04}, pace:0.62 },
+    shares:{spore:0.30, swarm:0.95, sprinter:0.55, husk:0.05, brute:0.03, flask:0.06, cocoon:0.04, swarmqueen:0.05}, pace:0.62 },
   { id:'kusatma',  name:'Kuşatma',         // az sayıda ağır, yavaş baskı
-    shares:{spore:0.14, swarm:0.08, sprinter:0.10, husk:0.55, brute:0.42, flask:0.16, cocoon:0.10}, pace:1.65 },
+    shares:{spore:0.14, swarm:0.08, sprinter:0.10, husk:0.55, brute:0.42, flask:0.16, cocoon:0.10, swarmqueen:0.04}, pace:1.65 },
   { id:'kosu',     name:'Koşu',            // hız odaklı
-    shares:{spore:0.18, swarm:0.30, sprinter:0.95, husk:0.10, brute:0.06, flask:0.06, cocoon:0.04}, pace:0.70 },
+    shares:{spore:0.18, swarm:0.30, sprinter:0.95, husk:0.10, brute:0.06, flask:0.06, cocoon:0.04, swarmqueen:0.05}, pace:0.70 },
   { id:'kalabalik',name:'Kalabalık',       // ekranı dolduran yığın
-    shares:{spore:0.85, swarm:0.75, sprinter:0.30, husk:0.14, brute:0.08, flask:0.08, cocoon:0.05}, pace:0.75 },
+    shares:{spore:0.85, swarm:0.75, sprinter:0.30, husk:0.14, brute:0.08, flask:0.08, cocoon:0.05, swarmqueen:0.07}, pace:0.75 },
   { id:'zirhli',   name:'Zırhlı',          // dayanıklılık sınavı
-    shares:{spore:0.20, swarm:0.15, sprinter:0.14, husk:0.70, brute:0.22, flask:0.18, cocoon:0.08}, pace:1.35 },
+    shares:{spore:0.20, swarm:0.15, sprinter:0.14, husk:0.70, brute:0.22, flask:0.18, cocoon:0.08, swarmqueen:0.04}, pace:1.35 },
   { id:'dalgali',  name:'Dalgalı',         // gruplar arası belirgin boşluk
-    shares:{spore:0.50, swarm:0.45, sprinter:0.35, husk:0.22, brute:0.16, flask:0.12, cocoon:0.10}, pace:1.45 },
+    shares:{spore:0.50, swarm:0.45, sprinter:0.35, husk:0.22, brute:0.16, flask:0.12, cocoon:0.10, swarmqueen:0.06}, pace:1.45 },
 ];
 
 function pickArchetype(rng, diff){
@@ -530,6 +538,10 @@ function buildWaves(rng, diff, levelNo){
   if(diff > 0.38) pool.push('flask');   // destek birimi: iyileştirme birikintisi
   if(diff > 0.46) pool.push('brute');
   if(diff > 0.30) pool.push('cocoon');  // kamikaze — yalnızca son dalgalarda görünür (bkz. isVeryLateWave)
+  // SÜRÜ ANASI: ilk 8 bölümde kesinlikle yok; sonrasında bölüm başına
+  // %35 ihtimalle havuza girer (tohuma bağlı, o yüzden aynı bölüm
+  // numarası her zaman aynı sonucu verir — "rastgele ama deterministik").
+  if(levelNo > 8 && rng() < 0.35) pool.push('swarmqueen');
 
   // Havuzdan bazen bir tür çıkarılır — aynı havuz her bölümde
   // aynı hissi vermesin diye. (En az 2 tür kalır.)
@@ -762,14 +774,16 @@ function generateWaveForGenerated(level, waveIndex){
     ];
   }
 
-  const mult = 1 + waveIndex*0.16;
+  // lateWaveBoost (config.js): 8. dalgadan sonra her dalga giderek
+  // daha kalabalık olsun diye ek doğrusal çarpan (9. dalga +%10, ...)
+  const mult = (1 + waveIndex*0.16) * lateWaveBoost(waveIndex);
   const arch = level.archetype || WAVE_ARCHETYPES[0];
   const count = Math.round((p.countBase + waveIndex*p.countGrowth) * mult * 0.55);
   const groups = [];
   const pool = level.enemyPool;
 
   // Arketip, hangi türün ağır basacağını ve ritmi belirler
-  const baseIntervals = { swarm:0.40, sprinter:0.75, spore:0.75, husk:1.20, brute:1.70, flask:1.50, cocoon:2.2 };
+  const baseIntervals = { swarm:0.40, sprinter:0.75, spore:0.75, husk:1.20, brute:1.70, flask:1.50, cocoon:2.2, swarmqueen:1.8 };
   // ŞİŞE yalnızca son 3 dalgada görünür — her dalgada çıkması hem
   // tekrara düşürüyor hem de erken dalgaları gereksiz zorlaştırıyordu.
   const isLateWave = waveIndex > level.waveCount - 3;

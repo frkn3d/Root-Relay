@@ -1155,20 +1155,29 @@ function drawBossAura(e){
   ctx.save();
   const R = e.auraRadius;
 
+  // Sürü Anası'nın müttefik-güçlendirme aurası sıcak/altın renkte —
+  // Don Efendisi'nin soğuk mavi don fırtınasından görsel olarak
+  // ayrışsın diye (biri kuleleri yavaşlatır, diğeri düşmanları güçlendirir).
+  const warm = !!e.allyBuffTypes;
+  const c0 = warm ? 'rgba(245,210,90,0.04)'  : 'rgba(150,220,245,0.03)';
+  const c1 = warm ? 'rgba(230,180,60,0.11)'  : 'rgba(120,200,235,0.10)';
+  const c2 = warm ? 'rgba(200,150,40,0.02)'  : 'rgba(90,170,215,0.02)';
+  const dotColor = warm ? 'rgba(255,235,180,0.6)' : 'rgba(230,250,255,0.55)';
+
   const g = ctx.createRadialGradient(e.x,e.y,R*0.2,e.x,e.y,R);
-  g.addColorStop(0,'rgba(150,220,245,0.03)');
-  g.addColorStop(0.7,'rgba(120,200,235,0.10)');
-  g.addColorStop(1,'rgba(90,170,215,0.02)');
+  g.addColorStop(0,c0);
+  g.addColorStop(0.7,c1);
+  g.addColorStop(1,c2);
   ctx.beginPath(); ctx.arc(e.x,e.y,R,0,Math.PI*2);
   ctx.fillStyle=g; ctx.fill();
 
-  // içerideki savrulan kar — sınırı çember yerine bu belirtir
+  // içeride savrulan zerrecikler — sınırı çember yerine bu belirtir
   for(let i=0;i<18;i++){
     const ang = t0*0.5 + i*(Math.PI*2/18);
     const rr = R*(0.35 + ((t0*0.25+i*0.11)%1)*0.62);
     const sx = e.x+Math.cos(ang)*rr, sy = e.y+Math.sin(ang)*rr;
     ctx.beginPath(); ctx.arc(sx,sy,1.6,0,Math.PI*2);
-    ctx.fillStyle='rgba(230,250,255,0.55)'; ctx.fill();
+    ctx.fillStyle=dotColor; ctx.fill();
   }
   ctx.restore();
 }

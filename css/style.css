@@ -187,6 +187,13 @@ canvas{
   background:rgba(255,255,255,0.14);
 }
 .pli-dots i.on{ background:var(--gold); }
+.pli-stars-req{
+  font-family:'JetBrains Mono', monospace; font-size:9.5px;
+  color:var(--cream-dim); text-align:center;
+  margin-top:4px; padding-top:6px;
+  border-top:1px solid rgba(244,192,74,0.16);
+  width:100%;
+}
 
 /* Market: geri kalan arayüzden ayrışsın diye mavi tema. */
 #shopOverlay{ background:rgba(8,20,28,0.88); }

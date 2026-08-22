@@ -12,11 +12,15 @@ const ENEMY_TYPES = {
   /* KÜP — öldüğünde ikiye bölünür. Çocuklar ebeveynin canının ve
      boyutunun %40'ı kadar olur. splitsLeft tükenene dek bölünmeye
      devam eder. Yolda zikzak çizerek "deli gibi" ilerler. */
-  cube:     { hp:130, speed:0.0725, radius:20, gold:8,  dmgToLives:1, label:'Küp',     shape:'cube',   body:'#ff9f43', body2:'#b5541a', eyes:2,
+  /* Denge güncellemesi: bölünmemiş küp +%10, ilk bölünme (orta boy)
+     +%15, en küçüğe bölünenler (2. ve 3. küçülme — ikisi de minRadius'a
+     kenetlendiği için ekranda aynı boyda görünür) +%35 hızlandırıldı. */
+  cube:     { hp:130, speed:0.07975, radius:20, gold:8,  dmgToLives:1, label:'Küp',     shape:'cube',   body:'#ff9f43', body2:'#b5541a', eyes:2,
               splits:3, splitHpFactor:0.40, splitSizeFactor:0.40, minRadius:6, wobble:26,
               /* Nesil başına hız çarpanı (taban hıza göre):
-                 1. küçülme +%50, 2. küçülme +%100, 3. küçülme +%150 */
-              splitSpeedMults:[1.5, 2.0, 2.5] },
+                 1. küçülme +%50 → +%15 ek, 2. küçülme +%100 → +%35 ek,
+                 3. küçülme +%150 → +%35 ek */
+              splitSpeedMults:[1.725, 2.7, 3.375] },
   /* KALKAN TAŞIYICI — önünde enerji kalkanı taşır. Önden gelen
      mermiler seker; yalnızca yandan/arkadan hasar alır. Kule
      konumlandırmayı anlamlı hale getirir. */
@@ -52,6 +56,14 @@ const ENEMY_TYPES = {
      "KIVILCIM PATLAMASI"). Yalnızca bölümün son dalgalarında görülür. */
   cocoon:   { hp:70, speed:0.5, radius:18, gold:15, dmgToLives:1, label:'Kıvılcım Kozası', shape:'cocoon',
               body:'#ff7a3f', body2:'#7a1f0a', eyes:0, deathBlindRadius:100, deathBlindDuration:2.5 },
+
+  /* SÜRÜ ANASI — Don Efendisi'nin tersi: kuleleri değil müttefiklerini
+     güçlendirir. Kendisi zayıf; yakınındaki Spor/Sürü'ye hız ve hafif
+     hasar direnci verir. Onu öncelikli öldürmek dalgayı belirgin
+     şekilde kolaylaştırır (bkz. engine.js "SÜRÜ ANASI AURASI"). */
+  swarmqueen:{ hp:38, speed:0.6, radius:19, gold:14, dmgToLives:1, label:'Sürü Anası', shape:'blob',
+              body:'#f0c419', body2:'#8a6510', eyes:2,
+              auraRadius:120, allyBuffTypes:['spore','swarm'], allySpeedBuff:0.28, allyDmgResist:0.20 },
 };
 
 const TOWER_TYPES = {
@@ -137,6 +149,15 @@ const LEVELS = [
    WAVE_EXTRA_MULT ile tek tek dalgalara ek ince ayar yapılabilir. */
 const GLOBAL_COUNT_BOOST = 1.30;
 const WAVE_EXTRA_MULT = { 8: 1.30 };  // 8. dalga ayrıca +%30
+
+/* 8. dalgadan sonra dalgalar giderek kalabalıklaşsın diye doğrusal
+   ek çarpan: 9. dalga +%10, 10. dalga +%20, 11. dalga +%30, ...
+   Klasik bölümler (generateWave) ve 1000 Bölüm üretici
+   (generateWaveForGenerated, levelgen.js) ikisi de kullanır. */
+function lateWaveBoost(waveIndex){
+  return waveIndex > 8 ? 1 + 0.10*(waveIndex-8) : 1;
+}
+
 function waveCountMultiplier(waveIndex){
   let m;
   if(waveIndex <= 1) m = 1.0;
@@ -144,7 +165,7 @@ function waveCountMultiplier(waveIndex){
   else if(waveIndex === 3) m = 2.0;
   else if(waveIndex <= 6) m = 2.5;
   else m = 2.5 * 1.7;
-  return m * GLOBAL_COUNT_BOOST * (WAVE_EXTRA_MULT[waveIndex] || 1);
+  return m * GLOBAL_COUNT_BOOST * (WAVE_EXTRA_MULT[waveIndex] || 1) * lateWaveBoost(waveIndex);
 }
 
 /* Spawn aralıkları: düşman sayısı arttıkça dalganın tek seferde

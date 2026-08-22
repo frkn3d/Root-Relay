@@ -123,6 +123,19 @@ function renderDots(el, count){
   for(let i=0;i<5;i++) html += `<i class="${i<count?'on':''}"></i>`;
   el.innerHTML = html;
 }
+
+/* Bir bölümü kaç yıldızla bitirmek için kaç can gerektiğini hesaplar
+   (bkz. endGame() — frac=lives/startLivesEffective, >=0.8 → 3 yıldız,
+   >=0.4 → 2 yıldız). Menü ekranlarında oyuncuya somut bir sayı olarak
+   gösterilir; yalnızca yüzde söylemek hangi bölümde kaç can ettiğini
+   belirsiz bırakıyordu. */
+function starLivesNeeded(startLives){
+  return {
+    three: Math.ceil(startLives*0.8),
+    two: Math.ceil(startLives*0.4),
+  };
+}
+
 function renderPauseLevelInfo(){
   const box = document.getElementById('pauseLevelInfo');
   if(!box || !level) return;
@@ -131,6 +144,9 @@ function renderPauseLevelInfo(){
   renderDots(document.getElementById('pliDiff'), dots.diffDots);
   renderDots(document.getElementById('pliAdv'), dots.advDots);
   renderDots(document.getElementById('pliBoss'), dots.bossDots);
+  const need = starLivesNeeded(level.startLives);
+  const reqEl = document.getElementById('pliStarsReq');
+  if(reqEl) reqEl.textContent = `⭐⭐⭐ ≥${need.three} can  ·  ⭐⭐ ≥${need.two} can`;
 }
 
 /* ---- Menü sayfası gezinme ---- */
@@ -226,10 +242,12 @@ function renderSeedPreview(){
   const r = ROAD_TYPES[lv.theme.road].name;
   const prog = getLevelProgress(lv.id);
   const dots = Math.max(1, Math.min(5, Math.round(lv.difficulty01*5)));
+  const need = starLivesNeeded(lv.startLives);
   el.innerHTML =
     `<b>Bölüm ${n}</b> — ${s} · ${b} · ${r} yol<br>` +
     `${lv.entries} giriş / ${lv.exits} çıkış · ${lv.waveCount} dalga · ${lv.spots.length} kule noktası<br>` +
-    `Zorluk: ${'●'.repeat(dots)}${'○'.repeat(5-dots)} · Tarz: ${lv.archetype.name}` +
+    `Zorluk: ${'●'.repeat(dots)}${'○'.repeat(5-dots)} · Tarz: ${lv.archetype.name}<br>` +
+    `Can: ${lv.startLives} · ⭐⭐⭐ ≥${need.three} can · ⭐⭐ ≥${need.two} can` +
     (lv.mods.notes.length ? `<br><span style="color:#8fe3a0">☀ ${lv.mods.notes.join(' ')}</span>` : '') +
     (prog.bestStars>0 ? `<br>En iyi: ${'⭐'.repeat(prog.bestStars)}` : '');
 }
