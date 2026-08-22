@@ -388,23 +388,6 @@ document.getElementById('resetProgressBtn').addEventListener('pointerup', ()=>{
   }
 });
 
-document.getElementById('fsBtn').addEventListener('pointerup', ()=>{
-  playMenuTap();
-  const el = document.documentElement;
-  if(!document.fullscreenElement && !document.webkitFullscreenElement){
-    const req = el.requestFullscreen || el.webkitRequestFullscreen;
-    if(req) req.call(el).catch(()=>{});
-  } else {
-    const exit = document.exitFullscreen || document.webkitExitFullscreen;
-    if(exit) exit.call(document).catch(()=>{});
-  }
-});
-document.addEventListener('fullscreenchange', ()=>{
-  const btn = document.getElementById('fsBtn');
-  const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-  btn.textContent = isFs ? '⛗' : '⛶';
-  setTimeout(fitGameToViewport, 120);
-});
 
 syncSoundButtons();
 renderTowerSelectBtn();
