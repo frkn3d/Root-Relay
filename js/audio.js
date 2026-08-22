@@ -67,6 +67,33 @@ function playShoot(kind){
   else if(kind==='ice') blip(900,0.10,'sine',0.11,1300);
 }
 function playCoin(){ if(!throttleSound('coin',35)) return; blip(1050,0.09,'square',0.09,1400); }
+
+/* Vuruş sesi — düşmanın yarıçapına göre ölçekleniyor: küçük düşman
+   ince/tiz bir "tık", büyük düşman kalın/tok bir "dum". Boss'larda
+   ekstra ağırlık için bir oktav altına ikinci, sessiz bir katman
+   ekleniyor. Boyut sınıfı başına ayrı throttle var ki aynı anda hem
+   küçük hem büyük bir düşmana vurulunca ikisi de duyulsun, ama aynı
+   sınıftan art arda gelen vuruşlar makineli tüfek gibi uğuldamasın. */
+function playHit(radius, boss){
+  const key = boss ? 'boss' : (radius<12 ? 'sm' : radius<18 ? 'md' : 'lg');
+  if(!throttleSound('hit_'+key, 42)) return;
+  const r = Math.max(8, Math.min(26, radius||14));
+  const t = (r-8)/18;   // 0 = en küçük, 1 = en büyük
+  const freq = 980 - t*760;
+  const dur  = 0.045 + t*0.09;
+  const vol  = 0.065 + t*0.045;
+  blip(freq, dur, t<0.5?'triangle':'sine', vol, freq*(0.55-t*0.1));
+  if(boss) setTimeout(()=>blip(freq*0.55, dur*1.15, 'sine', vol*0.7, freq*0.4), 4);
+}
+
+/* Düşman öldüğünde: hızlı, iki notalı yükselen bir "ding-ding" —
+   altın toplama hissi versin diye playCoin()'den bilinçli olarak
+   farklı ve daha belirgin/keyifli. */
+function playKill(){
+  if(!throttleSound('kill',55)) return;
+  blip(880,0.07,'triangle',0.10,1300);
+  setTimeout(()=>blip(1320,0.09,'triangle',0.11,1760), 45);
+}
 function playPlace(){ blip(300,0.10,'triangle',0.16,520); }
 function playError(){ blip(140,0.18,'sawtooth',0.13,90); }
 function playWaveStart(){ blip(300,0.35,'sine',0.14,700); }

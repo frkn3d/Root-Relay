@@ -1020,6 +1020,7 @@ function update(dt){
         enemies.forEach(e=>{
           if(Math.hypot(e.x-ix,e.y-iy)<=p.splash){
             e.hp -= p.dmg; e.flashT=1;
+            playHit(e.radius, e.boss);
           }
         });
         explosions.push({x:ix,y:iy,r:4,maxR:p.splash,life:0.35});
@@ -1048,6 +1049,7 @@ function update(dt){
         } else {
           if(p.dmg > 0){
             tgt.hp -= p.dmg; tgt.flashT=1;
+            playHit(tgt.radius, tgt.boss);
             floatTexts.push({x:p.x,y:p.y,text:'-'+Math.round(p.dmg),life:0.6,vy:-30,color:p.kind==='mage'?'#b6f0e0':'#ffe3c2'});
 
             /* YANSITICI: hasarın bir kısmını atan kuleye geri yansıtır.
@@ -1091,6 +1093,7 @@ function update(dt){
               if(!next) break;
               dmg *= p.chainFalloff;
               next.hp -= dmg; next.flashT = 1;
+              playHit(next.radius, next.boss);
               arcs.push({x1:cur.x, y1:cur.y, x2:next.x, y2:next.y, life:0.22});
               floatTexts.push({x:next.x,y:next.y,text:'-'+Math.round(dmg),life:0.5,vy:-26,color:'#fff3a8'});
               hitSet.add(next);
@@ -1116,7 +1119,7 @@ function update(dt){
     const spawned = [];
     dead.forEach(e=>{
       gold += e.gold;
-      playCoin();
+      playKill();
 
       // KÜP BÖLÜNMESİ: ölen küp, canının ve boyutunun %40'ı kadar
       // iki yavru bırakır. splitsLeft bitene kadar zincir devam eder.
