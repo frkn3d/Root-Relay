@@ -126,6 +126,14 @@ function playHit(radius, boss){
   if(boss) setTimeout(()=>blip(freq*0.55, dur*1.15, 'sine', vol*0.7, freq*0.4), 4);
 }
 
+/* Kıvılcım Kozası öldüğünde patlayıp yakındaki kuleleri kör edince —
+   derin, kısa bir "whump" + hemen ardından hafif bir toz/polen tıslaması. */
+function playBlindBurst(){
+  if(!throttleSound('blindburst', 100)) return;
+  blip(90, 0.28, 'sawtooth', 0.16, 45);
+  setTimeout(()=>blip(1600, 0.12, 'sawtooth', 0.06, 400), 20);
+}
+
 /* Şimşek isabeti — Şimşek Direği'nin ilk vuruşu ve zincirin sıçradığı
    her hedef için: genel playHit() yerine zapSound() tabanlı, gerçekten
    elektriksel bir çıtırtı. Boyuta göre ölçekleniyor (playHit ile aynı

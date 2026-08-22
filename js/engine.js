@@ -978,6 +978,7 @@ function update(dt){
     const rateMult = towerRateMultiplier(t);
     t.cooldown = Math.max(0, t.cooldown-dt);
     if(t.overloadT > 0) t.overloadT -= dt;
+    if(t.blindT > 0) t.blindT -= dt;
 
     /* NİŞAN ALMA: kule, ateş etmese bile menzilindeki hedefe döner.
        Namlu/yay anlık zıplamasın diye açı yumuşatılarak takip edilir. */
@@ -1178,6 +1179,29 @@ function update(dt){
             color: i%3===0 ? '#dffbe9' : '#7fe0a8'});
         }
         floatTexts.push({x:e.x,y:e.y-16,text:'ŞİŞE KIRILDI',life:1.0,vy:-26,color:'#7fe0a8'});
+      }
+
+      // KIVILCIM PATLAMASI: ölünce geniş bir alana patlayıcı polen saçar;
+      // yarıçaptaki kuleler bir süreliğine kör olup ateş edemez.
+      if(e.deathBlindRadius > 0){
+        let blinded = 0;
+        towers.forEach(tw=>{
+          if(tw.buildLeft > 0) return;   // inşa halindeki kule zaten ateş etmiyor
+          if(Math.hypot(tw.x-e.x, tw.y-e.y) <= e.deathBlindRadius){
+            tw.cooldown = Math.max(tw.cooldown, e.deathBlindDuration);
+            tw.blindT = e.deathBlindDuration;
+            blinded++;
+          }
+        });
+        explosions.push({x:e.x,y:e.y,r:6,maxR:e.deathBlindRadius,life:0.5});
+        shake = Math.min(shake+6, 16);
+        playBlindBurst();
+        for(let i=0;i<26;i++){
+          const ang=(i/26)*Math.PI*2, sp=70+Math.random()*130;
+          particles.push({x:e.x,y:e.y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,life:0.55,
+            color: i%3===0 ? '#ffe08a' : (i%3===1 ? '#ff8a4a' : '#ffb35c')});
+        }
+        if(blinded>0) floatTexts.push({x:e.x,y:e.y-16,text:'KÖRLEŞTİ',life:0.9,vy:-26,color:'#ffb35c'});
       }
 
       if(e.boss){

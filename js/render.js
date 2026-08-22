@@ -1187,6 +1187,21 @@ function drawChillBadge(t){
   ctx.restore();
 }
 
+/* Kıvılcım Kozası'nın patlaması bir kuleyi kör ettiğinde — o kule
+   ateş edemezken üstünde turuncu, dönen bir polen/toz halkası. */
+function drawBlindBadge(t){
+  if(!(t.blindT > 0)) return;
+  const t0 = performance.now()/1000;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(t.x, t.y, 24, 0, Math.PI*2);
+  ctx.strokeStyle='rgba(255,160,90,'+(0.5+Math.sin(t0*5)*0.2)+')';
+  ctx.lineWidth=2; ctx.setLineDash([3,4]); ctx.lineDashOffset=-t0*14;
+  ctx.stroke(); ctx.setLineDash([]);
+  ctx.font='11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('💫', t.x, t.y-30);
+  ctx.restore();
+}
+
 function drawTowerRange(t){
   const isSelected = towerPanelOpen && selectedTower===t;
   const showRing = isSelected || activeTowerRing===t;
@@ -1558,6 +1573,65 @@ function drawFlaskEnemy(e){
   ctx.restore();
 }
 
+/* KIVILCIM KOZASI — nabız gibi atan, içi lav/spor dolu şişkin bir koza.
+   Bacak/göz yok; organik bir tehlike hissi versin diye sadece dışa
+   taşan bir nabız halkası ve içte parlayan bir köz var. */
+function drawCocoonEnemy(e){
+  const t0 = performance.now()/1000;
+  const R = e.radius;
+  const bob = Math.sin(e.bounce)*2;
+  const flash = Math.max(0,e.flashT||0) > 0.05;
+  const pulse = 0.5 + 0.5*Math.sin(t0*3.4 + e.bounce);
+
+  ctx.save();
+  ctx.translate(e.x, e.y + Math.abs(bob));
+
+  // gölge
+  ctx.beginPath(); ctx.ellipse(0, R+5, R*0.78, R*0.26, 0, 0, Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,0.28)'; ctx.fill();
+
+  // dışa taşan nabız halkası — patlama tehlikesini önceden hissettirir
+  ctx.beginPath(); ctx.ellipse(0, 0, R*(1.15+pulse*0.2), R*(1.32+pulse*0.22), 0, 0, Math.PI*2);
+  ctx.fillStyle = `rgba(255,120,60,${0.08+pulse*0.10})`; ctx.fill();
+
+  // koza gövdesi — organik, oval
+  ctx.beginPath();
+  ctx.ellipse(0, 0, R*0.86, R*1.05, 0, 0, Math.PI*2);
+  const g = ctx.createRadialGradient(-R*0.25,-R*0.3,2,0,0,R*1.15);
+  g.addColorStop(0, flash?'#ffffff':'#ff9a5c');
+  g.addColorStop(0.55, flash?'#ffffff':e.body);
+  g.addColorStop(1, flash?'#ffffff':e.body2);
+  ctx.fillStyle=g; ctx.fill();
+  ctx.lineWidth=2.2; ctx.strokeStyle='#3a0f05'; ctx.stroke();
+
+  // içindeki közün nabzı
+  if(!flash){
+    ctx.beginPath();
+    ctx.arc(0, R*0.05, R*(0.26+pulse*0.16), 0, Math.PI*2);
+    ctx.fillStyle = `rgba(255,214,120,${0.55+pulse*0.35})`;
+    ctx.fill();
+  }
+
+  // koza dikişleri/çatlakları
+  ctx.strokeStyle='rgba(58,15,5,0.55)'; ctx.lineWidth=1.4;
+  [[-0.5,-0.7,0.15,0.4],[0.55,-0.6,-0.1,0.5],[-0.2,0.3,0.35,0.85]].forEach(([x1,y1,x2,y2])=>{
+    ctx.beginPath();
+    ctx.moveTo(x1*R, y1*R);
+    ctx.quadraticCurveTo((x1+x2)/2*R, (y1+y2)/2*R + R*0.15, x2*R, y2*R);
+    ctx.stroke();
+  });
+
+  ctx.restore();
+
+  // can barı
+  const w=R*2.1;
+  ctx.save();
+  ctx.translate(e.x, e.y + Math.abs(bob));
+  ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(-w/2,-R-14,w,4);
+  ctx.fillStyle='#7fe3b4'; ctx.fillRect(-w/2,-R-14,w*(e.hp/e.maxHp),4);
+  ctx.restore();
+}
+
 /* Kırılan şişelerin bıraktığı iyileştirme birikintisi */
 function drawHealZones(){
   if(!healZones || !healZones.length) return;
@@ -1608,6 +1682,7 @@ function drawEnemy(e){
   if(e.shape==='boss'){ drawBossEnemy(e); return; }
   if(e.shape==='cube'){ drawCubeEnemy(e); return; }
   if(e.shape==='flask'){ drawFlaskEnemy(e); return; }
+  if(e.shape==='cocoon'){ drawCocoonEnemy(e); return; }
   const bob = Math.sin(e.bounce)*3;
   const squash = 1 - Math.abs(Math.sin(e.bounce))*0.12;
   ctx.save();
@@ -1816,6 +1891,7 @@ function render(){
   enemies.forEach(drawEnemy);
   towers.forEach(drawTower);
   towers.forEach(drawChillBadge);
+  towers.forEach(drawBlindBadge);
   projectiles.forEach(drawProjectile);
   drawArcs();
   drawExplosions();

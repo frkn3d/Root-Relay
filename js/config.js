@@ -45,6 +45,13 @@ const ENEMY_TYPES = {
      düşürür (0.5 = %50 yavaş). */
   frostlord:{ hp:910, speed:0.26, radius:24, gold:120, dmgToLives:1, label:'Don Efendisi', shape:'boss',
               body:'#7fd4ea', body2:'#2d5f80', eyes:2, boss:true, auraRadius:83, auraSlow:0.5 },
+
+  /* KIVILCIM KOZASI — kamikaze. Öldüğünde geniş bir alana patlayıcı
+     polen saçar; patlama yarıçapındaki kuleleri deathBlindDuration
+     saniyeliğine kör edip ateş edemez hale getirir (bkz. engine.js'te
+     "KIVILCIM PATLAMASI"). Yalnızca bölümün son dalgalarında görülür. */
+  cocoon:   { hp:70, speed:0.5, radius:18, gold:15, dmgToLives:1, label:'Kıvılcım Kozası', shape:'cocoon',
+              body:'#ff7a3f', body2:'#7a1f0a', eyes:0, deathBlindRadius:100, deathBlindDuration:2.5 },
 };
 
 const TOWER_TYPES = {
