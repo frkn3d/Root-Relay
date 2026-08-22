@@ -277,8 +277,9 @@ let pressProgressStart = 0;     // basılı tutmanın başladığı zaman damgas
 const LONG_PRESS_MS = 500;      // yükseltme panelini açmak için gereken basılı tutma süresi
 let sellConfirmPending = false;
 
-// level0->1, level1->2, level2->3 (son seviye yükseltmesine +%75 zam: 1.3 -> 2.275)
-const UPGRADE_COST_MULT = [0.6, 0.9, 1.3*1.75];
+// level0->1, level1->2, level2->3. İlk seviyeye zam yok; 2. seviyeye
+// +%50 (0.9 -> 1.35), son seviyeye +%75 (1.3 -> 2.275).
+const UPGRADE_COST_MULT = [0.6, 0.9*1.5, 1.3*1.75];
 
 /* İnşa/yükseltme süreleri (saniye).
    BUILD_TIMES[0] = ilk kurulum, [1] = 2. seviye, [2] = 3. seviye.
@@ -290,33 +291,18 @@ function buildDurationFor(levelAfter){
   return Math.max(0.5, Math.round(base * sessionBuildFactor() * 2) / 2);
 }
 
-/* Ekonomi denetimi: düşman sayısı/altın geliri zorlukla katlanarak
-   büyürken kule/yükseltme fiyatları sabit kalıyordu — geç bölümlerde
-   ihtiyacın 15-35 katı altın birikiyordu. Karesel bir zorluk çarpanı
-   uyguluyoruz: düşük zorlukta (zaten sıkı olan erken oyun) neredeyse
-   etkisiz, zorluk arttıkça hızla büyür (zorluk=1'de ×7). Hem kurulum
-   hem yükseltme fiyatına uygulanır ki ikisi de aynı oranda ölçeklensin. */
-function currentLevelDiff01(){
-  // Yalnızca üretilmiş (1000 Bölüm) bölümler ölçeklenir. Klasik kampanya
-  // sadece 2 bölümden oluştuğu için index tabanlı bir vekil (0, 1) kule
-  // fiyatlarını Sisli Vadi'de 1000 Bölüm'ün en zoruyla aynı seviyeye
-  // (×7) sıçratırdı — bu ekonomi düzeltmesi klasik bölümleri hiç
-  // etkilemesin diye onlarda hep 0 (ölçeksiz) kullanılır.
-  return (level && level.generated) ? level.difficulty01 : 0;
-}
-function towerCostScale(){
-  const diff = currentLevelDiff01();
-  return 1 + diff*diff*6;
-}
+// Kurulum maliyeti zorlukla ölçeklenmiyor — sabit (TOWER_TYPES.cost).
+// Diff bazlı ölçekleme (×7'ye varan) denendi, geç bölümlerde okçuyu
+// bile 280 altına çıkarıp başlangıcı imkansız kıldığı için geri alındı.
 function buildCost(def){
-  return Math.round(def.cost * towerCostScale() / 5) * 5;
+  return def.cost;
 }
 
 function upgradeCost(t){
   const lvl = t.level||0;
   if(lvl>=3) return null;
   // Fiyatlar her zaman 5'in katı olsun — okunması kolay, tutarlı sayılar
-  return Math.round(t.def.cost * UPGRADE_COST_MULT[lvl] * towerCostScale() / 5) * 5;
+  return Math.round(t.def.cost * UPGRADE_COST_MULT[lvl] / 5) * 5;
 }
 /* Aktif bölümün mevsim/biyom etkileri. Klasik bölümlerde tema
    olmadığı için nötr değerler döner. */
