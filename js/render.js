@@ -160,8 +160,8 @@ function drawDirectionArrows(){
     const len = pathLens[pi] || 0;
     if(len < 120) return;
     const zones = [
-      { start: 40,                            color:'226,80,74',  alpha:0.30 }, // giriş
-      { start: Math.max(60, len - 150),       color:'86,184,224', alpha:0.42 }, // çıkış — daha vurgulu
+      { start: 40,                            color:'226,80,74',  alpha:0.65 }, // giriş
+      { start: Math.max(60, len - 150),       color:'86,184,224', alpha:0.80 }, // çıkış — daha vurgulu
     ];
     zones.forEach(zone=>{
       for(let i=0;i<3;i++){
@@ -175,11 +175,21 @@ function drawDirectionArrows(){
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(ang);
+        ctx.lineCap='round'; ctx.lineJoin='round';
+        // Koyu bir dış kontur önce çizilip üstüne renk basılıyor —
+        // altındaki zemin açık ya da koyu olsun fark etmeksizin okun
+        // her zeminde net seçilmesini sağlıyor.
+        ctx.globalAlpha = Math.min(1, zone.alpha*1.1) * fade;
+        ctx.strokeStyle = 'rgba(20,16,10,0.85)';
+        ctx.lineWidth = 6.5;
+        ctx.beginPath();
+        ctx.moveTo(-9,-8); ctx.lineTo(3,0); ctx.lineTo(-9,8);
+        ctx.stroke();
         ctx.globalAlpha = zone.alpha * fade;
         ctx.strokeStyle = `rgb(${zone.color})`;
-        ctx.lineWidth = 3; ctx.lineCap='round'; ctx.lineJoin='round';
+        ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.moveTo(-7,-7); ctx.lineTo(2,0); ctx.lineTo(-7,7);
+        ctx.moveTo(-9,-8); ctx.lineTo(3,0); ctx.lineTo(-9,8);
         ctx.stroke();
         ctx.restore();
       }
