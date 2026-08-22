@@ -298,11 +298,14 @@ function buildCost(def){
   return def.cost;
 }
 
+// Düz zam: tüm yükseltmelere +10 altın, son (2->3) yükseltmeye +200 altın.
+const UPGRADE_COST_FLAT_ADD = [10, 10, 200];
 function upgradeCost(t){
   const lvl = t.level||0;
   if(lvl>=3) return null;
   // Fiyatlar her zaman 5'in katı olsun — okunması kolay, tutarlı sayılar
-  return Math.round(t.def.cost * UPGRADE_COST_MULT[lvl] / 5) * 5;
+  const base = Math.round(t.def.cost * UPGRADE_COST_MULT[lvl] / 5) * 5;
+  return base + UPGRADE_COST_FLAT_ADD[lvl];
 }
 /* Aktif bölümün mevsim/biyom etkileri. Klasik bölümlerde tema
    olmadığı için nötr değerler döner. */
