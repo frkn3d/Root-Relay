@@ -87,6 +87,13 @@ const TOWER_TYPES = {
      Her sıçramada hasar azalır. Kalabalığa karşı güçlü. */
   bolt:   { id:'bolt',   name:'Şimşek Direği', cost:155, range:175, rate:1.35, dmg:20, splash:0, kind:'bolt', color:'#ffe066', icon:'⚡',
             chainCount:3, chainFalloff:0.6, chainRange:95 },
+  /* ATEŞ KULESİ — mermi atmaz, nişan açısındaki geniş bir KONİ içindeki
+     TÜM düşmanlara birden alev püskürtür (menzili kısa ama tek atışta
+     çoklu hedef vurur). Değdiği herkesi 10 saniye boyunca yakar.
+     Don Peykesi ile AYNI ANDA çalışmaz: alev üzerindeki donu/yavaşlamayı
+     söndürür, don da üzerindeki yanmayı söndürür (bkz. engine.js). */
+  fire:   { id:'fire',   name:'Ateş Kulesi', cost:115, range:115, rate:0.9, dmg:4, splash:0, kind:'fire', color:'#ff5a2e', icon:'🔥',
+            coneAngle: Math.PI/5, burnDps:9, burnDuration:10 },
 };
 
 // Yapı alanları: her segmentin orta noktası etrafında, birbirinden en az

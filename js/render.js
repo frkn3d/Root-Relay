@@ -1028,6 +1028,69 @@ function drawBoltTower(t){
   ctx.restore();
 }
 
+/* ATEŞ KULESİ — köşeli bir yakıt tankı ve nişan açısına dönen bir
+   püskürtme namlusu; namlu ucunda ateş etmese bile küçük bir pilot
+   alevi titrer, "sönmemiş" hissi versin diye. */
+function drawFireTower(t){
+  const {x,y}=t;
+  const t0 = performance.now()/1000;
+  const lvl = t.level||0;
+  const aim = (t.aimAngle !== undefined) ? t.aimAngle : -Math.PI/2;
+  ctx.save();
+  drawBasePlinth(x,y,t.pulse);
+
+  // yakıt tankı
+  const tankGrad = ctx.createLinearGradient(x-10,y-24,x+10,y+2);
+  tankGrad.addColorStop(0,'#5a4038'); tankGrad.addColorStop(0.5,'#3a2620'); tankGrad.addColorStop(1,'#241511');
+  ctx.fillStyle=tankGrad; ctx.strokeStyle='#160b08'; ctx.lineWidth=2.5;
+  roundedRect(x-10,y-24,20,26,6); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle='rgba(0,0,0,0.35)'; ctx.lineWidth=1.4;
+  [-18,-2].forEach(dy=>{ ctx.beginPath(); ctx.moveTo(x-10,y+dy); ctx.lineTo(x+10,y+dy); ctx.stroke(); });
+
+  // gözetleme camı — için için kızarır
+  const glowPulse = 0.6+Math.sin(t0*3)*0.25+(t.pulse||0)*0.3;
+  ctx.beginPath(); ctx.arc(x,y-11,5+lvl*0.6,0,Math.PI*2);
+  ctx.fillStyle=`rgba(255,${120+lvl*15},60,${glowPulse})`;
+  ctx.shadowColor='#ff5a2e'; ctx.shadowBlur=14+lvl*3; ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.strokeStyle='#160b08'; ctx.lineWidth=1.5; ctx.stroke();
+
+  // namlu — nişan açısına döner
+  ctx.save(); ctx.translate(x,y-13); ctx.rotate(aim);
+  const barrelLen = 15+lvl*2;
+  const bg = ctx.createLinearGradient(0,-3,barrelLen,3);
+  bg.addColorStop(0,'#6b5850'); bg.addColorStop(1,'#2a1c17');
+  ctx.fillStyle=bg; ctx.strokeStyle='#160b08'; ctx.lineWidth=2;
+  roundedRect(0,-4,barrelLen,8,3); ctx.fill(); ctx.stroke();
+
+  // namlu ucunda titreyen pilot alevi
+  const flick = 0.7+Math.sin(t0*14)*0.3;
+  for(let i=0;i<3;i++){
+    const fl = (barrelLen-2) + i*3*flick;
+    const fh = (3-i*0.7)*flick;
+    ctx.beginPath();
+    ctx.moveTo(fl,0);
+    ctx.quadraticCurveTo(fl+4+i*2, -fh, fl+7+i*2.4, 0);
+    ctx.quadraticCurveTo(fl+4+i*2, fh, fl,0);
+    const fg = ctx.createLinearGradient(fl,0,fl+9,0);
+    fg.addColorStop(0,'#fff3a8'); fg.addColorStop(0.4,'#ff9a3c'); fg.addColorStop(1,'rgba(255,90,46,0)');
+    ctx.fillStyle=fg; ctx.fill();
+  }
+  ctx.restore();
+
+  // etrafta yükselen kor parçacıkları
+  for(let i=0;i<2+lvl;i++){
+    const cyc = (t0*0.6+i*0.37)%1;
+    const ang0 = i*2.4;
+    const ex = x + Math.cos(ang0)*(6+cyc*8);
+    const ey = y-16 - cyc*18;
+    ctx.beginPath(); ctx.arc(ex,ey,1.6*(1-cyc*0.6),0,Math.PI*2);
+    ctx.fillStyle=`rgba(255,${150+Math.floor(cyc*80)},80,${0.75*(1-cyc)})`;
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
 function drawMortarTower(t){
   const {x,y}=t;
   const t0 = performance.now()/1000;
@@ -1283,6 +1346,7 @@ function drawTower(t){
   else if(t.def.kind==='ice') drawIceTower(t);
   else if(t.def.kind==='poison') drawPoisonTower(t);
   else if(t.def.kind==='bolt') drawBoltTower(t);
+  else if(t.def.kind==='fire') drawFireTower(t);
   else drawMortarTower(t);
   ctx.restore();
 
@@ -1702,6 +1766,48 @@ function drawDebris(){
   ctx.restore();
 }
 
+/* ALEV PÜSKÜRTME — Ateş Kulesi'nin ateş ettiği andaki koni şeklindeki
+   sıcak dalga. debris/healZones ile aynı desen: kısa ömürlü, kendi
+   dizisinde tutulur, hızla solarak kaybolur. */
+function drawFlameSprays(){
+  if(!flameSprays || !flameSprays.length) return;
+  ctx.save();
+  flameSprays.forEach(f=>{
+    const fade = Math.max(0, f.life / f.maxLife);
+    ctx.save();
+    ctx.globalAlpha = fade;
+
+    // taban yıkaması: koni şeklinde sıcak bir dolgu
+    ctx.beginPath();
+    ctx.moveTo(f.x, f.y);
+    ctx.arc(f.x, f.y, f.range, f.angle-f.cone, f.angle+f.cone);
+    ctx.closePath();
+    const g = ctx.createRadialGradient(f.x,f.y,0, f.x,f.y,f.range);
+    g.addColorStop(0, 'rgba(255,245,190,0.8)');
+    g.addColorStop(0.35,'rgba(255,150,60,0.5)');
+    g.addColorStop(0.75,'rgba(230,70,30,0.26)');
+    g.addColorStop(1, 'rgba(180,30,20,0)');
+    ctx.fillStyle = g; ctx.fill();
+
+    // koninin ekseni boyunca sıcak "diller" — tam düz bir yıkama
+    // yerine daha organik, alevli bir doku hissi versin
+    for(let i=1;i<=3;i++){
+      const dist = f.range*(i/3.4);
+      const jitter = Math.sin(f.x*3+f.y*7+i*13)*0.5;
+      const ang = f.angle + f.cone*0.55*(i/3)*jitter;
+      const bx = f.x+Math.cos(ang)*dist, by = f.y+Math.sin(ang)*dist;
+      const r = 10+i*6;
+      const bg = ctx.createRadialGradient(bx,by,0,bx,by,r);
+      bg.addColorStop(0,'rgba(255,220,140,0.6)');
+      bg.addColorStop(1,'rgba(255,120,50,0)');
+      ctx.beginPath(); ctx.arc(bx,by,r,0,Math.PI*2);
+      ctx.fillStyle=bg; ctx.fill();
+    }
+    ctx.restore();
+  });
+  ctx.restore();
+}
+
 function drawHealZones(){
   if(!healZones || !healZones.length) return;
   const t0 = performance.now()/1000;
@@ -1810,6 +1916,25 @@ function drawEnemy(e){
       const by = -cyc*(e.radius+10);
       ctx.beginPath(); ctx.arc(bx, by, 1.6*(1-cyc*0.5), 0, Math.PI*2);
       ctx.fillStyle=`rgba(180,240,110,${0.8*(1-cyc)})`; ctx.fill();
+    }
+  }
+
+  // ATEŞ: turuncu parıltı ve yükselen alev dilleri (bkz. Ateş Kulesi)
+  if(e.burnT > 0){
+    const t0 = performance.now()/1000;
+    ctx.beginPath(); ctx.arc(0,0,e.radius+1,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,110,40,0.24)'; ctx.fill();
+    for(let i=0;i<3;i++){
+      const cyc = (t0*1.6 + i*0.31) % 1;
+      const bx = (i-1)*e.radius*0.5;
+      const by = -cyc*(e.radius+12);
+      const fh = 4*(1-cyc*0.5);
+      ctx.beginPath();
+      ctx.moveTo(bx, by+fh);
+      ctx.quadraticCurveTo(bx-2.4, by+fh*0.3, bx, by-fh);
+      ctx.quadraticCurveTo(bx+2.4, by+fh*0.3, bx, by+fh);
+      ctx.fillStyle=`rgba(255,${150+Math.floor(cyc*90)},60,${0.85*(1-cyc)})`;
+      ctx.fill();
     }
   }
 
@@ -1964,6 +2089,7 @@ function render(){
   towers.forEach(drawBlindBadge);
   projectiles.forEach(drawProjectile);
   drawArcs();
+  drawFlameSprays();
   drawExplosions();
   drawParticles();
   drawFloatTexts();

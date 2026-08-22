@@ -164,7 +164,7 @@ function buildPathDecor(path, totalLen){
 
 let gold, lives, waveIndex, waveActive, gameOver, gameWon;
 let startLivesEffective = 10;
-let towers, enemies, projectiles, particles, floatTexts, explosions, arcs, healZones, debris;
+let towers, enemies, projectiles, particles, floatTexts, explosions, arcs, healZones, debris, flameSprays;
 let spawnTimeline, waveElapsed;
 let shake = 0;
 let spots = [];
@@ -335,6 +335,10 @@ function getTowerStats(t){
     slowDuration: t.def.slowDuration
       ? Math.max(0.5, t.def.slowDuration + m.iceSlowBonus)
       : 0,
+    burnDps: t.def.burnDps ? t.def.burnDps*(1+lvl*0.30)*dmgMul : 0,
+    burnDuration: t.def.burnDuration || 0,
+    // Seviye arttıkça püskürtme konisi biraz daha geniş açılır
+    coneAngle: t.def.coneAngle ? t.def.coneAngle*(1+lvl*0.08) : 0,
   };
 }
 /* Menzil içindeki düşmanlardan, kulenin hedefleme moduna göre birini seçer.
@@ -593,7 +597,7 @@ function loadLevel(idx){
   resetSessionShop();            // progress.js — bölüm içi alımlar sıfırlanır
   waveIndex = 0;
   waveActive=false; gameOver=false; gameWon=false;
-  towers=[]; enemies=[]; projectiles=[]; particles=[]; floatTexts=[]; explosions=[]; arcs=[]; healZones=[]; debris=[];
+  towers=[]; enemies=[]; projectiles=[]; particles=[]; floatTexts=[]; explosions=[]; arcs=[]; healZones=[]; debris=[]; flameSprays=[];
   spawnTimeline=[]; waveElapsed=0; shake=0;
   seenEnemyTypes = new Set();
   birds = []; scheduleNextBird();
@@ -942,6 +946,13 @@ function update(dt){
       e.hp -= (e.poisonDps||0) * dt * (1-(e.queenDmgResist||0));
       if(e.poisonT <= 0){ e.poisonT = 0; e.poisonDps = 0; }
     }
+    // ATEŞ: süre boyunca saniyede burnDps kadar hasar — Don Peykesi'nin
+    // yavaşlatmasıyla aynı hedefte bir arada duramaz (bkz. "ATEŞ vs DON").
+    if(e.burnT > 0){
+      e.burnT -= dt;
+      e.hp -= (e.burnDps||0) * dt * (1-(e.queenDmgResist||0));
+      if(e.burnT <= 0){ e.burnT = 0; e.burnDps = 0; }
+    }
   });
 
   arcs.forEach(a=>{ a.life -= dt; });
@@ -951,6 +962,12 @@ function update(dt){
   if(debris.length){
     debris.forEach(d=>{ d.life -= dt; });
     debris = debris.filter(d=>d.life > 0);
+  }
+
+  /* ALEV PÜSKÜRTME GÖRSELİ — yalnızca görsel, oynanışa etkisi yok */
+  if(flameSprays.length){
+    flameSprays.forEach(f=>{ f.life -= dt; });
+    flameSprays = flameSprays.filter(f=>f.life > 0);
   }
 
   /* İYİLEŞTİRME BİRİKİNTİLERİ (kırılan şişelerden)
@@ -1040,16 +1057,39 @@ function update(dt){
     if(t.cooldown<=0){
       const target = aimTarget;
       if(target){
-        const dist0 = Math.hypot(target.x-t.x, target.y-t.y);
-        projectiles.push({x:t.x,y:t.y-20,target,dmg:st.dmg,splash:st.splash,kind:t.def.kind,
-          ox:t.x, oy:t.y, tower:t,
-          speed:t.def.kind==='mortar'?4.2:(t.def.kind==='bolt'?11:7),travel:dist0,
-          slow:t.def.slowFactor,slowDuration:st.slowDuration,
-          poisonDps:st.poisonDps, poisonDuration:st.poisonDuration,
-          chainCount:st.chainCount, chainFalloff:st.chainFalloff, chainRange:st.chainRange});
+        if(t.def.kind === 'fire'){
+          // ALEV PÜSKÜRTME: tek hedefe uçan bir mermi değil — nişan
+          // açısındaki koni içinde, menzildeki HERKESE anında isabet eder.
+          const aimAng = t.angle;
+          const cone = st.coneAngle;
+          enemies.forEach(e=>{
+            if(Math.hypot(e.x-t.x, e.y-t.y) > st.range) return;
+            let diff = Math.atan2(e.y-t.y, e.x-t.x) - aimAng;
+            while(diff >  Math.PI) diff -= Math.PI*2;
+            while(diff < -Math.PI) diff += Math.PI*2;
+            if(Math.abs(diff) > cone) return;
+            if(st.dmg>0) e.hp -= st.dmg*(1-(e.queenDmgResist||0));
+            e.flashT = 1;
+            // ATEŞ vs DON: aynı hedefte bir arada duramaz — alev,
+            // üzerindeki yavaşlatmayı/donu hemen eritir.
+            e.slowT = 0;
+            e.burnDps = Math.max(e.burnDps||0, st.burnDps);
+            e.burnT = Math.max(e.burnT||0, st.burnDuration);
+          });
+          flameSprays.push({x:t.x, y:t.y-20, angle:aimAng, cone, range:st.range, life:0.30, maxLife:0.30});
+          playShoot('fire');
+        } else {
+          const dist0 = Math.hypot(target.x-t.x, target.y-t.y);
+          projectiles.push({x:t.x,y:t.y-20,target,dmg:st.dmg,splash:st.splash,kind:t.def.kind,
+            ox:t.x, oy:t.y, tower:t,
+            speed:t.def.kind==='mortar'?4.2:(t.def.kind==='bolt'?11:7),travel:dist0,
+            slow:t.def.slowFactor,slowDuration:st.slowDuration,
+            poisonDps:st.poisonDps, poisonDuration:st.poisonDuration,
+            chainCount:st.chainCount, chainFalloff:st.chainFalloff, chainRange:st.chainRange});
+          playShoot(t.def.kind);
+        }
         t.cooldown = st.rate * rateMult;
         t.pulse = 1;
-        playShoot(t.def.kind);
       }
     }
     if(t.pulse>0) t.pulse = Math.max(0,t.pulse-dt*2.5);
@@ -1115,6 +1155,8 @@ function update(dt){
           if(p.slow){
             tgt.slowT = p.slowDuration;
             tgt.slowFactor = p.slow;
+            // ATEŞ vs DON: yavaşlatma, üzerindeki yanmayı hemen söndürür.
+            tgt.burnT = 0; tgt.burnDps = 0;
             if(p.dmg <= 0) tgt.flashT = 0.6;
           }
           // ZEHİR: hedefe zamana yayılı hasar yükle (en güçlü etki geçerli)

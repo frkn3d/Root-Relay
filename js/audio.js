@@ -105,6 +105,9 @@ function playShoot(kind){
   // bir efekt olduğundan yüksek sesli olursa rahatsız edici olurdu.
   else if(kind==='poison') blip(300,0.13,'sawtooth',0.05,150);
   else if(kind==='bolt') zapSound(1400,0.09,0.13);
+  // Ateş Kulesi: alçak, dokulu bir "fışş" — bir alev püskürtmesinin
+  // gürleyişine yakın dursun diye testere dalga + kısa süre.
+  else if(kind==='fire') blip(190,0.22,'sawtooth',0.09,120);
 }
 function playCoin(){ if(!throttleSound('coin',35)) return; blip(1050,0.09,'square',0.09,1400); }
 
