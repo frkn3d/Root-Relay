@@ -253,7 +253,7 @@ const CARD_TAP_MOVE_PX = 12;
 let cardPressStart = null;
 
 function renderTowerDrawer(){
-  const el = document.getElementById('towerDrawer');
+  const el = document.getElementById('towerDrawerRow');
   el.innerHTML='';
   Object.values(TOWER_TYPES).forEach(def=>{
     const card=document.createElement('div');
@@ -275,6 +275,55 @@ function renderTowerDrawer(){
     });
     el.appendChild(card);
   });
+  updateTowerDrawerThumb();
+}
+
+/* Kaydırma göstergesi: parça genişliği görünür/toplam oranını,
+   konumu ise mevcut kaydırma ilerlemesini yansıtır. Kaydıracak bir
+   şey yoksa (tüm kartlar sığıyorsa) çubuk tamamen gizlenir. */
+function updateTowerDrawerThumb(){
+  const row = document.getElementById('towerDrawerRow');
+  const bar = document.getElementById('towerDrawerScrollbar');
+  const thumb = document.getElementById('towerDrawerThumb');
+  if(!row || !bar || !thumb) return;
+  const maxScroll = row.scrollWidth - row.clientWidth;
+  if(maxScroll <= 1){
+    bar.style.display = 'none';
+    return;
+  }
+  bar.style.display = '';
+  const frac = Math.max(0.12, Math.min(1, row.clientWidth / row.scrollWidth));
+  thumb.style.width = (frac*100) + '%';
+  const travel = 100 - frac*100;
+  thumb.style.left = (travel * (row.scrollLeft / maxScroll)) + '%';
+}
+
+/* İlk kez açılışta: kaydırılabilir olduğunu anlatmak için çekmece
+   bir anlığına en sağa atlar, sonra 1 saniyede yumuşakça sola kayıp
+   normal başlangıç konumuna yerleşir. Sadece bir kez (cihaz başına)
+   gösterilir ve gerçekten kaydıracak içerik varsa çalışır. */
+const TOWER_DRAWER_HINT_KEY = 'rr_td_hint_v1';
+function maybePlayTowerDrawerHint(){
+  const row = document.getElementById('towerDrawerRow');
+  if(!row) return;
+  const maxScroll = row.scrollWidth - row.clientWidth;
+  if(maxScroll <= 1) return;
+  let seen = false;
+  try{ seen = !!localStorage.getItem(TOWER_DRAWER_HINT_KEY); }catch(e){}
+  if(seen) return;
+  try{ localStorage.setItem(TOWER_DRAWER_HINT_KEY, '1'); }catch(e){}
+
+  row.scrollLeft = maxScroll;
+  const start = performance.now();
+  const DUR = 1000;
+  function step(now){
+    const p = Math.min(1, (now-start)/DUR);
+    const ease = 1 - Math.pow(1-p, 3);   // ease-out: hızlı başlar, yumuşak biter
+    row.scrollLeft = maxScroll * (1-ease);
+    updateTowerDrawerThumb();
+    if(p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 }
 
 function toggleTowerDrawer(){
@@ -282,6 +331,10 @@ function toggleTowerDrawer(){
   const el = document.getElementById('towerDrawer');
   const isOpen = el.classList.toggle('show');
   document.getElementById('towerSelectBtn').classList.toggle('open', isOpen);
+  if(isOpen){
+    updateTowerDrawerThumb();
+    maybePlayTowerDrawerHint();
+  }
 }
 function closeTowerDrawer(){
   document.getElementById('towerDrawer').classList.remove('show');

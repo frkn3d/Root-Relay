@@ -395,20 +395,27 @@ canvas{
 
 .tower-drawer{
   /* Alt barın ÜSTÜNDE açılır. Düzeni itmediği için oyun sahası
-     yeniden boyutlanmaz — en-boy oranı sabit kalır. */
+     yeniden boyutlanmaz — en-boy oranı sabit kalır.
+     left/right -1px: kendi border(2px)+padding(6px)=8px içeri kayması,
+     alt bardaki butonların hizasıyla (dock'un 7px padding'i) tam
+     örtüşsün diye 1px dışarı alınıyor — aksi halde kartlar butonlardan
+     ~8px daha içeriden başlıyordu. */
   position:absolute;
-  left:7px; right:7px; bottom:calc(100% + 6px);
+  left:-1px; right:-1px; bottom:calc(100% + 6px);
   z-index:9;
-  display:none; flex-wrap:nowrap; gap:5px;
+  display:none; flex-direction:column; gap:5px;
   background:rgba(12,20,12,0.97);
   border:2px solid var(--wood);
   border-radius:10px;
   padding:6px;
-  overflow-x:auto; -webkit-overflow-scrolling:touch;
   box-shadow:0 8px 20px rgba(0,0,0,0.5);
 }
-.tower-drawer::-webkit-scrollbar{ height:0; }
 .tower-drawer.show{ display:flex; }
+.tower-drawer-row{
+  display:flex; flex-wrap:nowrap; gap:5px;
+  overflow-x:auto; -webkit-overflow-scrolling:touch;
+}
+.tower-drawer-row::-webkit-scrollbar{ height:0; }
 .tower-drawer .tower-card{
   flex:0 0 auto; width:58px;
   background:linear-gradient(180deg, #24361f, #172417);
@@ -422,10 +429,29 @@ canvas{
 .tower-drawer .tower-card .icon{ font-size:18px; line-height:1; }
 .tower-drawer .tower-card .name{
   font-size:8px; color:var(--cream-dim); text-align:center; line-height:1.1;
+  /* Sabit 2 satırlık yükseklik: isim 1 veya 2 satır sürsün, altındaki
+     maliyet rozeti her kartta HEP aynı satırda kalsın. */
+  height:17.6px;
+  display:flex; align-items:center; justify-content:center;
 }
 .tower-drawer .tower-card .cost{
   font-family:'JetBrains Mono', monospace;
   font-size:8.5px; color:var(--gold);
+}
+
+/* Kaydırılabilir olduğunu vurgulayan ince gösterge çubuğu.
+   Kart sayısı taşmıyorsa (ör. geniş ekran) JS bunu gizler. */
+.tower-drawer-scrollbar{
+  position:relative;
+  height:4px; flex-shrink:0;
+  border-radius:2px;
+  background:rgba(255,255,255,0.14);
+  overflow:hidden;
+}
+.tower-drawer-scrollbar .thumb{
+  position:absolute; top:0; left:0; height:100%;
+  border-radius:2px;
+  background:var(--gold);
 }
 
 .speed-btn{

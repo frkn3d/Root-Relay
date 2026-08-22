@@ -409,6 +409,7 @@ document.addEventListener('fullscreenchange', ()=>{
 syncSoundButtons();
 renderTowerSelectBtn();
 renderTowerDrawer();
+document.getElementById('towerDrawerRow').addEventListener('scroll', updateTowerDrawerThumb);
 loadLevel(0);
 showMenuPage('menuMain');
 fitGameToViewport();
