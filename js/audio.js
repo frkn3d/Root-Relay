@@ -59,16 +59,52 @@ function blip(freq, dur, type, vol, glideTo){
   osc.start(); osc.stop(ctx.currentTime+dur+0.02);
 }
 
+/* Ortak "elektrik çıtırtısı" üretici — şimşek atışı ve şimşek isabeti
+   ikisi de bunu kullanır (sadece perde/süre/ses düzeyi değişir). Düz
+   bir glide yerine birkaç düzensiz frekans sıçraması + hafif detune'lu
+   ikinci bir katman gerçek bir "cızırtı" hissi veriyor. */
+function zapSound(baseFreq, dur, vol){
+  if(!soundEnabled) return;
+  const c = ensureAudioCtx();
+  if(!c) return;
+  const t0 = c.currentTime;
+  const osc = c.createOscillator(), gain = c.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(baseFreq*1.7, t0);
+  osc.frequency.setValueAtTime(baseFreq*0.6, t0+dur*0.14);
+  osc.frequency.setValueAtTime(baseFreq*1.4, t0+dur*0.28);
+  osc.frequency.setValueAtTime(baseFreq*0.5, t0+dur*0.42);
+  osc.frequency.exponentialRampToValueAtTime(baseFreq*0.22, t0+dur);
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.exponentialRampToValueAtTime(vol, t0+0.006);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  osc.connect(gain); gain.connect(c.destination);
+  osc.start(); osc.stop(t0+dur+0.02);
+
+  // Hafif detune'lu ikinci katman — vızıltı/buzz hissi katıyor.
+  const osc2 = c.createOscillator(), gain2 = c.createGain();
+  osc2.type = 'square';
+  osc2.frequency.setValueAtTime(baseFreq*1.05, t0);
+  osc2.frequency.exponentialRampToValueAtTime(baseFreq*0.3, t0+dur*0.7);
+  gain2.gain.setValueAtTime(0.0001, t0);
+  gain2.gain.exponentialRampToValueAtTime(vol*0.35, t0+0.006);
+  gain2.gain.exponentialRampToValueAtTime(0.0001, t0+dur*0.7);
+  osc2.connect(gain2); gain2.connect(c.destination);
+  osc2.start(); osc2.stop(t0+dur*0.7+0.02);
+}
+
 function playShoot(kind){
   if(!throttleSound('shoot_'+kind, 45)) return;
   if(kind==='archer') blip(520,0.08,'triangle',0.11,420);
   else if(kind==='mage') blip(780,0.14,'sine',0.13,1100);
   else if(kind==='mortar') blip(140,0.16,'square',0.15,90);
-  else if(kind==='ice') blip(900,0.10,'sine',0.11,1300);
+  // Don Peykesi: eskisinden daha kısık ve kalın — parlak bir "ping"
+  // yerine alçak, hafif boğuk bir "vuum".
+  else if(kind==='ice') blip(260,0.20,'sine',0.065,150);
   // Zehir: diğer atışlardan bilinçli olarak kısık — sürekli tekrarlayan
   // bir efekt olduğundan yüksek sesli olursa rahatsız edici olurdu.
   else if(kind==='poison') blip(300,0.13,'sawtooth',0.05,150);
-  else if(kind==='bolt') blip(1500,0.05,'sawtooth',0.12,2400);
+  else if(kind==='bolt') zapSound(1400,0.09,0.13);
 }
 function playCoin(){ if(!throttleSound('coin',35)) return; blip(1050,0.09,'square',0.09,1400); }
 
@@ -88,6 +124,23 @@ function playHit(radius, boss){
   const vol  = 0.065 + t*0.045;
   blip(freq, dur, t<0.5?'triangle':'sine', vol, freq*(0.55-t*0.1));
   if(boss) setTimeout(()=>blip(freq*0.55, dur*1.15, 'sine', vol*0.7, freq*0.4), 4);
+}
+
+/* Şimşek isabeti — Şimşek Direği'nin ilk vuruşu ve zincirin sıçradığı
+   her hedef için: genel playHit() yerine zapSound() tabanlı, gerçekten
+   elektriksel bir çıtırtı. Boyuta göre ölçekleniyor (playHit ile aynı
+   mantık): küçük düşman tiz bir çıtırtı, büyük/boss kalın ve boss'ta
+   ekstra bir alt katman. */
+function playElectricHit(radius, boss){
+  const key = boss ? 'boss' : (radius<12 ? 'sm' : radius<18 ? 'md' : 'lg');
+  if(!throttleSound('ehit_'+key, 40)) return;
+  const r = Math.max(8, Math.min(26, radius||14));
+  const t = (r-8)/18;
+  const baseFreq = 1100 - t*550;
+  const dur = 0.055 + t*0.05;
+  const vol = 0.09 + t*0.04;
+  zapSound(baseFreq, dur, vol);
+  if(boss) setTimeout(()=>zapSound(baseFreq*0.5, dur*1.1, vol*0.6), 4);
 }
 
 /* Düşman öldüğünde: hızlı, iki notalı yükselen bir "ding-ding" —
