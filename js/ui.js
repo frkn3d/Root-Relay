@@ -301,7 +301,7 @@ function renderStartLevelList(){
 function renderTowerSelectBtn(){
   const btn = document.getElementById('towerSelectBtn');
   const def = TOWER_TYPES[selectedType];
-  btn.innerHTML = `<span class="ts-icon">${def.icon}</span><span class="ts-cost">🪙${def.cost}</span>`;
+  btn.innerHTML = `<span class="ts-icon">${def.icon}</span><span class="ts-cost">🪙${buildCost(def)}</span>`;
 }
 
 /* Kart genişliği (58px) küçük ve çekmece kaydırmalı (overflow-x) olduğu
@@ -320,7 +320,7 @@ function renderTowerDrawer(){
   Object.values(TOWER_TYPES).forEach(def=>{
     const card=document.createElement('div');
     card.className='tower-card'+(def.id===selectedType?' active':'');
-    card.innerHTML = `<div class="icon">${def.icon}</div><div class="name">${def.name}</div><div class="cost">🪙${def.cost}</div>`;
+    card.innerHTML = `<div class="icon">${def.icon}</div><div class="name">${def.name}</div><div class="cost">🪙${buildCost(def)}</div>`;
     card.addEventListener('pointerdown', (e)=>{
       cardPressStart = {x:e.clientX, y:e.clientY};
     });

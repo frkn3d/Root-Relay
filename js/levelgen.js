@@ -96,8 +96,8 @@ const GEN = {
   MIN_SPOT_TO_SPOT: 74,            // kule–kule asgari mesafesi
   SPOTS_PER_LEN: 1/175,            // yol uzunluğu başına asgari nokta (175 birime 1 kule)
   TOTAL_LEVELS: 1000,
-  MIN_WAVES: 13,                   // bölüm başına asgari dalga sayısı
-  MAX_WAVES: 23,                   // bölüm başına azami dalga sayısı
+  MIN_WAVES: 9,                    // bölüm başına asgari dalga sayısı
+  MAX_WAVES: 18,                   // bölüm başına azami dalga sayısı
   LONG_PATH_CHANCE: 0.8,           // bölümlerin bu oranı uzun/karmaşık yol alır
   MAX_SPOTS: 18,                   // kule dikme noktası üst sınırı — hiçbir bölüm bunu aşamaz
 };

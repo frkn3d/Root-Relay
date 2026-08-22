@@ -290,11 +290,33 @@ function buildDurationFor(levelAfter){
   return Math.max(0.5, Math.round(base * sessionBuildFactor() * 2) / 2);
 }
 
+/* Ekonomi denetimi: düşman sayısı/altın geliri zorlukla katlanarak
+   büyürken kule/yükseltme fiyatları sabit kalıyordu — geç bölümlerde
+   ihtiyacın 15-35 katı altın birikiyordu. Karesel bir zorluk çarpanı
+   uyguluyoruz: düşük zorlukta (zaten sıkı olan erken oyun) neredeyse
+   etkisiz, zorluk arttıkça hızla büyür (zorluk=1'de ×7). Hem kurulum
+   hem yükseltme fiyatına uygulanır ki ikisi de aynı oranda ölçeklensin. */
+function currentLevelDiff01(){
+  // Yalnızca üretilmiş (1000 Bölüm) bölümler ölçeklenir. Klasik kampanya
+  // sadece 2 bölümden oluştuğu için index tabanlı bir vekil (0, 1) kule
+  // fiyatlarını Sisli Vadi'de 1000 Bölüm'ün en zoruyla aynı seviyeye
+  // (×7) sıçratırdı — bu ekonomi düzeltmesi klasik bölümleri hiç
+  // etkilemesin diye onlarda hep 0 (ölçeksiz) kullanılır.
+  return (level && level.generated) ? level.difficulty01 : 0;
+}
+function towerCostScale(){
+  const diff = currentLevelDiff01();
+  return 1 + diff*diff*6;
+}
+function buildCost(def){
+  return Math.round(def.cost * towerCostScale() / 5) * 5;
+}
+
 function upgradeCost(t){
   const lvl = t.level||0;
   if(lvl>=3) return null;
   // Fiyatlar her zaman 5'in katı olsun — okunması kolay, tutarlı sayılar
-  return Math.round(t.def.cost * UPGRADE_COST_MULT[lvl] / 5) * 5;
+  return Math.round(t.def.cost * UPGRADE_COST_MULT[lvl] * towerCostScale() / 5) * 5;
 }
 /* Aktif bölümün mevsim/biyom etkileri. Klasik bölümlerde tema
    olmadığı için nötr değerler döner. */
@@ -385,7 +407,7 @@ function refreshTowerPanelAffordability(){
   // Kurulum onayı açıksa ✓ butonunun durumunu tazele
   if(pendingSpot){
     const def = TOWER_TYPES[selectedType];
-    const dis = gold < def.cost;
+    const dis = gold < buildCost(def);
     if(dis !== lastBuildAfford){
       lastBuildAfford = dis;
       const b = document.getElementById('bcOk');
@@ -503,10 +525,11 @@ let pendingSpot = null;   // kurulum onayı bekleyen yapı alanı
 function openBuildConfirm(spot){
   pendingSpot = spot;
   const def = TOWER_TYPES[selectedType];
+  const cost = buildCost(def);
   const box = document.getElementById('buildConfirm');
   document.getElementById('bcIcon').textContent = def.icon;
-  document.getElementById('bcCost').textContent = '🪙'+def.cost;
-  document.getElementById('bcOk').disabled = gold < def.cost;
+  document.getElementById('bcCost').textContent = '🪙'+cost;
+  document.getElementById('bcOk').disabled = gold < cost;
 
   // Mantıksal canvas koordinatını ekran (CSS) koordinatına çevir
   const rect = canvas.getBoundingClientRect();
@@ -534,18 +557,19 @@ function confirmBuild(){
   if(!pendingSpot) return;
   const spot = pendingSpot;
   const def = TOWER_TYPES[selectedType];
+  const cost = buildCost(def);
   if(spot.occ){ closeBuildConfirm(); return; }
-  if(gold < def.cost){
+  if(gold < cost){
     playError();
     const chip=document.getElementById('goldChip');
     chip.classList.remove('shake'); void chip.offsetWidth; chip.classList.add('shake');
     return;
   }
-  gold -= def.cost;
+  gold -= cost;
   document.getElementById('goldVal').textContent = gold;
   const t = {
     x:spot.x, y:spot.y, def, cooldown:0, pulse:0,
-    level:0, totalSpent:def.cost,
+    level:0, totalSpent:cost,
     targetMode:'first',
     buildDuration: buildDurationFor(0),
     buildLeft: buildDurationFor(0),
