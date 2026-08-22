@@ -14,7 +14,9 @@ const ENEMY_TYPES = {
      devam eder. Yolda zikzak çizerek "deli gibi" ilerler. */
   /* Denge güncellemesi: bölünmemiş küp +%10, ilk bölünme (orta boy)
      +%15, en küçüğe bölünenler (2. ve 3. küçülme — ikisi de minRadius'a
-     kenetlendiği için ekranda aynı boyda görünür) +%35 hızlandırıldı. */
+     kenetlendiği için ekranda aynı boyda görünür) +%35, sonra bir tur
+     daha +%35 (küçükler daha da hızlı olsun istendi — toplamda taban
+     çarpanın üstüne ~%82) hızlandırıldı. */
   /* Küp artık her dalgaya karışık düşebildiğinden (bkz. levelgen.js
      buildWaves) toplam bölünme ağacından gelen altın da önceki
      dedike-dalga tasarımına göre çok daha sık kazanılıyordu; bu yüzden
@@ -24,9 +26,9 @@ const ENEMY_TYPES = {
   cube:     { hp:130, speed:0.07975, radius:20, gold:4,  dmgToLives:1, label:'Küp',     shape:'cube',   body:'#ff9f43', body2:'#b5541a', eyes:2,
               splits:3, splitHpFactor:0.40, splitSizeFactor:0.40, minRadius:6, wobble:26,
               /* Nesil başına hız çarpanı (taban hıza göre):
-                 1. küçülme +%50 → +%15 ek, 2. küçülme +%100 → +%35 ek,
-                 3. küçülme +%150 → +%35 ek */
-              splitSpeedMults:[1.725, 2.7, 3.375] },
+                 1. küçülme (orta boy) +%15 ek — değişmedi.
+                 2. ve 3. küçülme (küçükler) +%35 ek, sonra +%35 daha ek. */
+              splitSpeedMults:[1.725, 3.645, 4.55625] },
   /* KALKAN TAŞIYICI — önünde enerji kalkanı taşır. Önden gelen
      mermiler seker; yalnızca yandan/arkadan hasar alır. Kule
      konumlandırmayı anlamlı hale getirir. */

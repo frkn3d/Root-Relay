@@ -837,9 +837,13 @@ function generateWaveForGenerated(level, waveIndex){
   // KIVILCIM KOZASI yalnızca son 5 dalgada görünür — kamikaze etkisi
   // (ölünce kuleleri kör etmesi) erken dalgalarda orantısız sert olurdu.
   const isVeryLateWave = waveIndex > level.waveCount - 5;
+  // KÜP ilk 7 dalgada hiç çıkmaz — bölünerek çoğalan kaotik hasarı
+  // oyunun en erken anlarında orantısız sert olurdu.
+  const isVeryEarlyWave = waveIndex <= 7;
   pool.forEach(type=>{
     if(type === 'flask' && !isLateWave) return;
     if(type === 'cocoon' && !isVeryLateWave) return;
+    if(type === 'cube' && isVeryEarlyWave) return;
     const share = arch.shares[type] !== undefined ? arch.shares[type] : 0.2;
     const c = Math.max(1, Math.round(count * share));
     const interval = (baseIntervals[type] || 0.8) * arch.pace;

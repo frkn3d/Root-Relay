@@ -120,8 +120,9 @@ function drawPath(){
   ctx.restore();
 
   // Giriş ve çıkış işaretleri — her rotanın kendi uçları.
-  // Giriş (düşman doğuşu) kırmızı, çıkış (röleye ulaşılan uç) mavi —
-  // çıkış ayrıca nabız gibi atan bir dış halkayla daha vurgulu.
+  // Giriş (düşman doğuşu) yeşil, çıkış (röleye ulaşılan uç) kırmızı —
+  // trafik ışığı mantığıyla: yeşilden gelir, kırmızıya (tehlike/röle)
+  // ulaşır. Çıkış ayrıca nabız gibi atan bir dış halkayla daha vurgulu.
   ctx.save();
   ctx.font='15px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
   const seenStart = [], seenEnd = [];
@@ -133,17 +134,17 @@ function drawPath(){
     if(!near(seenStart,s)){
       seenStart.push(s);
       ctx.beginPath(); ctx.arc(s.x,s.y,13,0,Math.PI*2);
-      ctx.fillStyle='rgba(226,80,74,0.22)'; ctx.fill();
-      ctx.strokeStyle='rgba(226,80,74,0.7)'; ctx.lineWidth=2; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle='rgba(88,196,120,0.22)'; ctx.fill();
+      ctx.strokeStyle='rgba(88,196,120,0.7)'; ctx.lineWidth=2; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
       ctx.fillText('💀', s.x, s.y+1);
     }
     if(!near(seenEnd,e)){
       seenEnd.push(e);
       ctx.beginPath(); ctx.arc(e.x,e.y,17+pulse*3,0,Math.PI*2);
-      ctx.strokeStyle=`rgba(86,184,224,${0.28+pulse*0.22})`; ctx.lineWidth=2; ctx.stroke();
+      ctx.strokeStyle=`rgba(226,80,74,${0.28+pulse*0.22})`; ctx.lineWidth=2; ctx.stroke();
       ctx.beginPath(); ctx.arc(e.x,e.y,13,0,Math.PI*2);
-      ctx.fillStyle='rgba(86,184,224,0.25)'; ctx.fill();
-      ctx.strokeStyle='rgba(86,184,224,0.85)'; ctx.lineWidth=2; ctx.stroke();
+      ctx.fillStyle='rgba(226,80,74,0.25)'; ctx.fill();
+      ctx.strokeStyle='rgba(226,80,74,0.85)'; ctx.lineWidth=2; ctx.stroke();
       ctx.fillText('🔮', e.x, e.y+1);
     }
   });
@@ -151,7 +152,7 @@ function drawPath(){
 }
 /* Yolun başına ve sonuna, gidiş yönünü belirten silik akan oklar.
    Yolun teğetine göre döner, sürekli ileri kayarak yönü belli eder.
-   Giriş ucundakiler kırmızı, çıkış (röle) ucundakiler mavi ve daha
+   Giriş ucundakiler yeşil, çıkış (röle) ucundakiler kırmızı ve daha
    belirgin — girişle çıkışı renkle ayırıp çıkışı daha vurguluyor.
    Koyu dış kontur yalnızca DURAKLIYKEN ya da bölüm hiç başlamamışken
    (ilk dalga atılmadan önce) tam görünür — oyun başlayınca 0.5 saniye
@@ -174,8 +175,8 @@ function drawDirectionArrows(){
     const len = pathLens[pi] || 0;
     if(len < 120) return;
     const zones = [
-      { start: 40,                            color:'226,80,74',  alpha:0.65 }, // giriş
-      { start: Math.max(60, len - 150),       color:'86,184,224', alpha:0.80 }, // çıkış — daha vurgulu
+      { start: 40,                            color:'88,196,120', alpha:0.65 }, // giriş
+      { start: Math.max(60, len - 150),       color:'226,80,74',  alpha:0.80 }, // çıkış — daha vurgulu
     ];
     zones.forEach(zone=>{
       for(let i=0;i<3;i++){
