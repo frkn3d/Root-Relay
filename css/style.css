@@ -477,6 +477,10 @@ canvas{
 .tower-drawer-row{
   display:flex; flex-wrap:nowrap; gap:5px;
   overflow-x:auto; -webkit-overflow-scrolling:touch;
+  /* overflow-x:auto tek başına overflow-y'yi de "auto"ya çevirir (CSS
+     kuralı) — bu da kartların üstüne taşan sayı rozetini üstten keser.
+     padding-top, rozetin taştığı ~3px'e yetecek boşluğu veriyor. */
+  padding-top:5px; margin-top:-5px;
 }
 .tower-drawer-row::-webkit-scrollbar{ height:0; }
 .tower-drawer .tower-card{
