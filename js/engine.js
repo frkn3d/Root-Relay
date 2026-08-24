@@ -299,11 +299,20 @@ function buildCost(def){
   return def.cost;
 }
 
+// Zehir Sarmaşığı ve Ateş Kulesi (alan/süre etkili, aynı seviyede diğer
+// kulelerden orantısız güçlü kalıyorlar) yükseltmelerine ekstra düz zam:
+// 1. yükseltme +100, 2. yükseltme +200, son yükseltme +300.
+const EXTRA_UPGRADE_SURCHARGE = {
+  poison: [100, 200, 300],
+  fire:   [100, 200, 300],
+};
 function upgradeCost(t){
   const lvl = t.level||0;
   if(lvl>=3) return null;
   // Fiyatlar her zaman 5'in katı olsun — okunması kolay, tutarlı sayılar
-  return Math.round(t.def.cost * UPGRADE_COST_MULT[lvl] / 5) * 5;
+  const base = Math.round(t.def.cost * UPGRADE_COST_MULT[lvl] / 5) * 5;
+  const surcharge = (EXTRA_UPGRADE_SURCHARGE[t.def.id] || [0,0,0])[lvl];
+  return base + surcharge;
 }
 /* Aktif bölümün mevsim/biyom etkileri. Klasik bölümlerde tema
    olmadığı için nötr değerler döner. */
