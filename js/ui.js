@@ -301,7 +301,10 @@ function renderStartLevelList(){
 function renderTowerSelectBtn(){
   const btn = document.getElementById('towerSelectBtn');
   const def = TOWER_TYPES[selectedType];
-  btn.innerHTML = `<span class="ts-icon">${def.icon}</span><span class="ts-cost">🪙${buildCost(def)}</span>`;
+  const left = towersRemaining(def);
+  btn.innerHTML = `<span class="ts-icon${left<=0?' depleted':''}">${def.icon}</span>`
+    + `<span class="tower-count-badge${left<=0?' depleted':''}">${left}</span>`
+    + `<span class="ts-cost">🪙${buildCost(def)}</span>`;
 }
 
 /* Kart genişliği (58px) küçük ve çekmece kaydırmalı (overflow-x) olduğu
@@ -318,9 +321,11 @@ function renderTowerDrawer(){
   const el = document.getElementById('towerDrawerRow');
   el.innerHTML='';
   Object.values(TOWER_TYPES).forEach(def=>{
+    const left = towersRemaining(def);
     const card=document.createElement('div');
-    card.className='tower-card'+(def.id===selectedType?' active':'');
-    card.innerHTML = `<div class="icon">${def.icon}</div><div class="name">${def.name}</div><div class="cost">🪙${buildCost(def)}</div>`;
+    card.className='tower-card'+(def.id===selectedType?' active':'')+(left<=0?' depleted':'');
+    card.innerHTML = `<span class="tower-count-badge${left<=0?' depleted':''}">${left}</span>`
+      + `<div class="icon">${def.icon}</div><div class="name">${def.name}</div><div class="cost">🪙${buildCost(def)}</div>`;
     card.addEventListener('pointerdown', (e)=>{
       cardPressStart = {x:e.clientX, y:e.clientY};
     });

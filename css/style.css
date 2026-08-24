@@ -436,7 +436,25 @@ canvas{
 }
 .tower-select-btn.open::after{ transform:rotate(180deg); }
 .tower-select-btn .ts-icon{ font-size:17px; line-height:1; }
+.tower-select-btn .ts-icon.depleted{ opacity:0.35; filter:grayscale(0.7); }
 .tower-select-btn .ts-cost{ font-family:'JetBrains Mono', monospace; font-size:8px; color:var(--gold); }
+
+/* Bölüm başına satın alma sınırı — kalan sayıyı gösteren rozet.
+   Hem tekli seçim butonunda hem çekmece kartlarında aynı görünür. */
+.tower-count-badge{
+  position:absolute; top:-5px; left:-5px; z-index:1;
+  min-width:14px; height:14px; padding:0 3px;
+  background:var(--gold); color:#241a10;
+  border:1.5px solid #1a1006;
+  border-radius:7px;
+  font-family:'JetBrains Mono', monospace;
+  font-size:9px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+  line-height:1;
+  box-shadow:0 1px 2px rgba(0,0,0,0.4);
+  pointer-events:none;
+}
+.tower-count-badge.depleted{ background:#55503f; color:#9a9384; border-color:#2a2620; }
 
 .tower-drawer{
   /* Alt barın ÜSTÜNDE açılır. Düzeni itmediği için oyun sahası
@@ -462,6 +480,7 @@ canvas{
 }
 .tower-drawer-row::-webkit-scrollbar{ height:0; }
 .tower-drawer .tower-card{
+  position:relative;
   flex:0 0 auto; width:58px;
   background:linear-gradient(180deg, #24361f, #172417);
   border:2px solid var(--line);
@@ -471,6 +490,7 @@ canvas{
   cursor:pointer; touch-action:manipulation;
 }
 .tower-drawer .tower-card.active{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(244,192,74,0.25) inset; }
+.tower-drawer .tower-card.depleted{ opacity:0.42; filter:grayscale(0.55); }
 .tower-drawer .tower-card .icon{ font-size:18px; line-height:1; }
 .tower-drawer .tower-card .name{
   font-size:8px; color:var(--cream-dim); text-align:center; line-height:1.1;

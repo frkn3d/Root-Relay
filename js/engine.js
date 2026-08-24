@@ -169,6 +169,12 @@ let spawnTimeline, waveElapsed;
 let shake = 0;
 let spots = [];
 let selectedType = 'archer';
+/* Bölüm başına, tür başına kaç kule SATIN ALINDI — satılsa bile bu
+   sayaç geri düşmez (bkz. TOWER_TYPES[id].maxCount). */
+let towerPurchaseCounts = {};
+function towersRemaining(def){
+  return def.maxCount - (towerPurchaseCounts[def.id]||0);
+}
 let seenEnemyTypes = new Set();
 let paused = false;
 let gameSpeed = 1;
@@ -407,7 +413,7 @@ function refreshTowerPanelAffordability(){
   // Kurulum onayı açıksa ✓ butonunun durumunu tazele
   if(pendingSpot){
     const def = TOWER_TYPES[selectedType];
-    const dis = gold < buildCost(def);
+    const dis = gold < buildCost(def) || towersRemaining(def) <= 0;
     if(dis !== lastBuildAfford){
       lastBuildAfford = dis;
       const b = document.getElementById('bcOk');
@@ -529,7 +535,7 @@ function openBuildConfirm(spot){
   const box = document.getElementById('buildConfirm');
   document.getElementById('bcIcon').textContent = def.icon;
   document.getElementById('bcCost').textContent = '🪙'+cost;
-  document.getElementById('bcOk').disabled = gold < cost;
+  document.getElementById('bcOk').disabled = gold < cost || towersRemaining(def) <= 0;
 
   // Mantıksal canvas koordinatını ekran (CSS) koordinatına çevir
   const rect = canvas.getBoundingClientRect();
@@ -559,6 +565,7 @@ function confirmBuild(){
   const def = TOWER_TYPES[selectedType];
   const cost = buildCost(def);
   if(spot.occ){ closeBuildConfirm(); return; }
+  if(towersRemaining(def) <= 0){ playError(); return; }
   if(gold < cost){
     playError();
     const chip=document.getElementById('goldChip');
@@ -567,6 +574,7 @@ function confirmBuild(){
   }
   gold -= cost;
   document.getElementById('goldVal').textContent = gold;
+  towerPurchaseCounts[def.id] = (towerPurchaseCounts[def.id]||0) + 1;
   const t = {
     x:spot.x, y:spot.y, def, cooldown:0, pulse:0,
     level:0, totalSpent:cost,
@@ -578,6 +586,7 @@ function confirmBuild(){
   towers.push(t); spot.occ = t;
   playMenuTap();
   closeBuildConfirm();
+  renderTowerSelectBtn(); renderTowerDrawer(); // ui.js — kalan sayı rozetleri tazelensin
 }
 
 /* Üretilmiş (prosedürel) bir bölümü yükleyip oyunu başlatır.
@@ -607,6 +616,7 @@ function loadLevel(idx){
   waveIndex = 0;
   waveActive=false; gameOver=false; gameWon=false;
   towers=[]; enemies=[]; projectiles=[]; particles=[]; floatTexts=[]; explosions=[]; arcs=[]; healZones=[]; debris=[]; flameSprays=[];
+  towerPurchaseCounts = {};
   spawnTimeline=[]; waveElapsed=0; shake=0;
   seenEnemyTypes = new Set();
   birds = []; scheduleNextBird();
@@ -626,6 +636,7 @@ function loadLevel(idx){
   if(typeof closeTowerDrawer === 'function') closeTowerDrawer();
   if(typeof resetTowerDrawerHint === 'function') resetTowerDrawerHint();   // ui.js — kayma ipucu her bölümde bir kez tekrar oynasın
   if(typeof updateLevelNavVisibility === 'function') updateLevelNavVisibility();   // GEÇİCİ (main.js)
+  renderTowerSelectBtn(); renderTowerDrawer();  // ui.js — kalan-sayı rozetleri yeni bölümle sıfırlansın
   renderWavePreview();    // ui.js
 
   // Mevsim/biyom etkisi varsa oyuncuya kısaca bildir
