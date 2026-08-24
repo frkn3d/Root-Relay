@@ -169,8 +169,9 @@ let spawnTimeline, waveElapsed;
 let shake = 0;
 let spots = [];
 let selectedType = 'archer';
-/* Bölüm başına, tür başına kaç kule SATIN ALINDI — satılsa bile bu
-   sayaç geri düşmez (bkz. TOWER_TYPES[id].maxCount). */
+/* Bölüm başına, tür başına şu an İNŞA HALİNDE OLAN kule sayısı — satış
+   bu sayacı bir azaltıp satın alma hakkını geri verir (bkz.
+   TOWER_TYPES[id].maxCount, confirmSellTower()). */
 let towerPurchaseCounts = {};
 function towersRemaining(def){
   return def.maxCount - (towerPurchaseCounts[def.id]||0);
@@ -499,11 +500,14 @@ function confirmSellTower(){
   if(!selectedTower) return;
   const refund = Math.floor(selectedTower.totalSpent/2);
   gold += refund;
+  const soldId = selectedTower.def.id;
+  towerPurchaseCounts[soldId] = Math.max(0, (towerPurchaseCounts[soldId]||0) - 1);
   towers = towers.filter(t=>t!==selectedTower);
   spots.forEach(s=>{ if(s.occ===selectedTower) s.occ=null; });
   document.getElementById('goldVal').textContent = gold;
   playCoin();
   closeTowerPanel();
+  renderTowerSelectBtn(); renderTowerDrawer(); // ui.js — satılan türün rozeti/silikleşmesi anında güncellensin
 }
 
 const SPEED_STEPS = [1, 2, 4];
