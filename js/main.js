@@ -336,6 +336,7 @@ document.getElementById('levelNextBtn').addEventListener('pointerup', ()=>{
   showWaveToast('Bölüm ' + generatedLevel.levelNo);
 });
 /* /GEÇİCİ */
+document.getElementById('mmStats').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuStats'); });
 document.getElementById('mmHowTo').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuHowTo'); });
 document.getElementById('mmSettings').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuSettings'); });
 document.getElementById('settingsAboutBtn').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuAbout'); });

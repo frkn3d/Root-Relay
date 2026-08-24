@@ -156,6 +156,49 @@ function showMenuPage(id){
   });
   if(id==='menuMain') { refreshGemDisplay(); refreshContinueButton(); }
   if(id==='menuLevels') renderStartLevelList();
+  if(id==='menuStats') renderStatsScreen();
+}
+
+/* ---- İstatistikler ekranı ----
+   Ömür boyu kazanılan/harcanan altına göre bir "unvan" gösterir ve
+   ekrana günün ilk girişinde elmas ödülü verir (bkz. progress.js). */
+const STAT_TITLES = [
+  { min:0.00, name:'Tohum Biriktiren' },
+  { min:0.35, name:'Filiz Yatırımcısı' },
+  { min:0.65, name:'Dengeli Bahçıvan' },
+  { min:0.90, name:'Sağlam Stratejist' },
+];
+function statTitleFor(ratio){
+  let cur = STAT_TITLES[0].name;
+  STAT_TITLES.forEach(t=>{ if(ratio >= t.min) cur = t.name; });
+  return cur;
+}
+function renderStatsScreen(){
+  const s = loadGoldStats();           // progress.js
+  const ratio = s.earned > 0 ? Math.min(1, s.spent / s.earned) : 0;
+
+  document.getElementById('statEarned').textContent = s.earned.toLocaleString('tr-TR');
+  document.getElementById('statSpent').textContent = s.spent.toLocaleString('tr-TR');
+  document.getElementById('statsTitle').textContent = statTitleFor(ratio);
+  const fill = document.getElementById('statRatioFill');
+  if(fill) fill.style.width = Math.round(ratio*100) + '%';
+
+  const reward = claimDailyStatsReward();   // progress.js — günde bir kez
+  if(reward > 0){
+    refreshGemDisplay();
+    showRewardToast(`+${reward} 💎 Günlük Ödül!`);
+  }
+}
+let rewardToastTimer = null;
+function showRewardToast(text){
+  const el = document.getElementById('dailyRewardToast');
+  if(!el) return;
+  el.textContent = text;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  clearTimeout(rewardToastTimer);
+  rewardToastTimer = setTimeout(()=>el.classList.remove('show'), 2000);
 }
 
 function refreshGemDisplay(){

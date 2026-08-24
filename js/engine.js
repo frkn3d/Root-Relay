@@ -460,6 +460,7 @@ function doUpgradeTower(){
   const cost = upgradeCost(t);
   if(cost===null || gold<cost){ playError(); return; }
   gold -= cost;
+  addGoldSpentStat(cost);
   t.totalSpent += cost;
   document.getElementById('goldVal').textContent = gold;
   // Seviye hemen artmaz — inşa süresi dolunca uygulanır.
@@ -506,6 +507,7 @@ function buyInGameItem(id){
 
   if(id === 'goldPack'){
     gold += 50;
+    addGoldEarnedStat(50);
     document.getElementById('goldVal').textContent = gold;
     floatTexts.push({x:LW/2, y:LH*0.35, text:'+50🪙', life:1.1, vy:-34, color:'#f4c04a'});
   } else if(id === 'lifePack'){
@@ -573,6 +575,7 @@ function confirmBuild(){
     return;
   }
   gold -= cost;
+  addGoldSpentStat(cost);
   document.getElementById('goldVal').textContent = gold;
   towerPurchaseCounts[def.id] = (towerPurchaseCounts[def.id]||0) + 1;
   const t = {
@@ -1227,6 +1230,7 @@ function update(dt){
     const spawned = [];
     dead.forEach(e=>{
       gold += e.gold;
+      addGoldEarnedStat(e.gold);
       playKill();
 
       // KÜP BÖLÜNMESİ: ölen küp, canının ve boyutunun %40'ı kadar

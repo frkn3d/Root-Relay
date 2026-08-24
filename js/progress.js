@@ -42,6 +42,45 @@ function addGems(n){
   return total;
 }
 
+/* ---- Ömür boyu altın istatistikleri (İstatistikler ekranı) ----
+   Kazanılan (öldürme + market altın paketi) ve harcanan (inşa + yükseltme)
+   altın, oyuncunun TÜM oturumları boyunca birikir. Kule satışı ne
+   kazanılana ne harcanana dokunur — o sadece anlık bakiyeyi etkiler. */
+const GOLD_STATS_KEY = 'rr_goldstats_v1';
+function loadGoldStats(){
+  try{
+    const raw = localStorage.getItem(GOLD_STATS_KEY);
+    const s = raw ? JSON.parse(raw) : null;
+    return { earned:(s&&s.earned)||0, spent:(s&&s.spent)||0 };
+  } catch(e){ return {earned:0, spent:0}; }
+}
+function addGoldEarnedStat(n){
+  if(!n) return;
+  const s = loadGoldStats();
+  s.earned += n;
+  try{ localStorage.setItem(GOLD_STATS_KEY, JSON.stringify(s)); }catch(e){}
+}
+function addGoldSpentStat(n){
+  if(!n) return;
+  const s = loadGoldStats();
+  s.spent += n;
+  try{ localStorage.setItem(GOLD_STATS_KEY, JSON.stringify(s)); }catch(e){}
+}
+
+/* ---- İstatistikler ekranına günlük giriş ödülü ----
+   Ekrana günde ilk girişte elmas verir (takvim günü, yerel saat). */
+const DAILY_STATS_KEY = 'rr_dailystats_v1';
+const DAILY_STATS_REWARD = 5;
+function claimDailyStatsReward(){
+  const today = new Date().toDateString();
+  let last = null;
+  try{ last = localStorage.getItem(DAILY_STATS_KEY); }catch(e){}
+  if(last === today) return 0;
+  try{ localStorage.setItem(DAILY_STATS_KEY, today); }catch(e){}
+  addGems(DAILY_STATS_REWARD);
+  return DAILY_STATS_REWARD;
+}
+
 /* ---- Devam edilebilir oyun kaydı ----
    Hangi bölümün yarıda bırakıldığını hatırlar. Tam bir oyun-durumu
    kaydı değil; bölümü baştan başlatır ama "Devam Et" akışını mümkün kılar. */

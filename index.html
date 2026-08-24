@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#12261b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
 <title>Root & Relay — Tower Defense</title>
-<link rel="stylesheet" href="css/style.css?v=73">
+<link rel="stylesheet" href="css/style.css?v=74">
 </head>
 <body class="in-menu">
 <div class="wrap">
@@ -56,6 +56,8 @@
           <span class="leaf rev" style="left:7%; font-size:14px; opacity:0.52; animation-duration:9.5s,3.3s; animation-delay:-0.5s,-0.4s;">🍃</span>
         </div>
 
+        <div class="reward-toast" id="dailyRewardToast"></div>
+
         <div class="menu-page active" id="menuMain">
           <div class="ss-badge">🌿</div>
           <div class="ss-title">Root <span>&</span> Relay</div>
@@ -65,9 +67,22 @@
             <button class="menu-btn primary" id="mmContinue">▶ Devam Et</button>
             <button class="menu-btn" id="mmLevels">🗺️ Bölüm Seç</button>
             <button class="menu-btn" id="mmEndless">🌍 1000 Bölüm</button>
+            <button class="menu-btn" id="mmStats">📊 İstatistikler</button>
             <button class="menu-btn" id="mmHowTo">❓ Nasıl Oynanır?</button>
             <button class="menu-btn" id="mmSettings">⚙️ Ayarlar</button>
           </div>
+        </div>
+
+        <div class="menu-page" id="menuStats">
+          <div class="menu-head">İstatistikler</div>
+          <div class="stats-box">
+            <div class="stats-title" id="statsTitle">Tohum Biriktiren</div>
+            <div class="stats-row"><span>🪙 Toplam Kazanılan</span><b id="statEarned">0</b></div>
+            <div class="stats-row"><span>🏗️ Toplam Harcanan</span><b id="statSpent">0</b></div>
+            <div class="stats-ratio-bar"><div class="stats-ratio-fill" id="statRatioFill"></div></div>
+            <div class="stats-hint">Harcaman, kazandığın altına ne kadar yaklaşırsa unvanın o kadar yükselir.</div>
+          </div>
+          <button class="menu-btn back" data-back>← Geri</button>
         </div>
 
         <div class="menu-page" id="menuSeed">
@@ -290,11 +305,11 @@
 <!-- Sıra önemli: config -> levelgen -> progress -> audio -> engine -> render -> ui -> main -->
 <script src="js/config.js?v=72"></script>
 <script src="js/levelgen.js?v=73"></script>
-<script src="js/progress.js?v=63"></script>
+<script src="js/progress.js?v=64"></script>
 <script src="js/audio.js?v=69"></script>
-<script src="js/engine.js?v=89"></script>
+<script src="js/engine.js?v=90"></script>
 <script src="js/render.js?v=77"></script>
-<script src="js/ui.js?v=73"></script>
-<script src="js/main.js?v=70"></script>
+<script src="js/ui.js?v=74"></script>
+<script src="js/main.js?v=71"></script>
 </body>
 </html>
