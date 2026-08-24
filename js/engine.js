@@ -356,6 +356,28 @@ function getTowerStats(t){
     coneAngle: t.def.coneAngle ? t.def.coneAngle*(1+lvl*0.08) : 0,
   };
 }
+/* Kulenin GÖRSEL namlu/yay/uç noktasının dünya koordinatı — render.js'teki
+   ilgili çizim fonksiyonundaki döndürme pivotu ve uzunlukla BİREBİR eşleşir
+   (drawArcherTower/drawMortarTower/drawBoltTower). Mermi buradan çıkmazsa
+   namlu görsel olarak hedefe dönükken mermi kule merkezinin üstünden
+   fırlamış gibi görünür — bkz. "havan namlu ucundan atmıyor" hatası.
+   Işık Kulesi/Don Peykesi/Zehir Sarmaşığı döner bir namluya sahip değil;
+   bunlar için sabit, yöne bağlı olmayan bir çıkış noktası yeterli. */
+function muzzlePoint(t){
+  const aim = (t.aimAngle !== undefined) ? t.aimAngle : (t.angle !== undefined ? t.angle : -Math.PI/2);
+  const lvl = t.level||0;
+  let pivotY, dist;
+  switch(t.def.kind){
+    case 'archer': pivotY = -4;  dist = 10;          break;  // yay yarıçapı
+    case 'mortar': pivotY = -4;  dist = 26 + lvl*3;  break;  // namlu boyu (bkz. drawMortarTower)
+    case 'bolt':   pivotY = -48; dist = 11;          break;  // çatal uçları
+    case 'mage':   return { x:t.x, y:t.y-36 };               // süzülen küre, yönden bağımsız
+    case 'ice':    return { x:t.x, y:t.y-22 };               // kristal ucu, yönden bağımsız
+    case 'poison': return { x:t.x, y:t.y-10 };               // tomurcuk ucu, yönden bağımsız
+    default:       pivotY = -20; dist = 0;
+  }
+  return { x: t.x + Math.cos(aim)*dist, y: t.y + pivotY + Math.sin(aim)*dist };
+}
 /* Menzil içindeki düşmanlardan, kulenin hedefleme moduna göre birini seçer.
    'first'     : yola en çok ilerlemiş (çıkışa en yakın) — varsayılan
    'weakest'   : en az canı kalan
@@ -1102,9 +1124,10 @@ function update(dt){
           flameSprays.push({x:t.x, y:t.y-20, angle:aimAng, cone, range:st.range, life:0.30, maxLife:0.30});
           playShoot('fire');
         } else {
-          const dist0 = Math.hypot(target.x-t.x, target.y-t.y);
-          projectiles.push({x:t.x,y:t.y-20,target,dmg:st.dmg,splash:st.splash,kind:t.def.kind,
-            ox:t.x, oy:t.y, tower:t,
+          const mz = muzzlePoint(t);
+          const dist0 = Math.hypot(target.x-mz.x, target.y-mz.y);
+          projectiles.push({x:mz.x,y:mz.y,target,dmg:st.dmg,splash:st.splash,kind:t.def.kind,
+            ox:mz.x, oy:mz.y, tower:t,
             speed:t.def.kind==='mortar'?4.2:(t.def.kind==='bolt'?11:7),travel:dist0,
             slow:t.def.slowFactor,slowDuration:st.slowDuration,
             poisonDps:st.poisonDps, poisonDuration:st.poisonDuration,
