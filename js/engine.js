@@ -940,18 +940,16 @@ function update(dt){
         }
       }
     }
-    // ZEHİR: süre boyunca saniyede poisonDps kadar hasar
-    if(e.poisonT > 0){
-      e.poisonT -= dt;
-      e.hp -= (e.poisonDps||0) * dt * (1-(e.queenDmgResist||0));
-      if(e.poisonT <= 0){ e.poisonT = 0; e.poisonDps = 0; }
-    }
-    // ATEŞ: süre boyunca saniyede burnDps kadar hasar — Don Peykesi'nin
-    // yavaşlatmasıyla aynı hedefte bir arada duramaz (bkz. "ATEŞ vs DON").
-    if(e.burnT > 0){
-      e.burnT -= dt;
-      e.hp -= (e.burnDps||0) * dt * (1-(e.queenDmgResist||0));
-      if(e.burnT <= 0){ e.burnT = 0; e.burnDps = 0; }
+    /* ZEHİR + ATEŞ: TEK ortak "yanma" (dot) yuvası paylaşırlar — Zehir
+       Sarmaşığı ve Ateş Kulesi aynı hedefte üst üste binip hasarlarını
+       TOPLAMAZ. Hangisi güçlüyse o uygulanır (bkz. "en güçlü etki
+       geçerli" — engine.js'te dotDps atandığı yerler), süre her isabette
+       en son vuranınkine yenilenir. dotKind yalnızca hangi görselin
+       (yeşil kabarcık / turuncu alev) çizileceğini belirler. */
+    if(e.dotT > 0){
+      e.dotT -= dt;
+      e.hp -= (e.dotDps||0) * dt * (1-(e.queenDmgResist||0));
+      if(e.dotT <= 0){ e.dotT = 0; e.dotDps = 0; e.dotKind = null; }
     }
   });
 
@@ -1073,8 +1071,10 @@ function update(dt){
             // ATEŞ vs DON: aynı hedefte bir arada duramaz — alev,
             // üzerindeki yavaşlatmayı/donu hemen eritir.
             e.slowT = 0;
-            e.burnDps = Math.max(e.burnDps||0, st.burnDps);
-            e.burnT = Math.max(e.burnT||0, st.burnDuration);
+            // ATEŞ vs ZEHİR: ortak "yanma" yuvası — üst üste binmez,
+            // en güçlü DPS uygular, süre bu isabetle yenilenir.
+            if(!(e.dotDps > st.burnDps)){ e.dotDps = st.burnDps; e.dotKind = 'fire'; }
+            e.dotT = Math.max(e.dotT||0, st.burnDuration);
           });
           flameSprays.push({x:t.x, y:t.y-20, angle:aimAng, cone, range:st.range, life:0.30, maxLife:0.30});
           playShoot('fire');
@@ -1155,14 +1155,15 @@ function update(dt){
           if(p.slow){
             tgt.slowT = p.slowDuration;
             tgt.slowFactor = p.slow;
-            // ATEŞ vs DON: yavaşlatma, üzerindeki yanmayı hemen söndürür.
-            tgt.burnT = 0; tgt.burnDps = 0;
+            // ATEŞ vs DON: yavaşlatma sadece ALEVİ söndürür, zehiri değil.
+            if(tgt.dotKind === 'fire'){ tgt.dotT = 0; tgt.dotDps = 0; tgt.dotKind = null; }
             if(p.dmg <= 0) tgt.flashT = 0.6;
           }
-          // ZEHİR: hedefe zamana yayılı hasar yükle (en güçlü etki geçerli)
+          // ZEHİR: ortak "yanma" yuvası — Ateş Kulesi ile üst üste
+          // binmez, en güçlü DPS uygular, süre bu isabetle yenilenir.
           if(p.poisonDps > 0){
-            if(!(tgt.poisonDps > p.poisonDps)) tgt.poisonDps = p.poisonDps;
-            tgt.poisonT = Math.max(tgt.poisonT||0, p.poisonDuration);
+            if(!(tgt.dotDps > p.poisonDps)){ tgt.dotDps = p.poisonDps; tgt.dotKind = 'poison'; }
+            tgt.dotT = Math.max(tgt.dotT||0, p.poisonDuration);
           }
           // ŞİMŞEK: hedeften yakındaki düşmanlara sıçra
           if(p.chainCount > 0){

@@ -439,6 +439,10 @@ function renderTowerPanel(){
     statsHtml += `<div class="tp-stat-row"><span>☠️ Zehir</span><b>${Math.round(st.poisonDps)}/sn</b></div>`;
     statsHtml += `<div class="tp-stat-row"><span>⏳ Süre</span><b>${st.poisonDuration.toFixed(1)}sn</b></div>`;
   }
+  if(st.burnDps>0){
+    statsHtml += `<div class="tp-stat-row"><span>🔥 Yanma</span><b>${Math.round(st.burnDps)}/sn</b></div>`;
+    statsHtml += `<div class="tp-stat-row"><span>⏳ Süre</span><b>${st.burnDuration.toFixed(1)}sn</b></div>`;
+  }
   if(st.chainCount>0){
     statsHtml += `<div class="tp-stat-row"><span>⚡ Sıçrama</span><b>${st.chainCount} hedef</b></div>`;
   }

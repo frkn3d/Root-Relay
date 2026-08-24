@@ -1905,8 +1905,9 @@ function drawEnemy(e){
     ctx.fillText('+', 0, -e.radius - 6 - ((t0*20)%10));
   }
 
-  // ZEHİR: yükselen yeşil kabarcıklar
-  if(e.poisonT > 0){
+  // ZEHİR: yükselen yeşil kabarcıklar — ateşle ORTAK yuvayı paylaşır,
+  // o yüzden hangisinin aktif olduğu dotKind ile ayırt edilir.
+  if(e.dotT > 0 && e.dotKind === 'poison'){
     const t0 = performance.now()/1000;
     ctx.beginPath(); ctx.arc(0,0,e.radius+1,0,Math.PI*2);
     ctx.fillStyle='rgba(150,220,80,0.28)'; ctx.fill();
@@ -1920,7 +1921,7 @@ function drawEnemy(e){
   }
 
   // ATEŞ: turuncu parıltı ve yükselen alev dilleri (bkz. Ateş Kulesi)
-  if(e.burnT > 0){
+  if(e.dotT > 0 && e.dotKind === 'fire'){
     const t0 = performance.now()/1000;
     ctx.beginPath(); ctx.arc(0,0,e.radius+1,0,Math.PI*2);
     ctx.fillStyle='rgba(255,110,40,0.24)'; ctx.fill();
