@@ -16,6 +16,11 @@
    düşer.
    ============================================================ */
 const SFX_DIR = 'sound/';
+/* Bir ses dosyası aynı adla YENİDEN üretildiğinde tarayıcı eskisini
+   önbellekten servis ediyor. index.html'deki ?v= mantığının aynısı:
+   sound/ içindeki bir dosyayı değiştirince bu sayıyı bir artır. */
+const SFX_VER = 2;
+function sfxUrl(file){ return SFX_DIR + file + '?v=' + SFX_VER; }
 
 /* Anahtar -> {f: dosya adı, v: taban ses düzeyi}
    Ses düzeyleri elle dengelendi: sürekli tekrarlayan efektler (atış,
@@ -39,7 +44,7 @@ const SFX = {
   hit_boss:      { f:'hit_boss.mp3',      v:0.38 },
   hit_electric:  { f:'hit_electric.mp3',  v:0.26 },
   hit_shield:    { f:'hit_shield_deflect.mp3', v:0.30 },
-  hit_burn:      { f:'hit_fire_burn.mp3', v:0.09 },   // sürekli cızırdadığı için kısık
+  hit_burn:      { f:'hit_fire_burn.mp3', v:0.05 },   // sürekli cızırdadığı için en kısıklardan
 
   // --- düşman olayları ---
   death_normal:  { f:'enemy_death_normal.mp3', v:0.26 },
@@ -204,7 +209,7 @@ function loadSfxLibrary(){
   if(!ctx){ sfxLoading = false; return; }
 
   const keys = Object.keys(SFX).concat(Object.keys(AMBIENCE).map(k=>'amb_'+k));
-  const src = k => SFX_DIR + (k.startsWith('amb_') ? AMBIENCE[k.slice(4)].f : SFX[k].f);
+  const src = k => sfxUrl(k.startsWith('amb_') ? AMBIENCE[k.slice(4)].f : SFX[k].f);
 
   // Önce tek bir dosyayla fetch+decode yolunun çalışıp çalışmadığını
   // sına: file:// ile açılan sayfalarda fetch CORS'a takılır ve tüm
@@ -437,8 +442,9 @@ function updateAmbience(){
   const lv = (typeof level !== 'undefined') ? level : null;
   const theme = (lv && lv.theme) || null;
 
-  /* Ana menüde biyom dokusu yerine menü teması çalar — menü kendi
-     müziğine sahip, harita ambiyansı oraya ait değil. */
+  /* MENÜDE AMBİYANS YOK. Menünün kendi müziği var (music_main_menu);
+     harita ambiyansı oraya ait değil. Biyom/hava/savaş katmanlarının
+     üçü de burada susturulur — menü yalnızca müzik duyar. */
   if(inMenu){
     startAmbience('menu', 'menu_music', 2.0);
     stopAmbience('biome', 1.2); stopAmbience('weather', 1.0); stopAmbience('battle', 1.0);

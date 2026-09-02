@@ -11,7 +11,7 @@ Tüm sesler profesyonel dijital ses işleme (DSP), frekans modülasyonu (FM sent
 
 | Dosya | Açıklama | Süre / Format |
 | :--- | :--- | :--- |
-| `music_main_menu.mp3` | **Root & Relay Ana Menü Teması:** Dm-Bb-F-C akor dizilimi; derin sıcak doğa pedi, kalimba/arp tınılı arpejler ve nefesli flüt/ocarina melodisi. | 26.7s (Loopable Stereo MP3, ~417 KB) |
+| `music_main_menu.mp3` | **Root & Relay Ana Menü Teması (Akustik Doğa):** Dm-Bb-F-C akor dizilimi; tamamen organik ahşap kalimba tınıları, sıcak akustik kontrbas gövdesi, marimba vurguları ve hafif orman esintisi (sentetik/uzayımsı tüm frekanslar arındırılmıştır). | 26.7s (Loopable Stereo MP3, ~417 KB) |
 
 ---
 
