@@ -226,12 +226,14 @@ function refreshContinueButton(){
 function openStartScreen(){
   showMenuPage('menuMain');
   document.body.classList.add('in-menu');
+  if(typeof updateAmbience === 'function') updateAmbience();   // sfx.js — menü teması girsin
   document.getElementById('startScreen').classList.remove('hide');
   if(typeof invalidateFit === 'function') invalidateFit();
   if(typeof fitGameToViewport === 'function') fitGameToViewport();
 }
 function closeStartScreen(){
   document.body.classList.remove('in-menu');
+  if(typeof updateAmbience === 'function') updateAmbience();   // sfx.js — menü teması çıksın, biyom girsin
   document.getElementById('startScreen').classList.add('hide');
   // Barlar yeniden göründü; oyun sahasını kalan alana göre yeniden ölç.
   if(typeof invalidateFit === 'function') invalidateFit();

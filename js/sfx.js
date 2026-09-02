@@ -39,7 +39,7 @@ const SFX = {
   hit_boss:      { f:'hit_boss.mp3',      v:0.38 },
   hit_electric:  { f:'hit_electric.mp3',  v:0.26 },
   hit_shield:    { f:'hit_shield_deflect.mp3', v:0.30 },
-  hit_burn:      { f:'hit_fire_burn.mp3', v:0.16 },
+  hit_burn:      { f:'hit_fire_burn.mp3', v:0.09 },   // sürekli cızırdadığı için kısık
 
   // --- düşman olayları ---
   death_normal:  { f:'enemy_death_normal.mp3', v:0.26 },
@@ -98,14 +98,67 @@ const SFX = {
 
 /* Döngüye giren ortam katmanları ayrı tutulur: bunlar tek atışlık
    değil, sürekli çalan ve birbirine karışan katmanlar.
-   Ses düzeyleri, sürekli çaldıkları için oyun efektlerinin önüne
-   geçmesin diye %70 kısıldı (ör. orman 0.22 -> 0.066). */
+   Hepsi bilinçli olarak KISIK: arka planda durmalılar, oyun
+   efektlerinin önüne geçmemeliler. */
 const AMBIENCE = {
-  forest: { f:'ambience_forest.mp3',       v:0.066 },
-  rain:   { f:'ambience_rain.mp3',         v:0.084 },
-  winter: { f:'ambience_winter_wind.mp3',  v:0.072 },
-  battle: { f:'ambience_battle_drone.mp3', v:0.060 },
+  // --- orman ---
+  forest:            { f:'ambience_forest.mp3',                 v:0.066 },
+  forest_deep:       { f:'ambience_forest_deep.mp3',            v:0.068 },
+  forest_mystic:     { f:'ambience_forest_mystic.mp3',          v:0.064 },
+  forest_stream:     { f:'ambience_forest_stream.mp3',          v:0.070 },
+  // --- çöl ---
+  desert_dunes:      { f:'ambience_desert_dunes.mp3',           v:0.068 },
+  desert_oasis:      { f:'ambience_desert_oasis.mp3',           v:0.064 },
+  desert_storm:      { f:'ambience_desert_storm.mp3',           v:0.058 },   // gürültülü, en kısığı
+  // --- tundra ---
+  tundra_calm:       { f:'ambience_tundra_calm.mp3',            v:0.068 },
+  tundra_blizzard:   { f:'ambience_tundra_blizzard.mp3',        v:0.058 },
+  tundra_glacier:    { f:'ambience_tundra_glacier.mp3',         v:0.064 },
+  // --- bataklık ---
+  swamp_night:       { f:'ambience_swamp_night.mp3',            v:0.066 },
+  swamp_fog:         { f:'ambience_swamp_fog.mp3',              v:0.066 },
+  swamp_drizzle:     { f:'ambience_swamp_drizzle.mp3',          v:0.070 },
+  // --- volkanik ---
+  volcanic_caldera:  { f:'ambience_volcanic_caldera.mp3',       v:0.062 },
+  volcanic_ash:      { f:'ambience_volcanic_ash.mp3',           v:0.066 },
+  volcanic_rumble:   { f:'ambience_volcanic_rumble.mp3',        v:0.056 },   // bas ağırlıklı
+  // --- akdeniz ---
+  med_coast:         { f:'ambience_mediterranean_coast.mp3',    v:0.070 },
+  med_breeze:        { f:'ambience_mediterranean_breeze.mp3',   v:0.066 },
+  med_cicadas:       { f:'ambience_mediterranean_cicadas.mp3',  v:0.060 },   // tiz, kolay yorar
+  // --- savan ---
+  savanna_wind:      { f:'ambience_savanna_wind.mp3',           v:0.068 },
+  savanna_dusk:      { f:'ambience_savanna_dusk.mp3',           v:0.066 },
+  savanna_wild:      { f:'ambience_savanna_wild.mp3',           v:0.066 },
+  // --- hava durumu katmanı (biyomun ÜSTÜNE biner) ---
+  rain:              { f:'ambience_rain.mp3',                   v:0.062 },
+  winter:            { f:'ambience_winter_wind.mp3',            v:0.054 },
+  // --- dalga gerilimi katmanı ---
+  battle:            { f:'ambience_battle_drone.mp3',           v:0.060 },
+  /* Ana menü teması. Ambiyans değil MÜZİK olduğu için biraz daha
+     yüksek; menüdeyken biyom dokusunun yerine geçer. */
+  menu_music:        { f:'music_main_menu.mp3',                 v:0.170 },
 };
+
+/* Her biyomun kendi ambiyans havuzu (levelgen.js'teki BIOMES ile aynı
+   kimlikler). Bir bölümde havuzdaki parçalar TEK TEK değil, SIRAYLA
+   çalınır: bir parça bir süre döndükten sonra yavaşça bir sonrakine
+   geçilir (bkz. rotateBiomeAmbience). Böylece aynı 12 saniyelik
+   döngüyü bölüm boyunca dinlemek zorunda kalmıyorsun. */
+const BIOME_AMBIENCE = {
+  forest:        ['forest_deep', 'forest_mystic', 'forest_stream', 'forest'],
+  desert:        ['desert_dunes', 'desert_oasis', 'desert_storm'],
+  tundra:        ['tundra_calm', 'tundra_glacier', 'tundra_blizzard'],
+  swamp:         ['swamp_night', 'swamp_fog', 'swamp_drizzle'],
+  volcanic:      ['volcanic_caldera', 'volcanic_ash', 'volcanic_rumble'],
+  mediterranean: ['med_coast', 'med_breeze', 'med_cicadas'],
+  savanna:       ['savanna_wind', 'savanna_dusk', 'savanna_wild'],
+};
+
+/* Bir parçanın ne kadar çalacağı (saniye). Aralık geniş tutuldu ki
+   geçişler saat gibi düzenli gelmesin. */
+const AMB_HOLD_MIN = 42, AMB_HOLD_MAX = 78;
+const AMB_CROSSFADE = 3.5;   // parçalar arası çapraz geçiş süresi
 
 let sfxMode = 'idle';        // idle | buffer | element | off
 let sfxLoading = false;
@@ -266,22 +319,31 @@ function stopAmbience(name, fadeSec){
   }catch(e){}
 }
 
-/* name: mantıksal kanal ('weather' / 'battle'), key: AMBIENCE anahtarı.
-   Aynı kanalda aynı parça zaten çalıyorsa hiçbir şey yapmaz. */
-function startAmbience(name, key, fadeSec){
-  if(!soundEnabled){ stopAmbience(name, 0.3); return; }
+/* name: mantıksal kanal ('biome' / 'weather' / 'battle'),
+   key: AMBIENCE anahtarı.
+   Aynı kanalda aynı parça zaten çalıyorsa hiçbir şey yapmaz.
+   outFade verilirse eski parça o sürede söner — böylece iki parça
+   üst üste binerek ÇAPRAZ GEÇİŞ yapar (biyom havuzu bunu kullanır).
+   Dönüş: parça gerçekten başlatılabildi mi (tampon henüz yüklenmemiş
+   olabilir; o zaman false döner ve çağıran sonra tekrar dener). */
+function startAmbience(name, key, fadeSec, outFade){
+  if(!soundEnabled){ stopAmbience(name, 0.3); return false; }
   const cur = ambLayers[name];
-  if(cur && cur.key === key) return;
-  if(cur) stopAmbience(name, 0.6);
+  if(cur && cur.key === key) return true;
   const def = AMBIENCE[key];
-  if(!def) return;
+  if(!def) return false;
+  // Yeni parçanın tamponu hazır değilse eskisini SUSTURMA — sessizlik
+  // yerine çalmaya devam etsin, geçiş bir sonraki denemede olur.
+  if(sfxMode === 'buffer' && !sfxBuffers['amb_'+key]) return false;
+  if(sfxMode === 'element' && !sfxElements['amb_'+key]) return false;
+  if(cur) stopAmbience(name, outFade || 0.6);
 
   if(sfxMode === 'buffer'){
     const buf = sfxBuffers['amb_'+key];
-    if(!buf) return;                       // henüz yüklenmedi; sonra tekrar denenir
+    if(!buf) return false;                 // henüz yüklenmedi; sonra tekrar denenir
     const c = ensureAudioCtx();
     const master = sfxMaster();
-    if(!c || !master) return;
+    if(!c || !master) return false;
     const src = c.createBufferSource();
     src.buffer = buf; src.loop = true;
     const g = c.createGain();
@@ -291,12 +353,12 @@ function startAmbience(name, key, fadeSec){
     src.connect(g); g.connect(master);
     src.start(now);
     ambLayers[name] = { src, gain:g, key };
-    return;
+    return true;
   }
 
   if(sfxMode === 'element'){
     const tpl = sfxElements['amb_'+key];
-    if(!tpl) return;
+    if(!tpl) return false;
     try{
       const el = tpl.cloneNode();
       el.loop = true; el.volume = 0;
@@ -310,43 +372,112 @@ function startAmbience(name, key, fadeSec){
         if(i>=steps) clearInterval(t);
       }, dur);
       ambLayers[name] = { el, key };
-    }catch(e){}
+      return true;
+    }catch(e){ return false; }
   }
+  return false;
+}
+
+/* --- biyom havuzunun sırası --- */
+let ambPoolId = null;    // hangi biyomun havuzu kurulu
+let ambOrder = [];       // karılmış çalma sırası
+let ambCursor = 0;
+let ambNextAt = 0;       // bir sonraki geçişin zamanı (performance.now())
+
+function shuffled(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    const t=a[i]; a[i]=a[j]; a[j]=t;
+  }
+  return a;
+}
+
+/* Bölümün biyomuna ait havuzdan sıradaki parçaya geçer. Süresi
+   dolmadıysa hiçbir şey yapmaz. Parça henüz yüklenmemişse zamanlayıcı
+   ilerletilmez; bir sonraki turda tekrar denenir. */
+function rotateBiomeAmbience(poolId){
+  if(poolId !== ambPoolId){
+    // Biyom değişti (yeni bölüm): havuzu yeniden kur ve HEMEN geç
+    ambPoolId = poolId;
+    ambOrder = shuffled(BIOME_AMBIENCE[poolId] || BIOME_AMBIENCE.forest);
+    ambCursor = 0;
+    ambNextAt = 0;
+  }
+  const now = performance.now();
+  if(now < ambNextAt) return;
+  const key = ambOrder[ambCursor % ambOrder.length];
+  const first = !ambLayers.biome;
+  if(!startAmbience('biome', key, first ? 2.0 : AMB_CROSSFADE, AMB_CROSSFADE)) return;
+  ambCursor++;
+  // Sıranın sonuna gelindiyse bir dahaki tura yeniden karıştır
+  if(ambCursor % ambOrder.length === 0) ambOrder = shuffled(ambOrder);
+  ambNextAt = now + (AMB_HOLD_MIN + Math.random()*(AMB_HOLD_MAX-AMB_HOLD_MIN))*1000;
 }
 
 /* Oyun durumuna bakıp hangi ortam katmanlarının çalması gerektiğine
-   karar verir. Bölüm yüklenince, dalga başlayınca/bitince ve menüye
-   dönünce çağrılır; ayrıca kütüphane geç yüklendiyse diye oyun
+   karar verir. Üç bağımsız katman var:
+     menu    — ana menü teması (yalnızca menüde; diğer üçü susar)
+     biome   — haritanın biyomuna ait, birkaç parça arasında dönen
+               taban dokusu (orman / çöl / tundra / bataklık /
+               volkanik / akdeniz / savan)
+     weather — yağmur ya da kış rüzgârı; biyomun ÜSTÜNE biner
+     battle  — dalga sürerken giren gerilim uğultusu
+   Bölüm yüklenince, dalga başlayınca/bitince ve menüye dönünce
+   çağrılır; ayrıca hem kütüphane geç yüklenmiş olabileceği hem de
+   biyom parçalarının zamanı gelince değişmesi gerektiği için oyun
    döngüsünden saniyede bir tazelenir (bkz. main.js). */
 function updateAmbience(){
   if(!soundEnabled || sfxMode === 'off' || sfxMode === 'idle'){
+    stopAmbience('menu', 0.4); stopAmbience('biome', 0.4);
     stopAmbience('weather', 0.4); stopAmbience('battle', 0.4);
     return;
   }
-  // Menüdeyken yalnızca sakin orman katmanı
   const inMenu = document.body.classList.contains('in-menu');
-  const theme = (typeof level !== 'undefined' && level && level.theme) || null;
+  const lv = (typeof level !== 'undefined') ? level : null;
+  const theme = (lv && lv.theme) || null;
 
-  let weather = 'forest';
-  if(!inMenu && typeof level !== 'undefined' && level){
-    if(level.twist === 'rain') weather = 'rain';
-    else if(theme && theme.season === 'winter') weather = 'winter';
+  /* Ana menüde biyom dokusu yerine menü teması çalar — menü kendi
+     müziğine sahip, harita ambiyansı oraya ait değil. */
+  if(inMenu){
+    startAmbience('menu', 'menu_music', 2.0);
+    stopAmbience('biome', 1.2); stopAmbience('weather', 1.0); stopAmbience('battle', 1.0);
+    ambPoolId = null;          // menüden çıkınca havuz sıfırdan kurulsun
+    return;
   }
-  startAmbience('weather', weather);
+  stopAmbience('menu', 1.5);
+
+  // Klasik bölümlerin (LEVELS) teması yok — orman kabul edilir.
+  const biome = (theme && BIOME_AMBIENCE[theme.biome]) ? theme.biome : 'forest';
+  rotateBiomeAmbience(biome);
+
+  /* Hava katmanı biyomun yerine geçmez, üstüne biner: yağmur
+     twist'inde yağmur, kış mevsiminde rüzgâr. Tundra zaten kendi
+     kış dokusunu taşıdığı için orada rüzgâr katmanı eklenmez. */
+  let weather = null;
+  if(!inMenu && lv){
+    if(lv.twist === 'rain') weather = 'rain';
+    else if(theme && theme.season === 'winter' && theme.biome !== 'tundra') weather = 'winter';
+  }
+  if(weather) startAmbience('weather', weather, 2.5);
+  else stopAmbience('weather', 1.5);
 
   const fighting = !inMenu && typeof waveActive !== 'undefined' && waveActive
                    && !paused && !gameOver && !gameWon;
-  if(fighting) startAmbience('battle', 'battle');
+  if(fighting) startAmbience('battle', 'battle', 1.5);
   else stopAmbience('battle', 1.2);
 }
 
 /* Ses açma/kapama anahtarı ortam katmanlarını da etkilemeli. */
 function syncAmbienceWithSoundPref(){
   if(!soundEnabled){
+    stopAmbience('menu', 0.3);
+    stopAmbience('biome', 0.3);
     stopAmbience('weather', 0.3);
     stopAmbience('battle', 0.3);
   } else {
     loadSfxLibrary();
+    ambNextAt = 0;          // kapalıyken kaçan geçiş hemen yapılsın
     updateAmbience();
   }
 }

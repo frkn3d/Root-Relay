@@ -6,7 +6,16 @@ Tüm sesler profesyonel dijital ses işleme (DSP), frekans modülasyonu (FM sent
 
 ---
 
-## 1. Ambiyans ve Atmosfer (Loopable Stereo)
+## 0. Ana Menü Müziği (Main Menu Theme - 72 BPM Celtic/Nature Folk)
+*Not: Oyuncuyu yormayacak şekilde huzurlu, yumuşak ve orta-kısık seviyede mikslenmiştir.*
+
+| Dosya | Açıklama | Süre / Format |
+| :--- | :--- | :--- |
+| `music_main_menu.mp3` | **Root & Relay Ana Menü Teması:** Dm-Bb-F-C akor dizilimi; derin sıcak doğa pedi, kalimba/arp tınılı arpejler ve nefesli flüt/ocarina melodisi. | 26.7s (Loopable Stereo MP3, ~417 KB) |
+
+---
+
+## 1. Genel Ambiyans ve Atmosfer (Loopable Stereo)
 | Dosya | Açıklama | Süre / Kanal |
 | :--- | :--- | :--- |
 | `ambience_forest.mp3` | Mistik orman atmosferi; rüzgar esintisi, yaprak hışırtıları, tatlı kuş şakımaları ve derin doğa akoru. | 14.0s (Stereo) |
@@ -14,6 +23,45 @@ Tüm sesler profesyonel dijital ses işleme (DSP), frekans modülasyonu (FM sent
 | `ambience_winter_wind.mp3` | Tundra ve kış sezonu için soğuk esinti, hafif ıslık çalan rüzgar ve kristal tınılar. | 12.0s (Stereo) |
 | `ambience_battle_drone.mp3` | Dalga anında çalan odaklayıcı ve gerilim katan derin analog sub-bass ve ritmik nabız. | 16.0s (Stereo) |
 | `bird_chirp.mp3` | Harita üzerinden geçen kuş sürüleri için tatlı gökyüzü kuşu ötüşü. | 0.42s (Mono) |
+
+---
+
+## 1.1. Biyom Harita Ambiyans Alternatifleri (7 Biyom x 3 Alternatif = 21 Parça)
+
+### 🌲 Orman (Forest)
+* `ambience_forest_deep.mp3`: Derin yaşlı orman örtüsü; rüzgar hışırtısı, baykuş ve uzaktan ağaç gövdesi yankıları.
+* `ambience_forest_mystic.mp3`: Mistik orman; büyülü kristal peri çanları, yumuşak esinti ve sıcak doğa pedi.
+* `ambience_forest_stream.mp3`: Orman deresi; taşlar arasından şırıldayan sakin kaynak suyu ve su kabarcıkları.
+
+### 🏜️ Çöl (Desert)
+* `ambience_desert_dunes.mp3`: Kızgın kum tepeleri; kuru çöl rüzgarı esintisi ve ince kum savrulma hışırtısı.
+* `ambience_desert_oasis.mp3`: Vaha akşamı; serinleyen hava, uzaktan çöl cırcır böcekleri ve su durgunluğu.
+* `ambience_desert_storm.mp3`: Kum fırtınası; bas uğultulu rüzgar girdapları ve savrulan sert kum taneleri.
+
+### ❄️ Tundra / Kar (Tundra)
+* `ambience_tundra_blizzard.mp3`: Dondurucu tipi; kar fırtınası rüzgarı ve tiz buzul uğultusu.
+* `ambience_tundra_calm.mp3`: Sessiz kış ovası; usulca yağan kar, kristal çınlamalar ve sakin buz esintisi.
+* `ambience_tundra_glacier.mp3`: Buzul yarığı; derin tektonik buzul çatlama sesleri ve mağara yankısı.
+
+### 🐊 Bataklık (Swamp)
+* `ambience_swamp_night.mp3`: Bataklık gecesi; kurbağa vıraklamaları, gece böcekleri ve ağır nemli hava.
+* `ambience_swamp_fog.mp3`: Sisli bataklık; sazlık hışırtısı ve dipten yükselen balçık baloncukları.
+* `ambience_swamp_drizzle.mp3`: Çisenti; durgun bataklık suyuna ve geniş nilüferlere vuran hafif yağmur.
+
+### 🌋 Volkanik (Volcanic)
+* `ambience_volcanic_caldera.mp3`: Magma kazanı; derin yer altı lav fokurtusu ve sıcak gaz uğultusu.
+* `ambience_volcanic_ash.mp3`: Kül rüzgarı; havada uçuşan sıcak kül taneleri ve çatırdayan köz parçacıkları.
+* `ambience_volcanic_rumble.mp3`: Tektonik sarsıntı; sismik bas gürültüsü ve basınçlı buhar tıslaması.
+
+### 🌊 Akdeniz (Mediterranean)
+* `ambience_mediterranean_coast.mp3`: Sahil dalgaları; kıyıya vuran sakin deniz dalgası ve çakıl taşları süzülüşü.
+* `ambience_mediterranean_breeze.mp3`: Kıyı meltemi; zeytinlik ve çam ağaçları arasından esen ılık yaz rüzgarı.
+* `ambience_mediterranean_cicadas.mp3`: Yaz öğlesi; Akdeniz cırcır böcekleri korosu ve güneşli sıcaklık dokusu.
+
+### 🌾 Savan (Savanna)
+* `ambience_savanna_wind.mp3`: Bozkır rüzgarı; sarı otların dalgalanması ve geniş açık alan esintisi.
+* `ambience_savanna_dusk.mp3`: Alacakaranlık; gün batımında soğuyan toprak ve uzaktan yabani böcek sesleri.
+* `ambience_savanna_wild.mp3`: Yabani savan; kuru çalı çıtırtıları ve uzaktan esen vahşi bozkır rüzgarı.
 
 ---
 
