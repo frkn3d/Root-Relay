@@ -405,15 +405,28 @@ function updateProjectiles(dt){
     if(d < step+2){
       const ix=p.target.x, iy=p.target.y;
       if(p.splash>0){
+        /* GÜLLE PATLAMASI — yarıçap içindeki HERKES tam hasar alır
+           (kenara doğru azalma yok). Top ritmi seyrek olduğu için
+           her isabetin ağır hissettirmesi gerekiyor: geniş şok
+           dalgası, güçlü sarsıntı ve savrulan toprak/kor. */
+        let caught = 0;
         enemies.forEach(e=>{
           if(Math.hypot(e.x-ix,e.y-iy)<=p.splash){
             e.hp -= p.dmg * (1-(e.queenDmgResist||0)); e.flashT=1;
             playHit(e.radius, e.boss);
+            caught++;
           }
         });
-        explosions.push({x:ix,y:iy,r:4,maxR:p.splash,life:0.35});
-        shake=Math.min(shake+4,10);
-        for(let i=0;i<16;i++) particles.push({x:ix,y:iy,vx:(Math.random()-0.5)*160,vy:(Math.random()-0.5)*160,life:0.4,color:'#e8a94a'});
+        explosions.push({x:ix,y:iy,r:6,maxR:p.splash,life:0.5,blast:true});
+        explosions.push({x:ix,y:iy,r:2,maxR:p.splash*0.55,life:0.3});
+        shake=Math.min(shake+7,14);
+        // Kaç düşman yakalandıysa o kadar çok enkaz savrulur
+        const bits = 22 + Math.min(18, caught*3);
+        for(let i=0;i<bits;i++){
+          const a = Math.random()*Math.PI*2, sp = 70+Math.random()*170;
+          particles.push({x:ix,y:iy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:0.3+Math.random()*0.35,
+            color: i%3===0 ? '#fff0b8' : (i%3===1 ? '#e8a94a' : '#8a5a2a')});
+        }
       } else {
         const tgt = p.target;
 

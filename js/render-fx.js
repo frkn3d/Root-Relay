@@ -236,15 +236,32 @@ function drawHealZones(){
 function drawProjectile(p){
   ctx.save();
   if(p.kind==='mortar'){
+    /* TOP GÜLLESİ — seyrek ama ağır atış, havada da ağır görünmeli:
+       yüksek bir yay, iri bir gülle ve arkasında dağılan duman izi. */
     const remaining = Math.hypot(p.target.x-p.x, p.target.y-p.y);
     const progress = p.travel>0 ? 1-Math.min(remaining/p.travel,1) : 1;
-    const arc = Math.sin(progress*Math.PI)*46;
-    ctx.beginPath(); ctx.ellipse(p.x,p.y,5,2.5,0,0,Math.PI*2);
-    ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.fill();
-    ctx.beginPath(); ctx.arc(p.x,p.y-arc,6,0,Math.PI*2);
-    ctx.fillStyle='#3a3530'; ctx.shadowColor='#000'; ctx.shadowBlur=4; ctx.fill();
-    ctx.beginPath(); ctx.arc(p.x-1,p.y-arc-6,1.8,0,Math.PI*2);
-    ctx.fillStyle='#ffb84a'; ctx.shadowColor='#ff8a2a'; ctx.shadowBlur=8; ctx.fill();
+    const arc = Math.sin(progress*Math.PI)*58;
+    ctx.beginPath(); ctx.ellipse(p.x,p.y,6,3,0,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,0,0,0.28)'; ctx.fill();
+    // duman izi: güllenin geldiği yönde soluklaşan kıvrımlar
+    for(let i=1;i<=4;i++){
+      const back = i*0.055;
+      const pr = Math.max(0, progress-back);
+      const bx = p.x - (p.x-p.ox)*(back/Math.max(progress,0.001));
+      const by = p.y - (p.y-p.oy)*(back/Math.max(progress,0.001)) - Math.sin(pr*Math.PI)*58;
+      ctx.beginPath(); ctx.arc(bx, by, 3.4-i*0.5, 0, Math.PI*2);
+      ctx.fillStyle='rgba(150,140,130,'+(0.26-i*0.05)+')'; ctx.fill();
+    }
+    ctx.beginPath(); ctx.arc(p.x,p.y-arc,7.5,0,Math.PI*2);
+    ctx.fillStyle='#3a3530'; ctx.shadowColor='#000'; ctx.shadowBlur=5; ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.lineWidth=1.4; ctx.strokeStyle='#1a1512'; ctx.stroke();
+    // gülle üzerinde parlama
+    ctx.beginPath(); ctx.arc(p.x-2.4,p.y-arc-2.4,2.2,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.22)'; ctx.fill();
+    // yanan fitil
+    ctx.beginPath(); ctx.arc(p.x-1,p.y-arc-7.5,2.1,0,Math.PI*2);
+    ctx.fillStyle='#ffb84a'; ctx.shadowColor='#ff8a2a'; ctx.shadowBlur=10; ctx.fill();
   } else if(p.kind==='mage'){
     ctx.beginPath(); ctx.arc(p.x,p.y,4.5,0,Math.PI*2);
     ctx.fillStyle='#bdf5e4'; ctx.shadowColor='#4fc3a1'; ctx.shadowBlur=14; ctx.fill();
@@ -316,9 +333,26 @@ function drawArcs(){
 
 function drawExplosions(){
   explosions.forEach(x=>{
-    ctx.save(); ctx.globalAlpha = Math.max(x.life/0.35,0)*0.6;
-    ctx.beginPath(); ctx.arc(x.x,x.y,x.r,0,Math.PI*2);
-    ctx.strokeStyle='#ffb84a'; ctx.lineWidth=4; ctx.stroke();
+    const fade = Math.max(x.life/(x.blast?0.5:0.35),0);
+    ctx.save();
+    /* blast: Mantar Havanı'nın gülle patlaması — sadece halka değil,
+       içi dolu sıcak bir şok dalgası. Kozanın körleştirme patlaması
+       eski sade halkasını korur. */
+    if(x.blast){
+      const g = ctx.createRadialGradient(x.x,x.y,0, x.x,x.y,x.r);
+      g.addColorStop(0,   'rgba(255,248,210,'+(0.55*fade)+')');
+      g.addColorStop(0.45,'rgba(255,150,50,'+(0.34*fade)+')');
+      g.addColorStop(1,   'rgba(150,50,10,0)');
+      ctx.beginPath(); ctx.arc(x.x,x.y,x.r,0,Math.PI*2);
+      ctx.fillStyle=g; ctx.fill();
+      ctx.globalAlpha = fade*0.85;
+      ctx.beginPath(); ctx.arc(x.x,x.y,x.r,0,Math.PI*2);
+      ctx.strokeStyle='#ffe08a'; ctx.lineWidth=3; ctx.stroke();
+    } else {
+      ctx.globalAlpha = fade*0.6;
+      ctx.beginPath(); ctx.arc(x.x,x.y,x.r,0,Math.PI*2);
+      ctx.strokeStyle='#ffb84a'; ctx.lineWidth=4; ctx.stroke();
+    }
     ctx.restore();
   });
 }

@@ -97,12 +97,14 @@ const SFX = {
 };
 
 /* Döngüye giren ortam katmanları ayrı tutulur: bunlar tek atışlık
-   değil, sürekli çalan ve birbirine karışan katmanlar. */
+   değil, sürekli çalan ve birbirine karışan katmanlar.
+   Ses düzeyleri, sürekli çaldıkları için oyun efektlerinin önüne
+   geçmesin diye %70 kısıldı (ör. orman 0.22 -> 0.066). */
 const AMBIENCE = {
-  forest: { f:'ambience_forest.mp3',       v:0.22 },
-  rain:   { f:'ambience_rain.mp3',         v:0.28 },
-  winter: { f:'ambience_winter_wind.mp3',  v:0.24 },
-  battle: { f:'ambience_battle_drone.mp3', v:0.20 },
+  forest: { f:'ambience_forest.mp3',       v:0.066 },
+  rain:   { f:'ambience_rain.mp3',         v:0.084 },
+  winter: { f:'ambience_winter_wind.mp3',  v:0.072 },
+  battle: { f:'ambience_battle_drone.mp3', v:0.060 },
 };
 
 let sfxMode = 'idle';        // idle | buffer | element | off

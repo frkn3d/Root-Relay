@@ -73,7 +73,13 @@ function getTowerStats(t, levelOverride){
   return {
     dmg: t.def.dmg * (1+lvl*0.28) * dmgMul,
     range: range,
-    rate: t.def.rate * (1-lvl*0.15),
+    /* Atış aralığı (saniye). Kulelerin çoğu genel formülü kullanır:
+       her seviye %15 hızlanma. Bir kule kendi eğrisini dayatmak
+       isterse (ör. Mantar Havanı'nın 3.0 -> 1.0 sn'lik top ritmi)
+       def.rateByLevel dizisi bunu geçersiz kılar. */
+    rate: t.def.rateByLevel
+      ? t.def.rateByLevel[Math.min(lvl, t.def.rateByLevel.length-1)]
+      : t.def.rate * (1-lvl*0.15),
     splash: t.def.splash ? t.def.splash*(1+lvl*0.10) : 0,
     poisonDps: t.def.poisonDps ? t.def.poisonDps*(1+lvl*0.30)*dmgMul : 0,
     poisonDuration: t.def.poisonDuration || 0,

@@ -112,10 +112,16 @@ function zapSound(baseFreq, dur, vol){
 
 function playShoot(kind){
   if(!throttleSound('shoot_'+kind, 45)) return;
-  if(sfx('shoot_'+kind, { rate:sfxRnd(0.05) })) return;
+  // Mantar Havanı artık bir TOP: örneği biraz pes çalıp yükselterek
+  // diğer atışlardan ayrılan tok bir gümbürtü hâline getiriyoruz.
+  const shotOpts = (kind==='mortar')
+    ? { rate:0.86*sfxRnd(0.03), vol:1.3 }
+    : { rate:sfxRnd(0.05) };
+  if(sfx('shoot_'+kind, shotOpts)) return;
   if(kind==='archer') blip(520,0.08,'triangle',0.11,420);
   else if(kind==='mage') blip(780,0.14,'sine',0.13,1100);
-  else if(kind==='mortar') blip(140,0.16,'square',0.15,90);
+  // Sentezlenmiş yedek de top gibi: daha pes, daha uzun bir gümbürtü.
+  else if(kind==='mortar'){ blip(95,0.34,'square',0.17,42); setTimeout(()=>blip(210,0.10,'sawtooth',0.08,70), 15); }
   // Don Peykesi: eskisinden daha kısık ve kalın — parlak bir "ping"
   // yerine alçak, hafif boğuk bir "vuum".
   else if(kind==='ice') blip(260,0.20,'sine',0.065,150);

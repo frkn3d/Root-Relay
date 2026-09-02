@@ -85,10 +85,21 @@ const TOWER_TYPES = {
      değen ve hedefi bırakmadan takip eden mavi bir ışın gönderir.
      Hasar ışın çakar çakmaz uygulanır (bkz. engine-update.js, beams). */
   mage:   { id:'mage',   name:'Lazer Kulesi', cost:80,  range:185, rate:0.85, dmg:15, splash:0,  kind:'mage',   color:'#4fa8ff', icon:'🔮', maxCount:4 },
-  /* Havan menzili tüm seviyelerde %50 artırıldı (160 -> 240; son seviye
-     ek menzili de 25 -> 37.5 ile aynı oranda ölçeklendi, bkz.
-     getTowerStats — engine-towers.js). */
-  mortar: { id:'mortar', name:'Mantar Havanı',cost:130, range:240, rate:1.7,  dmg:18, splash:58, kind:'mortar', color:'#c9793f', icon:'💥', maxCount:3 },
+  /* MANTAR HAVANI — artık hızlı bir havan değil, ağır bir TOP.
+     Seyrek ama çok sert vuruyor ve isabet noktasında geniş bir alanı
+     birden döven bir gülle patlaması bırakıyor.
+       • Atış hızı seviyeye göre elle belirlendi (rateByLevel): ilk
+         kurulumda 3 saniyede 1 atış, son seviyede saniyede 1 atış.
+         Genel formül (rate * (1-lvl*0.15)) bu eğriyi veremediği için
+         havana özel bir dizi kullanılıyor — bkz. getTowerStats.
+       • Atış başına hasar 18 -> 40; seyrekleşen atışı telafi ediyor
+         ve "tek gülle, ağır darbe" hissini veriyor.
+       • Alan yarıçapı 58 -> 78; gülle yarıçap içindeki HERKESE tam
+         hasar verir (kenarda azalma yok, bkz. updateProjectiles).
+     Menzili tüm seviyelerde %50 artırılmıştı (160 -> 240; son seviye
+     ek menzili de 25 -> 37.5 ile aynı oranda ölçeklendi). */
+  mortar: { id:'mortar', name:'Mantar Havanı',cost:130, range:240, rate:3.0,  dmg:40, splash:78, kind:'mortar', color:'#c9793f', icon:'💥', maxCount:3,
+            rateByLevel:[3.0, 2.3, 1.6, 1.0] },
   ice:    { id:'ice',    name:'Don Peykesi',  cost:60,  range:140, rate:0.7,  dmg:0,  splash:0,  kind:'ice',    color:'#8fd9f0', icon:'❄️', slowFactor:0.42, slowDuration:5.6, maxCount:4 },
   /* ZEHİR SARMAŞIĞI — vuruşta az hasar, ardından zamana yayılı hasar.
      Zırhlı/kalabalık dalgalarda birikerek etkili olur. */
