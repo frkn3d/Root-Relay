@@ -55,7 +55,9 @@ const ENEMY_TYPES = {
   /* BÜYÜK BOSS — çok yavaş, çok dayanıklı. Etrafında bir don fırtınası
      taşır: auraRadius içindeki kulelerin atış hızını auraSlow oranında
      düşürür (0.5 = %50 yavaş). */
-  frostlord:{ hp:910, speed:0.26, radius:24, gold:120, dmgToLives:1, label:'Don Efendisi', shape:'boss',
+  /* Can %20 artırıldı (910 -> 1092) ve boss dalgalarında artık TEK
+     değil BEŞ tane geliyor; bkz. BOSS_COUNT / BOSS_INTERVAL. */
+  frostlord:{ hp:1092, speed:0.26, radius:24, gold:120, dmgToLives:1, label:'Don Efendisi', shape:'boss',
               body:'#7fd4ea', body2:'#2d5f80', eyes:2, boss:true, auraRadius:83, auraSlow:0.5 },
 
   /* KIVILCIM KOZASI — kamikaze. Öldüğünde geniş bir alana patlayıcı
@@ -134,6 +136,17 @@ const TARGET_MODES = [
   { id:'strongest',label:'Güçlü',  icon:'💪', desc:'En çok canlı' },
 ];
 
+/* BOSS DALGASI — Don Efendisi artık tek başına gelmiyor: belirli
+   aralıklarla arka arkaya BEŞ tanesi giriyor. Sayı ve aralık tek
+   yerden yönetilsin diye sabit; hem elle yazılmış bölümler (aşağıdaki
+   waveOverrides) hem de 1000 Bölüm üreticisi (generateWaveForGenerated,
+   levelgen.js) bunu kullanır.
+   DİKKAT: bunlar SPAWN aralığı; bölümün ikinci yarısında
+   bunchIntervalMult (0.6) ile çarpıldığı için sahadaki gerçek aralık
+   ~7.2 saniye oluyor. */
+const BOSS_COUNT = 5;
+const BOSS_INTERVAL = 12.0;
+
 const LEVELS = [
   {
     id:'orman-girisi', name:'Orman Girişi', waveCount:10,
@@ -154,8 +167,8 @@ const LEVELS = [
       // KÜP artık tek başına değil, diğer birimlerle karışık geliyor
       6:[ {type:'cube', count:14, interval:4.2}, {type:'swarm', count:20, interval:0.5}, {type:'sprinter', count:10, interval:0.6} ],
       9:[ {type:'swarm', count:40, interval:0.42}, {type:'sprinter', count:40, interval:0.5}, {type:'flask', count:4, interval:2.2}, {type:'husk', count:23, interval:1.35}, {type:'brute', count:21, interval:2.0} ],
-      // BOSS DALGASI: tek Don Efendisi + maiyeti
-      10:[ {type:'frostlord', count:1, interval:1.0}, {type:'flask', count:5, interval:2.4}, {type:'husk', count:10, interval:1.6}, {type:'sprinter', count:16, interval:0.7} ]
+      // BOSS DALGASI: arka arkaya beş Don Efendisi + maiyeti
+      10:[ {type:'frostlord', count:BOSS_COUNT, interval:BOSS_INTERVAL}, {type:'flask', count:5, interval:2.4}, {type:'husk', count:10, interval:1.6}, {type:'sprinter', count:16, interval:0.7} ]
     }
   },
   {
@@ -179,8 +192,8 @@ const LEVELS = [
       // KÜP artık tek başına değil, diğer birimlerle karışık geliyor
       7:[ {type:'cube', count:20, interval:4.0}, {type:'swarm', count:26, interval:0.45}, {type:'sprinter', count:14, interval:0.6}, {type:'husk', count:6, interval:1.3} ],
       11:[ {type:'swarm', count:44, interval:0.39}, {type:'sprinter', count:44, interval:0.42}, {type:'spore', count:35, interval:0.55}, {type:'flask', count:6, interval:2.0}, {type:'husk', count:26, interval:1.25}, {type:'brute', count:22, interval:1.8} ],
-      // BOSS DALGASI: iki Don Efendisi + maiyeti
-      12:[ {type:'frostlord', count:2, interval:9.0}, {type:'flask', count:7, interval:2.2}, {type:'brute', count:12, interval:1.8}, {type:'husk', count:16, interval:1.3}, {type:'sprinter', count:24, interval:0.6} ]
+      // BOSS DALGASI: arka arkaya beş Don Efendisi + maiyeti
+      12:[ {type:'frostlord', count:BOSS_COUNT, interval:BOSS_INTERVAL}, {type:'flask', count:7, interval:2.2}, {type:'brute', count:12, interval:1.8}, {type:'husk', count:16, interval:1.3}, {type:'sprinter', count:24, interval:0.6} ]
     }
   },
 ];

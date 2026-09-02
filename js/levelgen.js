@@ -869,7 +869,8 @@ function generateWaveForGenerated(level, waveIndex){
   // Son dalga: boss izinliyse boss dalgası
   if(last && level.allowBoss){
     return [
-      {type:'frostlord', count: diff>0.8 ? 2 : 1, interval:8.0},
+      // BOSS_COUNT/BOSS_INTERVAL (config.js): beş Don Efendisi, aralıklı
+      {type:'frostlord', count: BOSS_COUNT, interval: BOSS_INTERVAL},
       {type:'flask', count: Math.round(3+diff*4), interval:2.2},
       {type:'husk', count: Math.round(6+diff*10), interval:1.2},
       {type:'sprinter', count: Math.round(8+diff*12), interval:0.6},
