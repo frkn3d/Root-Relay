@@ -108,8 +108,15 @@ function loop(now){
     }
   }
   render();
+  // Ses kütüphanesi ilk dokunuştan sonra asenkron yüklendiği için ortam
+  // katmanı ilk denemede başlayamamış olabilir; saniyede bir tazelenir.
+  if(now - lastAmbienceCheck > 1000){
+    lastAmbienceCheck = now;
+    if(typeof updateAmbience === 'function') updateAmbience();
+  }
   requestAnimationFrame(loop);
 }
+let lastAmbienceCheck = 0;
 
 function pointerToLogical(clientX, clientY){
   const rect = canvas.getBoundingClientRect();
@@ -348,7 +355,7 @@ document.getElementById('gemBuyBtn').addEventListener('pointerup', ()=>{
   // TEST SÜRÜMÜ: her dokunuşta bedava 25 elmas.
   // İleride burası mağaza satın alması veya ödüllü reklam olacak.
   addGems(25);
-  playCoin();
+  playGem();
   refreshGemDisplay();
   renderShop();          // fiyatlar/pasiflik durumu tazelensin
 });

@@ -159,6 +159,7 @@ function towerRateMultiplier(t){
       if(e.auraSlow > worst) worst = e.auraSlow;
     }
   }
+  if(worst > 0) playFrostlordAura();   // audio.js — kendi içinde uzun aralıkla kısıtlı
   t.chilled = worst > 0;
   return worst > 0 ? 1/(1-worst) : 1;   // %50 yavaş => aralık 2 katı
 }
@@ -195,11 +196,12 @@ function refreshTowerPanelAffordability(){
 function setTargetMode(id){
   if(!selectedTower) return;
   selectedTower.targetMode = id;
-  playMenuTap();
+  playTargetMode();   // audio.js
   renderTowerPanel();
 }
 
 function openTowerPanel(t){
+  playTowerSelect();   // audio.js
   selectedTower = t; towerPanelOpen = true; sellConfirmPending = false;
   activeTowerRing = null;
   lastAffordState = null;
@@ -227,7 +229,7 @@ function doUpgradeTower(){
   t.pendingLevel = nextLevel;
   t.buildDuration = buildDurationFor(nextLevel);
   t.buildLeft = t.buildDuration;
-  playMenuTap();
+  playTowerUpgrade();   // audio.js
   renderTowerPanel();
 }
 function requestSellTower(){ sellConfirmPending=true; playClick(); renderTowerPanel(); }
@@ -241,7 +243,7 @@ function confirmSellTower(){
   towers = towers.filter(t=>t!==selectedTower);
   spots.forEach(s=>{ if(s.occ===selectedTower) s.occ=null; });
   document.getElementById('goldVal').textContent = gold;
-  playCoin();
+  playTowerSell();   // audio.js
   closeTowerPanel();
   renderTowerSelectBtn(); renderTowerDrawer(); // ui.js — satılan türün rozeti/silikleşmesi anında güncellensin
 }
@@ -250,7 +252,7 @@ const SPEED_STEPS = [1, 2, 4];
 function toggleSpeed(){
   const idx = SPEED_STEPS.indexOf(gameSpeed);
   gameSpeed = SPEED_STEPS[(idx + 1) % SPEED_STEPS.length];
-  playClick();
+  playSpeedToggle();   // audio.js
   const btn = document.getElementById('speedBtn');
   btn.textContent = gameSpeed+'×';
   btn.classList.toggle('active', gameSpeed === 2);

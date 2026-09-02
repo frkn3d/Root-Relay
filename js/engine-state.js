@@ -90,6 +90,7 @@ function scheduleNextBird(){
    (düz). approachDur/loopDur/departDur toplamı bird.dur'u oluşturur;
    render.js bu üç evreyi bird.t'ye göre ayrı ayrı konumlandırır. */
 function spawnBird(){
+  playBirdChirp();   // audio.js
   const margin = 40;
   const edgePoint = ()=>{
     const edge = ['top','bottom','left','right'][Math.floor(Math.random()*4)];

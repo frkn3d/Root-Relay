@@ -41,6 +41,7 @@ function updateWaveProgress(dt){
       waveActive=false;
       if(waveIndex>=level.waveCount){ endGame(true); return false; }
       playWaveComplete();   // audio.js — dalga başarıyla bitince kısa bir başarı ezgisi
+      if(typeof updateAmbience === 'function') updateAmbience();   // sfx.js — savaş katmanı sussun
       showWaveToast(`Dalga ${waveIndex} Tamamlandı!`); // ui.js
       setWaveBtnReady(true); // ui.js
       renderWavePreview();   // ui.js
@@ -56,6 +57,7 @@ function applyQueenAuras(){
      belirgin şekilde kolaylaştırır çünkü buff'lı birimler onunla
      birlikte yeteneklerini kaybeder. */
   enemies.forEach(e=>{ e.queenSpeedBuff = 0; e.queenDmgResist = 0; });
+  let buffed = false;
   enemies.forEach(q=>{
     if(!q.allyBuffTypes || !q.allyBuffTypes.length) return;
     enemies.forEach(e=>{
@@ -63,9 +65,13 @@ function applyQueenAuras(){
       if(Math.hypot(e.x-q.x, e.y-q.y) <= q.auraRadius){
         if(q.allySpeedBuff > e.queenSpeedBuff) e.queenSpeedBuff = q.allySpeedBuff;
         if(q.allyDmgResist > e.queenDmgResist) e.queenDmgResist = q.allyDmgResist;
+        buffed = true;
       }
     });
   });
+  // Ses, döngünün İÇİNDEN değil sonundan bir kez çağrılır: yüzlerce
+  // birim varken throttleSound'u kare başına yüzlerce kez yoklamayalım.
+  if(buffed) playQueenBuff();   // audio.js
 }
 
 /* Düşmanları yol boyunca ilerletir, salınım/yanma/yavaşlama sayaçlarını
@@ -73,6 +79,7 @@ function applyQueenAuras(){
    (çağıran, onları doğru sırada diziye ekler). */
 function updateEnemyMovement(dt){
   const newborns = [];   // Kuluçka'nın bu karede bıraktığı yavrular
+  let burning = false;   // sahada yanan biri var mı (kavrulma cızırtısı için)
   enemies.forEach(e=>{
     const slowMult = e.slowT>0 ? e.slowFactor : 1;
     const queenMult = 1 + (e.queenSpeedBuff||0);
@@ -133,6 +140,7 @@ function updateEnemyMovement(dt){
           splitsLeft:0, broodEvery:0, blockArc:0, overloadSec:0,
           healRadius:0, auraRadius:0,
         });
+        playBrooderSpawn();   // audio.js
         for(let i=0;i<8;i++){
           const a=(i/8)*Math.PI*2;
           particles.push({x:e.x,y:e.y,vx:Math.cos(a)*60,vy:Math.sin(a)*60,life:0.3,color:e.body});
@@ -146,11 +154,16 @@ function updateEnemyMovement(dt){
        en son vuranınkine yenilenir. dotKind yalnızca hangi görselin
        (yeşil kabarcık / turuncu alev) çizileceğini belirler. */
     if(e.dotT > 0){
+      if(e.dotKind === 'fire') burning = true;
       e.dotT -= dt;
       e.hp -= (e.dotDps||0) * dt * (1-(e.queenDmgResist||0));
       if(e.dotT <= 0){ e.dotT = 0; e.dotDps = 0; e.dotKind = null; }
     }
   });
+  // Kavrulma cızırtısı kare başına bir kez denenir; playBurnTick kendi
+  // içinde uzun aralıkla kısıtlı olduğu için kaç düşman yanarsa yansın
+  // tek bir cızırtı duyulur.
+  if(burning) playBurnTick();   // audio.js
   return newborns;
 }
 
@@ -353,6 +366,7 @@ function applyDirectHit(tower, tgt, dmg, originX, originY){
     const fx = Math.cos(tgt.angle||0), fy = Math.sin(tgt.angle||0);
     if((inx/il)*fx + (iny/il)*fy > Math.cos(tgt.blockArc)){
       tgt.blockFlash = 0.35;
+      playShieldDeflect();   // audio.js
       floatTexts.push({x:tgt.x,y:tgt.y,text:'BLOKE',life:0.5,vy:-24,color:'#bcd2f0'});
       for(let i=0;i<4;i++) particles.push({x:tgt.x,y:tgt.y,vx:(Math.random()-0.5)*70,vy:(Math.random()-0.5)*70,life:0.25,color:'#dce8ff'});
       return false;
@@ -370,6 +384,7 @@ function applyDirectHit(tower, tgt, dmg, originX, originY){
     if(towers.includes(tower) && tower.buildLeft <= 0){
       tower.cooldown = Math.max(tower.cooldown, tgt.overloadSec);
       tower.overloadT = tgt.overloadSec;
+      playReflectorShock();   // audio.js
       floatTexts.push({x:tower.x,y:tower.y-30,text:'AŞIRI YÜK',life:0.8,vy:-24,color:'#ffe066'});
       for(let i=0;i<6;i++){
         const a=(i/6)*Math.PI*2;
@@ -417,6 +432,7 @@ function updateProjectiles(dt){
 
         if(blocked){
           tgt.blockFlash = 0.35;
+          playShieldDeflect();   // audio.js
           floatTexts.push({x:p.x,y:p.y,text:'BLOKE',life:0.5,vy:-24,color:'#bcd2f0'});
           for(let i=0;i<4;i++) particles.push({x:p.x,y:p.y,vx:(Math.random()-0.5)*70,vy:(Math.random()-0.5)*70,life:0.25,color:'#dce8ff'});
         } else {
@@ -432,6 +448,7 @@ function updateProjectiles(dt){
               if(towers.includes(tw) && tw.buildLeft <= 0){
                 tw.cooldown = Math.max(tw.cooldown, tgt.overloadSec);
                 tw.overloadT = tgt.overloadSec;
+                playReflectorShock();   // audio.js
                 floatTexts.push({x:tw.x,y:tw.y-30,text:'AŞIRI YÜK',life:0.8,vy:-24,color:'#ffe066'});
                 for(let i=0;i<6;i++){
                   const a=(i/6)*Math.PI*2;
@@ -502,11 +519,12 @@ function resolveEnemyDeaths(){
     dead.forEach(e=>{
       gold += e.gold;
       addGoldEarnedStat(e.gold);
-      playKill();
+      playKill(e.boss);
 
       // KÜP BÖLÜNMESİ: ölen küp, canının ve boyutunun %40'ı kadar
       // iki yavru bırakır. splitsLeft bitene kadar zincir devam eder.
       if(e.splitsLeft > 0){
+        playCubeSplit();   // audio.js
         // Kaçıncı küçülme olduğunu bul (1 = ilk küçülme)
         const gen = (e.splitsTotal || 0) - e.splitsLeft + 1;
         let childSpeed;
@@ -568,6 +586,7 @@ function resolveEnemyDeaths(){
           particles.push({x:e.x,y:e.y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,life:0.5,
             color: i%3===0 ? '#dffbe9' : '#7fe0a8'});
         }
+        playFlaskShatter();   // audio.js
         floatTexts.push({x:e.x,y:e.y-16,text:'ŞİŞE KIRILDI',life:1.0,vy:-26,color:'#7fe0a8'});
       }
 

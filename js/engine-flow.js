@@ -53,6 +53,8 @@ function loadLevel(idx){
   renderTowerSelectBtn(); renderTowerDrawer();  // ui.js — kalan-sayı rozetleri yeni bölümle sıfırlansın
   renderWavePreview();    // ui.js
 
+  if(typeof updateAmbience === 'function') updateAmbience();   // sfx.js — mevsim/hava katmanı
+
   // Mevsim/biyom etkisi varsa oyuncuya kısaca bildir
   if(level.mods && level.mods.notes && level.mods.notes.length){
     showWaveToast(level.mods.labels.join(' · '));  // ui.js
@@ -79,9 +81,10 @@ function toggleSimPause(){
   // tıklanabiliyor, ama market açıkken oyun HER ZAMAN duraklı kalmalı.
   if(document.getElementById('shopOverlay').classList.contains('show')) return;
   paused = !paused;
-  playMenuTap();
+  if(paused) playPauseSfx(); else playResumeSfx();   // audio.js
   if(!paused) document.getElementById('pauseOverlay').classList.remove('show');
   syncPauseToggleBtn();
+  if(typeof updateAmbience === 'function') updateAmbience();   // sfx.js
   if(!paused) lastTime = performance.now();
 }
 
@@ -89,10 +92,11 @@ function toggleSimPause(){
    açar (menüye basmak = duraklatmak, bu ikisi ayrılmaz). */
 function openPauseMenu(){
   if(gameOver||gameWon) return;
-  playMenuTap();
+  playPauseSfx();   // audio.js
   paused = true;
   document.getElementById('pauseOverlay').classList.add('show');
   syncPauseToggleBtn();
+  if(typeof updateAmbience === 'function') updateAmbience();   // sfx.js
   renderPauseLevelInfo(); // ui.js — bölüm adı + zorluk/macera/boss noktaları
 }
 
@@ -101,13 +105,14 @@ function openPauseMenu(){
    açıkken de basılabiliyor) devam ettirme — market kapanana kadar
    oyun duraklı kalmalı, yoksa market açıkken oyun arkada koşuyordu. */
 function resumeFromMenu(){
-  playMenuTap();
+  playResumeSfx();   // audio.js
   document.getElementById('pauseOverlay').classList.remove('show');
   if(!document.getElementById('shopOverlay').classList.contains('show')){
     paused = false;
     lastTime = performance.now();
   }
   syncPauseToggleBtn();
+  if(typeof updateAmbience === 'function') updateAmbience();   // sfx.js
 }
 
 function goToMainMenu(){
@@ -122,6 +127,7 @@ function goToMainMenu(){
   closeTowerPanel();
   if(typeof closeTowerDrawer === 'function') closeTowerDrawer();
   openStartScreen(); // ui.js
+  if(typeof updateAmbience === 'function') updateAmbience();   // sfx.js
 }
 
 function startWave(){
@@ -176,6 +182,7 @@ function startWave(){
   setWaveBtnReady(false); // ui.js
   saveResume(currentLevelIdx, waveIndex);
   playWaveStart();
+  if(typeof updateAmbience === 'function') updateAmbience();   // sfx.js — savaş katmanı girsin
   renderWavePreview();   // ui.js
 }
 
@@ -198,7 +205,15 @@ function endGame(win){
     // Elmas ödülü: yalnızca yeni kazanılan yıldızlar için verilir,
     // böylece aynı bölümü tekrar oynayıp sonsuz elmas kasılamaz.
     const newStars = Math.max(0, stars - prev.bestStars);
-    if(newStars>0) addGems(newStars*5);
+    if(newStars>0){
+      addGems(newStars*5);
+      // Zafer fanfarının üstüne binmesin diye ödül sesi biraz gecikir
+      setTimeout(playGem, 900);                       // audio.js
+      // Bu bölüm ilk kez yıldızlandıysa sıradaki bölümün kilidi açıldı
+      if(prev.bestStars === 0 && !level.generated && LEVELS[currentLevelIdx+1]){
+        setTimeout(playLevelUnlock, 1500);            // audio.js
+      }
+    }
     clearResume();
     h.textContent='Bölüm Tamamlandı'; h.className='win';
     p.textContent = newStars>0
@@ -214,6 +229,7 @@ function endGame(win){
     playDefeat();
   }
   overlay.classList.add('show');
+  if(typeof updateAmbience === 'function') updateAmbience();   // sfx.js — savaş katmanı sussun
 
   // Kazanıldıysa ve sıradaki bölüm varsa doğrudan geçiş butonu göster
   const nextBtn = document.getElementById('nextLevelBtn');

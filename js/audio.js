@@ -1,7 +1,12 @@
 /* ============================================================
-   AUDIO — Web Audio API ile prosedürel, dosyasız ses efektleri.
+   AUDIO — oyunun ses arayüzü. Her play* fonksiyonu ÖNCE sound/
+   klasöründeki MP3 örneğini çalmayı dener (playSfx, sfx.js);
+   örnek yoksa buradaki prosedürel Web Audio sentezine düşer.
+   Böylece ses dosyaları olmadan da oyun eskisi gibi çalışır.
+
    Tarayıcı politikası gereği AudioContext ilk kullanıcı
-   dokunuşunda başlatılır (ensureAudioCtx).
+   dokunuşunda başlatılır (ensureAudioCtx) — örnek kütüphanesi de
+   o anda yüklenmeye başlar.
    ============================================================ */
 let audioCtx = null;
 let soundEnabled = true;
@@ -18,8 +23,19 @@ function ensureAudioCtx(){
     catch(e){ audioCtx = null; }
   }
   if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
+  // Bağlam ilk kez kurulduğunda örnek kütüphanesini yüklemeye başla.
+  // loadSfxLibrary kendini bir kereye kilitler, tekrar çağrılması zararsız.
+  if(audioCtx && typeof loadSfxLibrary === 'function') loadSfxLibrary();
   return audioCtx;
 }
+
+/* Örnek çalınamadıysa false döner; her play* fonksiyonu bu sonuca
+   bakıp sentezlenmiş yedeğine düşer. sfx.js yüklenmemişse de
+   (dosya eksik) sessizce false döner. */
+function sfx(key, opts){
+  return (typeof playSfx === 'function') ? playSfx(key, opts) : false;
+}
+function sfxRnd(a){ return (typeof sfxWobble === 'function') ? sfxWobble(a) : 1; }
 
 function syncSoundButtons(){
   document.querySelectorAll('.sound-toggle-btn').forEach(btn=>{
@@ -32,6 +48,7 @@ function toggleSound(){
   soundEnabled = !soundEnabled;
   try{ localStorage.setItem('rr_sound', soundEnabled?'1':'0'); }catch(e){}
   syncSoundButtons();
+  if(typeof syncAmbienceWithSoundPref === 'function') syncAmbienceWithSoundPref();
   if(soundEnabled) playMenuTap();
 }
 
@@ -95,6 +112,7 @@ function zapSound(baseFreq, dur, vol){
 
 function playShoot(kind){
   if(!throttleSound('shoot_'+kind, 45)) return;
+  if(sfx('shoot_'+kind, { rate:sfxRnd(0.05) })) return;
   if(kind==='archer') blip(520,0.08,'triangle',0.11,420);
   else if(kind==='mage') blip(780,0.14,'sine',0.13,1100);
   else if(kind==='mortar') blip(140,0.16,'square',0.15,90);
@@ -109,7 +127,17 @@ function playShoot(kind){
   // gürleyişine yakın dursun diye testere dalga + kısa süre.
   else if(kind==='fire') blip(190,0.22,'sawtooth',0.09,120);
 }
-function playCoin(){ if(!throttleSound('coin',35)) return; blip(1050,0.09,'square',0.09,1400); }
+function playCoin(){
+  if(!throttleSound('coin',35)) return;
+  if(sfx('coin', { rate:sfxRnd(0.07) })) return;
+  blip(1050,0.09,'square',0.09,1400);
+}
+/* Elmas kazanma — altından ayrı, kristal arpejli ödül sesi. */
+function playGem(){
+  if(!throttleSound('gem',120)) return;
+  if(sfx('gem')) return;
+  [880,1174,1568].forEach((f,i)=>setTimeout(()=>blip(f,0.16,'triangle',0.11,f*1.05), i*70));
+}
 
 /* Vuruş sesi — düşmanın yarıçapına göre ölçekleniyor: küçük düşman
    ince/tiz bir "tık", büyük düşman kalın/tok bir "dum". Boss'larda
@@ -120,6 +148,8 @@ function playCoin(){ if(!throttleSound('coin',35)) return; blip(1050,0.09,'squar
 function playHit(radius, boss){
   const key = boss ? 'boss' : (radius<12 ? 'sm' : radius<18 ? 'md' : 'lg');
   if(!throttleSound('hit_'+key, 42)) return;
+  const sample = { boss:'hit_boss', sm:'hit_small', md:'hit_medium', lg:'hit_large' }[key];
+  if(sfx(sample, { rate:sfxRnd(0.08) })) return;
   const r = Math.max(8, Math.min(26, radius||14));
   const t = (r-8)/18;   // 0 = en küçük, 1 = en büyük
   const freq = 980 - t*760;
@@ -133,6 +163,7 @@ function playHit(radius, boss){
    derin, kısa bir "whump" + hemen ardından hafif bir toz/polen tıslaması. */
 function playBlindBurst(){
   if(!throttleSound('blindburst', 100)) return;
+  if(sfx('cocoon_burst')) return;
   blip(90, 0.28, 'sawtooth', 0.16, 45);
   setTimeout(()=>blip(1600, 0.12, 'sawtooth', 0.06, 400), 20);
 }
@@ -145,6 +176,9 @@ function playBlindBurst(){
 function playElectricHit(radius, boss){
   const key = boss ? 'boss' : (radius<12 ? 'sm' : radius<18 ? 'md' : 'lg');
   if(!throttleSound('ehit_'+key, 40)) return;
+  // Boyut farkı örnekte perde ile veriliyor: küçük hedef tiz, boss kalın.
+  if(sfx('hit_electric', { rate: boss ? 0.72 : (key==='sm' ? 1.18 : key==='md' ? 1.0 : 0.88),
+                           vol:  boss ? 1.35 : 1 })) return;
   const r = Math.max(8, Math.min(26, radius||14));
   const t = (r-8)/18;
   const baseFreq = 1100 - t*550;
@@ -157,10 +191,120 @@ function playElectricHit(radius, boss){
 /* Düşman öldüğünde: hızlı, iki notalı yükselen bir "ding-ding" —
    altın toplama hissi versin diye playCoin()'den bilinçli olarak
    farklı ve daha belirgin/keyifli. */
-function playKill(){
+function playKill(boss){
+  if(boss){
+    // Boss ölümü kalabalıkta kaybolmasın: kendi örneği, throttle'sız.
+    if(sfx('death_boss')) return;
+    blip(160,0.5,'sawtooth',0.18,60);
+    setTimeout(()=>blip(90,0.8,'sine',0.16,45), 120);
+    return;
+  }
   if(!throttleSound('kill',55)) return;
+  if(sfx('death_normal', { rate:sfxRnd(0.1) })) return;
   blip(880,0.07,'triangle',0.10,1300);
   setTimeout(()=>blip(1320,0.09,'triangle',0.11,1760), 45);
+}
+
+/* Kalkan Taşıyıcı önden gelen mermiyi sektirdiğinde */
+function playShieldDeflect(){
+  if(!throttleSound('deflect',60)) return;
+  if(sfx('hit_shield', { rate:sfxRnd(0.08) })) return;
+  blip(1200,0.09,'square',0.08,1900);
+}
+
+/* Yanan (DoT altındaki) düşmanların kavrulma cızırtısı — sahada
+   yanan biri olduğu sürece seyrek aralıklarla tekrarlanır. */
+function playBurnTick(){
+  if(!throttleSound('burn',420)) return;
+  if(sfx('hit_burn', { rate:sfxRnd(0.1) })) return;
+}
+
+/* Küp ikiye bölündüğünde */
+function playCubeSplit(){
+  if(!throttleSound('cubesplit',70)) return;
+  if(sfx('cube_split', { rate:sfxRnd(0.1) })) return;
+  blip(320,0.12,'square',0.09,180);
+}
+
+/* Kuluçka yolda yavru bıraktığında */
+function playBrooderSpawn(){
+  if(!throttleSound('brood',150)) return;
+  if(sfx('brooder_spawn', { rate:sfxRnd(0.1) })) return;
+  blip(420,0.10,'sine',0.07,260);
+}
+
+/* Şişe kırılıp şifa birikintisi bıraktığında */
+function playFlaskShatter(){
+  if(!throttleSound('flask',120)) return;
+  if(sfx('flask_shatter')) return;
+  blip(1500,0.14,'triangle',0.10,600);
+}
+
+/* Yansıtıcı hasarı kuleye geri yansıtıp kuleyi kilitlediğinde */
+function playReflectorShock(){
+  if(!throttleSound('reflect',120)) return;
+  if(sfx('reflector_shock')) return;
+  zapSound(700,0.14,0.11);
+}
+
+/* Sürü Anası aurası bir müttefiki güçlendirdiğinde (seyrek hatırlatma) */
+function playQueenBuff(){
+  if(!throttleSound('queenbuff',2500)) return;
+  if(sfx('queen_buff')) return;
+}
+
+/* Don Efendisi aurası bir kuleyi dondurduğunda (seyrek hatırlatma) */
+function playFrostlordAura(){
+  if(!throttleSound('frostaura',3000)) return;
+  if(sfx('frostlord_aura')) return;
+}
+
+/* Sahneden geçen kuş sürüsü */
+function playBirdChirp(){
+  if(!throttleSound('bird',900)) return;
+  if(sfx('bird', { rate:sfxRnd(0.12) })) return;
+}
+
+/* Yeni bir bölüm kilidi açıldığında */
+function playLevelUnlock(){
+  if(!throttleSound('unlock',800)) return;
+  if(sfx('level_unlock')) return;
+  [660,880,1320].forEach((f,i)=>setTimeout(()=>blip(f,0.2,'triangle',0.13,f*1.1), i*130));
+}
+
+/* Kule paneli açıldığında (sahadaki kuleye odaklanma) */
+function playTowerSelect(){
+  if(!throttleSound('towersel',80)) return;
+  if(sfx('tower_select')) return;
+  blip(660,0.06,'triangle',0.07,880);
+}
+
+/* Yükseltme satın alındığında */
+function playTowerUpgrade(){
+  if(sfx('tower_upgrade')) return;
+  [520,660,880].forEach((f,i)=>setTimeout(()=>blip(f,0.18,'triangle',0.12,f*1.1), i*80));
+}
+
+/* Kule satıldığında */
+function playTowerSell(){
+  if(sfx('tower_sell')) return;
+  playCoin();
+}
+
+/* Atış önceliği (Öncü/Zayıf/Güçlü) değiştirildiğinde */
+function playTargetMode(){
+  if(!throttleSound('targetmode',60)) return;
+  if(sfx('target_mode')) return;
+  blip(900,0.05,'square',0.07,1100);
+}
+
+/* Duraklat / devam et / hız değiştir */
+function playPauseSfx(){ if(sfx('ui_pause')) return; blip(420,0.20,'sine',0.10,160); }
+function playResumeSfx(){ if(sfx('ui_resume')) return; blip(160,0.20,'sine',0.10,420); }
+function playSpeedToggle(){
+  if(!throttleSound('speed',60)) return;
+  if(sfx('ui_speed')) return;
+  blip(800,0.05,'square',0.08,1000);
 }
 
 /* Bir düşman röleye ulaşıp can götürdüğünde — önceden yalnızca kamera
@@ -169,13 +313,14 @@ function playKill(){
    uzun ve iki vuruşlu. */
 function playLifeLoss(){
   if(!throttleSound('lifeloss',80)) return;
+  if(sfx('life_lost')) return;
   blip(150,0.16,'sawtooth',0.13,80);
   setTimeout(()=>blip(110,0.20,'sawtooth',0.11,55), 90);
 }
-function playPlace(){ blip(300,0.10,'triangle',0.16,520); }
-function playError(){ blip(140,0.18,'sawtooth',0.13,90); }
-function playWaveStart(){ blip(300,0.35,'sine',0.14,700); }
-function playClick(){ blip(700,0.05,'square',0.07,700); }
+function playPlace(){ if(sfx('tower_place')) return; blip(300,0.10,'triangle',0.16,520); }
+function playError(){ if(sfx('ui_error')) return; blip(140,0.18,'sawtooth',0.13,90); }
+function playWaveStart(){ if(sfx('wave_start')) return; blip(300,0.35,'sine',0.14,700); }
+function playClick(){ if(sfx('ui_click')) return; blip(700,0.05,'square',0.07,700); }
 
 // Menü/gezinme tuşları için kısık, tok (muted-thud) ses — oyun içi
 // efektlerden (playShoot, playCoin vb.) bilinçli olarak farklı: alçak
@@ -183,6 +328,7 @@ function playClick(){ blip(700,0.05,'square',0.07,700); }
 function playMenuTap(){
   if(!throttleSound('menutap',60)) return;
   if(!soundEnabled) return;
+  if(sfx('ui_tap')) return;
   const ctx = ensureAudioCtx();
   if(!ctx) return;
   const osc = ctx.createOscillator();
@@ -198,6 +344,7 @@ function playMenuTap(){
 }
 
 function playVictory(){
+  if(sfx('victory')) return;
   [520,660,780,1040].forEach((f,i)=>setTimeout(()=>blip(f,0.22,'triangle',0.15),i*110));
 }
 
@@ -206,6 +353,7 @@ function playVictory(){
    endGame(false)'da bir kez çalındığı için throttle uzun tutulabilir. */
 function playDefeat(){
   if(!throttleSound('defeat', 1000)) return;
+  if(sfx('defeat')) return;
   const notes = [392, 349.2, 311.1, 261.6, 220, 174.6];
   notes.forEach((f,i)=>setTimeout(()=>blip(f, i===notes.length-1?0.9:0.42, 'sawtooth', 0.12, f*0.65), i*430));
 }
@@ -215,6 +363,7 @@ function playDefeat(){
    daha hafif/kısa tutuldu çünkü bu her dalgada tekrar çalınacak. */
 function playWaveComplete(){
   if(!throttleSound('wavecomplete', 400)) return;
+  if(sfx('wave_complete')) return;
   const notes = [523.25, 659.25, 784.0, 1046.5, 1318.5];
   notes.forEach((f,i)=>setTimeout(()=>blip(f, i===notes.length-1?0.5:0.16, 'triangle', 0.12, f*1.1), i*150));
 }

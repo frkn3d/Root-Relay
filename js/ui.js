@@ -185,6 +185,7 @@ function renderStatsScreen(){
 
   const reward = claimDailyStatsReward();   // progress.js — günde bir kez
   if(reward > 0){
+    playGem();   // audio.js
     refreshGemDisplay();
     showRewardToast(`+${reward} 💎 Günlük Ödül!`);
   }

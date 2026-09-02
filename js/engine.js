@@ -51,6 +51,7 @@ function update(dt){
   updateExplosions(dt);
   resolveEnemyDeaths();
   updateParticlesAndTexts(dt);
+  updateWalkSounds(dt);       // sfx.js — sahadaki türlere göre ayak sesleri
 
   if(shake>0) shake = Math.max(0, shake-dt*40);
   refreshTowerPanelAffordability();
