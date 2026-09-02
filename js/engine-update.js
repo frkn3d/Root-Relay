@@ -339,6 +339,10 @@ function updateTowers(dt){
           const mz = muzzlePoint(t);
           const dist0 = Math.hypot(target.x-mz.x, target.y-mz.y);
           projectiles.push({x:mz.x,y:mz.y,target,dmg:st.dmg,splash:st.splash,kind:t.def.kind,
+            // tx/ty: merminin gideceği NOKTA. Hedef yaşadığı sürece her
+            // karede tazelenir; hedef ölürse mermi son bilinen bu noktaya
+            // uçmaya devam eder (bkz. updateProjectiles).
+            tx:target.x, ty:target.y,
             ox:mz.x, oy:mz.y, tower:t,
             speed:t.def.kind==='mortar'?4.2:(t.def.kind==='bolt'?11:7),travel:dist0,
             slow:t.def.slowFactor,slowDuration:st.slowDuration,
@@ -399,11 +403,22 @@ function applyDirectHit(tower, tgt, dmg, originX, originY){
    yavaşlatma/zehir/ateş etkilerini ve şimşek zincirini uygular. */
 function updateProjectiles(dt){
   projectiles.forEach(p=>{
-    if(!enemies.includes(p.target)){ p.dead=true; return; }
-    const dx=p.target.x-p.x, dy=p.target.y-p.y, d=Math.hypot(dx,dy);
+    /* BALİSTİK: hedef yolda ölürse mermi HAVADA YOK OLMAZ. Nişan noktası
+       (tx/ty) hedef yaşadığı sürece tazelenir; hedef düştüğü anda son
+       bilinen konumda donar ve mermi oraya kadar uçup düşer.
+       Havan güllesi için bu belirleyici: gülle yere indiğinde alan
+       hasarı yine uygulanır, yani hedefi son anda ölen bir top atışı
+       boşa gitmez — çevredeki düşmanlar patlamayı yer.
+       Tek hedefli mermiler (ok, buz, zehir, şimşek) ise vuracak kimse
+       kalmadığı için yere düşüp söner: hasar yok, yalnızca toz. */
+    const alive = enemies.includes(p.target);
+    if(alive){ p.tx = p.target.x; p.ty = p.target.y; }
+    else p.target = null;
+
+    const dx=p.tx-p.x, dy=p.ty-p.y, d=Math.hypot(dx,dy);
     const step = p.speed*dt*60;
     if(d < step+2){
-      const ix=p.target.x, iy=p.target.y;
+      const ix=p.tx, iy=p.ty;
       if(p.splash>0){
         /* GÜLLE PATLAMASI — yarıçap içindeki HERKES tam hasar alır
            (kenara doğru azalma yok). Top ritmi seyrek olduğu için
@@ -426,6 +441,13 @@ function updateProjectiles(dt){
           const a = Math.random()*Math.PI*2, sp = 70+Math.random()*170;
           particles.push({x:ix,y:iy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:0.3+Math.random()*0.35,
             color: i%3===0 ? '#fff0b8' : (i%3===1 ? '#e8a94a' : '#8a5a2a')});
+        }
+      } else if(!p.target){
+        // Hedef yolda öldü ve bu mermi alan hasarı vermiyor: yere düşüp
+        // söner. Görsel olarak "ıskaladı" hissi versin diye küçük bir toz.
+        for(let i=0;i<4;i++){
+          const a = Math.random()*Math.PI*2, sp = 30+Math.random()*50;
+          particles.push({x:ix,y:iy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:0.28,color:'#b8ad95'});
         }
       } else {
         const tgt = p.target;
@@ -507,8 +529,8 @@ function updateProjectiles(dt){
             }
           }
         }
-        for(let i=0;i<5;i++) particles.push({x:p.x,y:p.y,vx:(Math.random()-0.5)*90,vy:(Math.random()-0.5)*90,life:0.35,
-          color:p.kind==='mage'?'#8fd4ff':(p.kind==='ice'?'#bfeeff':(p.kind==='poison'?'#b9ea78':(p.kind==='bolt'?'#fff3a8':'#c9a56a')))});
+        for(let i=0;i<5;i++) particles.push({x:ix,y:iy,vx:(Math.random()-0.5)*90,vy:(Math.random()-0.5)*90,life:0.35,
+          color:p.kind==='ice'?'#bfeeff':(p.kind==='poison'?'#b9ea78':(p.kind==='bolt'?'#fff3a8':'#c9a56a'))});
       }
       p.dead=true;
     } else {

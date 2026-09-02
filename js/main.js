@@ -157,6 +157,17 @@ canvas.addEventListener('pointerdown',(e)=>{
     return;
   }
   const {x:mx,y:my} = pointerToLogical(e.clientX,e.clientY);
+
+  /* Yeşil yükseltme rozetine dokunulduysa paneli DOĞRUDAN aç —
+     basılı tutmaya gerek yok. Rozet kulenin dokunma yarıçapının
+     dışında durduğu için normal kule dokunuşuyla çakışmıyor. */
+  const badgeTower = findUpgradeBadgeAt(mx, my);   // engine-towers.js
+  if(badgeTower){
+    openTowerPanel(badgeTower);
+    cancelPress();
+    return;
+  }
+
   pressStartPos = {x:mx,y:my};
   longPressFired = false;
   pressTower = findTowerAt(mx,my);

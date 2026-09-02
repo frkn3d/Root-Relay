@@ -27,6 +27,7 @@ function render(){
   towers.forEach(drawTowerRange);
   enemies.forEach(drawEnemy);
   towers.forEach(drawTower);
+  towers.forEach(drawUpgradeBadge);   // yükseltmeye hazır kuleler
   towers.forEach(drawChillBadge);
   towers.forEach(drawBlindBadge);
   projectiles.forEach(drawProjectile);

@@ -233,12 +233,15 @@ function drawHealZones(){
   ctx.restore();
 }
 
+/* Mermiler artık hedef nesnesini değil, NİŞAN NOKTASINI (p.tx/p.ty)
+   izliyor: hedef yolda ölse bile mermi havada kaybolmuyor, uçuşunu
+   tamamlayıp düşüyor (bkz. updateProjectiles, engine-update.js). */
 function drawProjectile(p){
   ctx.save();
   if(p.kind==='mortar'){
     /* TOP GÜLLESİ — seyrek ama ağır atış, havada da ağır görünmeli:
        yüksek bir yay, iri bir gülle ve arkasında dağılan duman izi. */
-    const remaining = Math.hypot(p.target.x-p.x, p.target.y-p.y);
+    const remaining = Math.hypot(p.tx-p.x, p.ty-p.y);
     const progress = p.travel>0 ? 1-Math.min(remaining/p.travel,1) : 1;
     const arc = Math.sin(progress*Math.PI)*58;
     ctx.beginPath(); ctx.ellipse(p.x,p.y,6,3,0,0,Math.PI*2);
@@ -266,7 +269,7 @@ function drawProjectile(p){
     ctx.beginPath(); ctx.arc(p.x,p.y,4.5,0,Math.PI*2);
     ctx.fillStyle='#bdf5e4'; ctx.shadowColor='#4fc3a1'; ctx.shadowBlur=14; ctx.fill();
   } else if(p.kind==='ice'){
-    const ang = Math.atan2(p.target.y-p.y, p.target.x-p.x);
+    const ang = Math.atan2(p.ty-p.y, p.tx-p.x);
     ctx.translate(p.x,p.y); ctx.rotate(ang);
     ctx.beginPath();
     ctx.moveTo(6,0); ctx.lineTo(-3,-3); ctx.lineTo(-6,0); ctx.lineTo(-3,3); ctx.closePath();
@@ -284,7 +287,7 @@ function drawProjectile(p){
       ctx.fillStyle='rgba(200,245,140,0.7)'; ctx.fill();
     }
   } else if(p.kind==='bolt'){
-    const ang = Math.atan2(p.target.y-p.y, p.target.x-p.x);
+    const ang = Math.atan2(p.ty-p.y, p.tx-p.x);
     ctx.translate(p.x,p.y); ctx.rotate(ang);
     ctx.beginPath();
     ctx.moveTo(-10,0); ctx.lineTo(-3,-3.5); ctx.lineTo(0,0.5); ctx.lineTo(8,-1);
@@ -292,7 +295,7 @@ function drawProjectile(p){
     ctx.shadowColor='#ffe066'; ctx.shadowBlur=12; ctx.stroke();
     ctx.shadowBlur=0;
   } else {
-    const ang = Math.atan2(p.target.y-p.y, p.target.x-p.x);
+    const ang = Math.atan2(p.ty-p.y, p.tx-p.x);
     ctx.translate(p.x,p.y); ctx.rotate(ang);
     ctx.strokeStyle='#5c3a1e'; ctx.lineWidth=2.2;
     ctx.beginPath(); ctx.moveTo(-9,0); ctx.lineTo(6,0); ctx.stroke();

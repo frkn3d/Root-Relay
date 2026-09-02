@@ -44,7 +44,7 @@ const SFX = {
   hit_boss:      { f:'hit_boss.mp3',      v:0.38 },
   hit_electric:  { f:'hit_electric.mp3',  v:0.26 },
   hit_shield:    { f:'hit_shield_deflect.mp3', v:0.30 },
-  hit_burn:      { f:'hit_fire_burn.mp3', v:0.05 },   // sürekli cızırdadığı için en kısıklardan
+  hit_burn:      { f:'hit_fire_burn.mp3', v:0.02 },   // sürekli cızırdadığı için kütüphanenin en kısığı
 
   // --- düşman olayları ---
   death_normal:  { f:'enemy_death_normal.mp3', v:0.26 },
@@ -98,48 +98,51 @@ const SFX = {
   ui_speed:      { f:'ui_speed_toggle.mp3',v:0.30 },
 
   // --- ortam ---
-  bird:          { f:'bird_chirp.mp3',     v:0.22 },
+  bird:          { f:'bird_chirp.mp3',     v:0.022 },  // arada bir ötüyor, çok kısık
 };
 
 /* Döngüye giren ortam katmanları ayrı tutulur: bunlar tek atışlık
    değil, sürekli çalan ve birbirine karışan katmanlar.
-   Hepsi bilinçli olarak KISIK: arka planda durmalılar, oyun
-   efektlerinin önüne geçmemeliler. */
+   Hepsi bilinçli olarak ÇOK KISIK: arka planda durmalılar, oyun
+   efektlerinin önüne geçmemeliler. Değerler iki turda %70'er
+   kısıldı — artık 0.016-0.021 bandında, yani neredeyse yalnızca
+   sessizliği dolduran bir doku. menu_music bunun dışında: o
+   ambiyans değil, müzik. */
 const AMBIENCE = {
   // --- orman ---
-  forest:            { f:'ambience_forest.mp3',                 v:0.066 },
-  forest_deep:       { f:'ambience_forest_deep.mp3',            v:0.068 },
-  forest_mystic:     { f:'ambience_forest_mystic.mp3',          v:0.064 },
-  forest_stream:     { f:'ambience_forest_stream.mp3',          v:0.070 },
+  forest:            { f:'ambience_forest.mp3',                 v:0.020 },
+  forest_deep:       { f:'ambience_forest_deep.mp3',            v:0.020 },
+  forest_mystic:     { f:'ambience_forest_mystic.mp3',          v:0.019 },
+  forest_stream:     { f:'ambience_forest_stream.mp3',          v:0.021 },
   // --- çöl ---
-  desert_dunes:      { f:'ambience_desert_dunes.mp3',           v:0.068 },
-  desert_oasis:      { f:'ambience_desert_oasis.mp3',           v:0.064 },
-  desert_storm:      { f:'ambience_desert_storm.mp3',           v:0.058 },   // gürültülü, en kısığı
+  desert_dunes:      { f:'ambience_desert_dunes.mp3',           v:0.020 },
+  desert_oasis:      { f:'ambience_desert_oasis.mp3',           v:0.019 },
+  desert_storm:      { f:'ambience_desert_storm.mp3',           v:0.017 },   // gürültülü, en kısığı
   // --- tundra ---
-  tundra_calm:       { f:'ambience_tundra_calm.mp3',            v:0.068 },
-  tundra_blizzard:   { f:'ambience_tundra_blizzard.mp3',        v:0.058 },
-  tundra_glacier:    { f:'ambience_tundra_glacier.mp3',         v:0.064 },
+  tundra_calm:       { f:'ambience_tundra_calm.mp3',            v:0.020 },
+  tundra_blizzard:   { f:'ambience_tundra_blizzard.mp3',        v:0.017 },
+  tundra_glacier:    { f:'ambience_tundra_glacier.mp3',         v:0.019 },
   // --- bataklık ---
-  swamp_night:       { f:'ambience_swamp_night.mp3',            v:0.066 },
-  swamp_fog:         { f:'ambience_swamp_fog.mp3',              v:0.066 },
-  swamp_drizzle:     { f:'ambience_swamp_drizzle.mp3',          v:0.070 },
+  swamp_night:       { f:'ambience_swamp_night.mp3',            v:0.020 },
+  swamp_fog:         { f:'ambience_swamp_fog.mp3',              v:0.020 },
+  swamp_drizzle:     { f:'ambience_swamp_drizzle.mp3',          v:0.021 },
   // --- volkanik ---
-  volcanic_caldera:  { f:'ambience_volcanic_caldera.mp3',       v:0.062 },
-  volcanic_ash:      { f:'ambience_volcanic_ash.mp3',           v:0.066 },
-  volcanic_rumble:   { f:'ambience_volcanic_rumble.mp3',        v:0.056 },   // bas ağırlıklı
+  volcanic_caldera:  { f:'ambience_volcanic_caldera.mp3',       v:0.019 },
+  volcanic_ash:      { f:'ambience_volcanic_ash.mp3',           v:0.020 },
+  volcanic_rumble:   { f:'ambience_volcanic_rumble.mp3',        v:0.017 },   // bas ağırlıklı
   // --- akdeniz ---
-  med_coast:         { f:'ambience_mediterranean_coast.mp3',    v:0.070 },
-  med_breeze:        { f:'ambience_mediterranean_breeze.mp3',   v:0.066 },
-  med_cicadas:       { f:'ambience_mediterranean_cicadas.mp3',  v:0.060 },   // tiz, kolay yorar
+  med_coast:         { f:'ambience_mediterranean_coast.mp3',    v:0.021 },
+  med_breeze:        { f:'ambience_mediterranean_breeze.mp3',   v:0.020 },
+  med_cicadas:       { f:'ambience_mediterranean_cicadas.mp3',  v:0.018 },   // tiz, kolay yorar
   // --- savan ---
-  savanna_wind:      { f:'ambience_savanna_wind.mp3',           v:0.068 },
-  savanna_dusk:      { f:'ambience_savanna_dusk.mp3',           v:0.066 },
-  savanna_wild:      { f:'ambience_savanna_wild.mp3',           v:0.066 },
+  savanna_wind:      { f:'ambience_savanna_wind.mp3',           v:0.020 },
+  savanna_dusk:      { f:'ambience_savanna_dusk.mp3',           v:0.020 },
+  savanna_wild:      { f:'ambience_savanna_wild.mp3',           v:0.020 },
   // --- hava durumu katmanı (biyomun ÜSTÜNE biner) ---
-  rain:              { f:'ambience_rain.mp3',                   v:0.062 },
-  winter:            { f:'ambience_winter_wind.mp3',            v:0.054 },
+  rain:              { f:'ambience_rain.mp3',                   v:0.019 },
+  winter:            { f:'ambience_winter_wind.mp3',            v:0.016 },
   // --- dalga gerilimi katmanı ---
-  battle:            { f:'ambience_battle_drone.mp3',           v:0.060 },
+  battle:            { f:'ambience_battle_drone.mp3',           v:0.018 },
   /* Ana menü teması. Ambiyans değil MÜZİK olduğu için biraz daha
      yüksek; menüdeyken biyom dokusunun yerine geçer. */
   menu_music:        { f:'music_main_menu.mp3',                 v:0.170 },

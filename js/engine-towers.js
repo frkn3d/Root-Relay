@@ -206,6 +206,38 @@ function setTargetMode(id){
   renderTowerPanel();
 }
 
+/* ============================================================
+   YÜKSELTMEYE HAZIR ROZETİ — bir kule şu anda yükseltilebiliyorsa
+   yanında küçük yeşil bir düğme yanar. Amaç oyuncuyu tetikte tutmak:
+   altın biriktiğinde "şimdi harcayabilirsin" işareti sahada görünür,
+   panel açmaya gerek kalmadan.
+   Geometri hem çizim (drawUpgradeBadge, render-towers.js) hem de
+   dokunma testi (main.js) tarafından kullanıldığı için burada,
+   ikisinin de öncesinde yüklenen dosyada duruyor. */
+const UPGRADE_BADGE_DX = 20;    // kule merkezine göre yatay kayma
+const UPGRADE_BADGE_DY = -22;   // ...ve dikey
+const UPGRADE_BADGE_R  = 9;     // çizim yarıçapı
+const UPGRADE_BADGE_TAP_R = 14; // dokunma yarıçapı (parmak için biraz geniş)
+
+function towerUpgradeReady(t){
+  if(!t || t.buildLeft > 0) return false;       // inşa/yükseltme sürüyor
+  const cost = upgradeCost(t);
+  if(cost === null) return false;               // son seviye
+  return gold >= cost;                          // parası var mı
+}
+
+/* Rozete dokunulduysa o kuleyi döndürür (main.js kullanır). */
+function findUpgradeBadgeAt(mx, my){
+  let found = null, bestD = Infinity;
+  towers.forEach(t=>{
+    if(!towerUpgradeReady(t)) return;
+    if(towerPanelOpen && selectedTower === t) return;   // panel zaten açık
+    const d = Math.hypot(mx-(t.x+UPGRADE_BADGE_DX), my-(t.y+UPGRADE_BADGE_DY));
+    if(d < UPGRADE_BADGE_TAP_R && d < bestD){ bestD = d; found = t; }
+  });
+  return found;
+}
+
 function openTowerPanel(t){
   playTowerSelect();   // audio.js
   selectedTower = t; towerPanelOpen = true; sellConfirmPending = false;

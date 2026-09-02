@@ -99,6 +99,55 @@ function drawBlindBadge(t){
   ctx.restore();
 }
 
+/* Yükseltmeye hazır kulenin yanında nabız gibi atan yeşil düğme.
+   Yalnızca kule gerçekten yükseltilebiliyorken çizilir: inşa bitmiş,
+   son seviyede değil ve oyuncunun parası yetiyor (towerUpgradeReady,
+   engine-towers.js). Dokunulabilir — bkz. main.js pointerdown. */
+function drawUpgradeBadge(t){
+  if(!towerUpgradeReady(t)) return;
+  if(towerPanelOpen && selectedTower === t) return;   // panel zaten açık, rozet gereksiz
+
+  const t0 = performance.now()/1000;
+  const pulse = 0.5 + 0.5*Math.sin(t0*4.2);           // 0..1 nabız
+  const x = t.x + UPGRADE_BADGE_DX, y = t.y + UPGRADE_BADGE_DY;
+  const R = UPGRADE_BADGE_R;
+
+  ctx.save();
+
+  // dışa açılan halka — göz köşesiyle bile fark edilsin
+  const ringR = R + 3 + pulse*4;
+  ctx.beginPath(); ctx.arc(x, y, ringR, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(127,227,180,'+(0.45*(1-pulse))+')';
+  ctx.lineWidth = 2; ctx.stroke();
+
+  // gövde
+  const g = ctx.createRadialGradient(x-R*0.35, y-R*0.4, R*0.2, x, y, R);
+  g.addColorStop(0, '#b6ffd8');
+  g.addColorStop(0.55, '#4fd48c');
+  g.addColorStop(1, '#1f8a52');
+  ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI*2);
+  ctx.fillStyle = g;
+  ctx.shadowColor = '#4fd48c'; ctx.shadowBlur = 8 + pulse*8;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.lineWidth = 1.8; ctx.strokeStyle = '#0d3a24'; ctx.stroke();
+
+  // yukarı ok — "yükselt"
+  ctx.beginPath();
+  ctx.moveTo(x, y - R*0.46);
+  ctx.lineTo(x + R*0.42, y + R*0.10);
+  ctx.lineTo(x + R*0.17, y + R*0.10);
+  ctx.lineTo(x + R*0.17, y + R*0.46);
+  ctx.lineTo(x - R*0.17, y + R*0.46);
+  ctx.lineTo(x - R*0.17, y + R*0.10);
+  ctx.lineTo(x - R*0.42, y + R*0.10);
+  ctx.closePath();
+  ctx.fillStyle = '#0d3a24';
+  ctx.fill();
+
+  ctx.restore();
+}
+
 /* Menzil halkası — düşmanlardan ÖNCE (zeminin üstüne) çizilir ki
    yarı saydam dolgu düşmanların üstünü kapatmasın. */
 function drawTowerRange(t){
