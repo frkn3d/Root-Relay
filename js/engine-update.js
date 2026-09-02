@@ -318,7 +318,10 @@ function updateTowers(dt){
         t.pulse = 1;
         // Kesintisiz ateşte her karede ses çalmasın — kısa aralıkla döner
         t.flameSndT = (t.flameSndT||0) - dt;
-        if(t.flameSndT <= 0){ playShoot('fire'); t.flameSndT = 0.32; }
+        if(t.flameSndT <= 0){
+          playShoot('fire', rangeVolume(Math.hypot(aimTarget.x-t.x, aimTarget.y-t.y), st.range));
+          t.flameSndT = 0.32;
+        }
       }
       if(t.pulse>0) t.pulse = Math.max(0,t.pulse-dt*2.5);
       return;
@@ -327,14 +330,19 @@ function updateTowers(dt){
     if(t.cooldown<=0){
       const target = aimTarget;
       if(target){
+        /* Sesin uzaklık çarpanı: hedef menzilin dibindeyse 1, ucuna
+           doğru kademeli olarak zayıflar (rangeVolume, audio.js).
+           Menzil kulenin merkezinden ölçüldüğü için mesafe de namlu
+           ucundan değil merkezden alınıyor. */
+        const shotVol = rangeVolume(Math.hypot(target.x-t.x, target.y-t.y), st.range);
         if(t.def.kind === 'mage'){
           /* MAVİ LAZER — uçan mermi yok: ışın anında hedefe değer ve
              hasar aynı karede uygulanır. Kayıt hedefi referansla
              tuttuğu için görsel de düşmanı birebir takip eder. */
           const mz = muzzlePoint(t);
-          applyDirectHit(t, target, st.dmg, mz.x, mz.y);
+          applyDirectHit(t, target, st.dmg, mz.x, mz.y, shotVol);
           beams.push({tower:t, target, life:0.25, maxLife:0.25});
-          playShoot('mage');
+          playShoot('mage', shotVol);
         } else {
           const mz = muzzlePoint(t);
           const dist0 = Math.hypot(target.x-mz.x, target.y-mz.y);
@@ -343,12 +351,16 @@ function updateTowers(dt){
             // karede tazelenir; hedef ölürse mermi son bilinen bu noktaya
             // uçmaya devam eder (bkz. updateProjectiles).
             tx:target.x, ty:target.y,
+            // volMult: atış anında dondurulan uzaklık çarpanı. İsabet
+            // sesi de bunu kullanır, böylece atış ve patlama aynı
+            // uzaklıkta duyulur (bkz. rangeVolume, audio.js).
+            volMult:shotVol,
             ox:mz.x, oy:mz.y, tower:t,
             speed:t.def.kind==='mortar'?4.2:(t.def.kind==='bolt'?11:7),travel:dist0,
             slow:t.def.slowFactor,slowDuration:st.slowDuration,
             poisonDps:st.poisonDps, poisonDuration:st.poisonDuration,
             chainCount:st.chainCount, chainFalloff:st.chainFalloff, chainRange:st.chainRange});
-          playShoot(t.def.kind);
+          playShoot(t.def.kind, shotVol);
         }
         t.cooldown = st.rate * rateMult;
         t.pulse = 1;
@@ -363,7 +375,7 @@ function updateTowers(dt){
    izler: Kalkan Taşıyıcı önden gelen darbeyi seker, Yansıtıcı atan
    kuleyi aşırı yükleyebilir. originX/originY, kalkanın hangi yöne
    baktığının hesaplanabilmesi için darbenin geldiği noktadır. */
-function applyDirectHit(tower, tgt, dmg, originX, originY){
+function applyDirectHit(tower, tgt, dmg, originX, originY, volMult){
   if(tgt.blockArc > 0){
     const inx = originX - tgt.x, iny = originY - tgt.y;
     const il = Math.hypot(inx, iny) || 1;
@@ -378,7 +390,7 @@ function applyDirectHit(tower, tgt, dmg, originX, originY){
   }
   tgt.hp -= dmg * (1-(tgt.queenDmgResist||0));
   tgt.flashT = 1;
-  playHit(tgt.radius, tgt.boss);
+  playHit(tgt.radius, tgt.boss, volMult);
   floatTexts.push({x:tgt.x,y:tgt.y,text:'-'+Math.round(dmg),life:0.6,vy:-30,color:'#bfe4ff'});
   for(let i=0;i<5;i++) particles.push({x:tgt.x,y:tgt.y,vx:(Math.random()-0.5)*90,vy:(Math.random()-0.5)*90,life:0.35,color:tower.def.color});
 
@@ -428,7 +440,7 @@ function updateProjectiles(dt){
         enemies.forEach(e=>{
           if(Math.hypot(e.x-ix,e.y-iy)<=p.splash){
             e.hp -= p.dmg * (1-(e.queenDmgResist||0)); e.flashT=1;
-            playHit(e.radius, e.boss);
+            playHit(e.radius, e.boss, p.volMult);
             caught++;
           }
         });
@@ -473,7 +485,7 @@ function updateProjectiles(dt){
         } else {
           if(p.dmg > 0){
             tgt.hp -= p.dmg * (1-(tgt.queenDmgResist||0)); tgt.flashT=1;
-            if(p.kind==='bolt') playElectricHit(tgt.radius, tgt.boss); else playHit(tgt.radius, tgt.boss);
+            if(p.kind==='bolt') playElectricHit(tgt.radius, tgt.boss, p.volMult); else playHit(tgt.radius, tgt.boss, p.volMult);
             floatTexts.push({x:p.x,y:p.y,text:'-'+Math.round(p.dmg),life:0.6,vy:-30,color:p.kind==='mage'?'#bfe4ff':'#ffe3c2'});
 
             /* YANSITICI: hasarın bir kısmını atan kuleye geri yansıtır.
@@ -521,7 +533,7 @@ function updateProjectiles(dt){
               if(!next) break;
               dmg *= p.chainFalloff;
               next.hp -= dmg * (1-(next.queenDmgResist||0)); next.flashT = 1;
-              playElectricHit(next.radius, next.boss);
+              playElectricHit(next.radius, next.boss, p.volMult);
               arcs.push({x1:cur.x, y1:cur.y, x2:next.x, y2:next.y, life:0.22});
               floatTexts.push({x:next.x,y:next.y,text:'-'+Math.round(dmg),life:0.5,vy:-26,color:'#fff3a8'});
               hitSet.add(next);

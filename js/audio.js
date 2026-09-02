@@ -110,28 +110,95 @@ function zapSound(baseFreq, dur, vol){
   osc2.start(); osc2.stop(t0+dur*0.7+0.02);
 }
 
-function playShoot(kind){
-  if(!throttleSound('shoot_'+kind, 45)) return;
+/* ============================================================
+   MESAFEYE GÖRE SES ZAYIFLAMASI
+   Bir kule menzilinin dibindeki bir düşmana ateş ettiğinde atış ve
+   vuruş sesi tam güçte duyulur; hedef menzilin ucuna doğru gittikçe
+   ses kademe kademe zayıflar. Böylece uzaktaki çarpışmalar arka
+   planda kalır, kulenin burnunun dibindeki olay öne çıkar.
+
+   Ölçü mutlak piksel değil, MENZİLE ORAN: 240 menzilli havanın 150
+   birimlik atışı ile 120 menzilli okçunun 75 birimlik atışı aynı
+   oranda "uzak" sayılır. Aksi hâlde uzun menzilli kuleler sürekli
+   kısık, kısa menzilliler sürekli tam sesle çalardı.
+
+   Kademeler (mesafe / menzil):
+     <= %50   -> 1.00   (istenen)
+       %50-60 -> 0.80   (istenen)
+       %60-70 -> 0.60   (istenen)
+       %70-80 -> 0.45
+       %80-90 -> 0.35
+       > %90  -> 0.30   (taban)
+   İlk üç kademe birebir istendiği gibi. Devamında -0,20'lik adımı
+   aynen sürdürmek menzil ucunda çarpanı 0'a indirir, yani en uzak
+   atışlar tamamen sessiz kalırdı; "zayıflasın" isteğini karşılamak
+   için adım yumuşatılıp 0.30'luk bir taban bırakıldı. */
+const RANGE_VOLUME_BANDS = [
+  [0.50, 1.00],
+  [0.60, 0.80],
+  [0.70, 0.60],
+  [0.80, 0.45],
+  [0.90, 0.35]
+];
+const RANGE_VOLUME_FLOOR = 0.30;
+
+/* dist: kule merkezi ile hedef arasındaki mesafe, range: kulenin o
+   seviyedeki menzili. Menzil bilinmiyorsa (0/undefined) 1 döner,
+   yani ses eskisi gibi tam güçte çalar. */
+function rangeVolume(dist, range){
+  if(!(range > 0) || !(dist >= 0)) return 1;
+  const f = dist / range;
+  for(let i=0;i<RANGE_VOLUME_BANDS.length;i++)
+    if(f <= RANGE_VOLUME_BANDS[i][0]) return RANGE_VOLUME_BANDS[i][1];
+  return RANGE_VOLUME_FLOOR;
+}
+
+/* play* fonksiyonlarına gelen çarpanı güvene alır: verilmemişse 1. */
+function volScale(m){
+  return (typeof m === 'number' && m >= 0) ? Math.min(1, m) : 1;
+}
+
+/* throttleSound'un ses düzeyine duyarlı hâli. Düz throttle'da aynı
+   anahtardan ilk gelen sesi çalar, penceredeki gerisini atardı; bu,
+   mesafe zayıflatmasıyla birlikte ters teper: menzilin ucundan atan
+   bir okçu, aynı anda burnumuzun dibinde ateş eden okçuyu susturur
+   ve yakın çarpışma sessiz kalırdı. Burada pencere içinde belirgin
+   şekilde daha YÜKSEK (yani daha yakın) bir olay gelirse ona yol
+   veriliyor; benzer düzeydekiler eskisi gibi eleniyor. */
+const lastSoundVol = {};
+function throttleByVolume(key, ms, v){
+  if(throttleSound(key, ms)){ lastSoundVol[key] = v; return true; }
+  if(v > (lastSoundVol[key] || 0) + 0.15){
+    lastSoundAt[key] = performance.now();
+    lastSoundVol[key] = v;
+    return true;
+  }
+  return false;
+}
+
+function playShoot(kind, volMult){
+  const V = volScale(volMult);
+  if(!throttleByVolume('shoot_'+kind, 45, V)) return;
   // Mantar Havanı artık bir TOP: örneği biraz pes çalıp yükselterek
   // diğer atışlardan ayrılan tok bir gümbürtü hâline getiriyoruz.
   const shotOpts = (kind==='mortar')
-    ? { rate:0.86*sfxRnd(0.03), vol:1.3 }
-    : { rate:sfxRnd(0.05) };
+    ? { rate:0.86*sfxRnd(0.03), vol:1.3*V }
+    : { rate:sfxRnd(0.05), vol:V };
   if(sfx('shoot_'+kind, shotOpts)) return;
-  if(kind==='archer') blip(520,0.08,'triangle',0.11,420);
-  else if(kind==='mage') blip(780,0.14,'sine',0.13,1100);
+  if(kind==='archer') blip(520,0.08,'triangle',0.11*V,420);
+  else if(kind==='mage') blip(780,0.14,'sine',0.13*V,1100);
   // Sentezlenmiş yedek de top gibi: daha pes, daha uzun bir gümbürtü.
-  else if(kind==='mortar'){ blip(95,0.34,'square',0.17,42); setTimeout(()=>blip(210,0.10,'sawtooth',0.08,70), 15); }
+  else if(kind==='mortar'){ blip(95,0.34,'square',0.17*V,42); setTimeout(()=>blip(210,0.10,'sawtooth',0.08*V,70), 15); }
   // Don Peykesi: eskisinden daha kısık ve kalın — parlak bir "ping"
   // yerine alçak, hafif boğuk bir "vuum".
-  else if(kind==='ice') blip(260,0.20,'sine',0.065,150);
+  else if(kind==='ice') blip(260,0.20,'sine',0.065*V,150);
   // Zehir: diğer atışlardan bilinçli olarak kısık — sürekli tekrarlayan
   // bir efekt olduğundan yüksek sesli olursa rahatsız edici olurdu.
-  else if(kind==='poison') blip(300,0.13,'sawtooth',0.05,150);
-  else if(kind==='bolt') zapSound(1400,0.09,0.13);
+  else if(kind==='poison') blip(300,0.13,'sawtooth',0.05*V,150);
+  else if(kind==='bolt') zapSound(1400,0.09,0.13*V);
   // Ateş Kulesi: alçak, dokulu bir "fışş" — bir alev püskürtmesinin
   // gürleyişine yakın dursun diye testere dalga + kısa süre.
-  else if(kind==='fire') blip(190,0.22,'sawtooth',0.09,120);
+  else if(kind==='fire') blip(190,0.22,'sawtooth',0.09*V,120);
 }
 function playCoin(){
   if(!throttleSound('coin',35)) return;
@@ -151,16 +218,20 @@ function playGem(){
    ekleniyor. Boyut sınıfı başına ayrı throttle var ki aynı anda hem
    küçük hem büyük bir düşmana vurulunca ikisi de duyulsun, ama aynı
    sınıftan art arda gelen vuruşlar makineli tüfek gibi uğuldamasın. */
-function playHit(radius, boss){
+function playHit(radius, boss, volMult){
   const key = boss ? 'boss' : (radius<12 ? 'sm' : radius<18 ? 'md' : 'lg');
-  if(!throttleSound('hit_'+key, 42)) return;
+  // volMult: atışı yapan kuleye olan uzaklıktan gelen zayıflama
+  // (rangeVolume). Atış sesiyle AYNI çarpan kullanılır ki tek bir
+  // vuruş olayı baştan sona aynı uzaklıkta duyulsun.
+  const V = volScale(volMult);
+  if(!throttleByVolume('hit_'+key, 42, V)) return;
   const sample = { boss:'hit_boss', sm:'hit_small', md:'hit_medium', lg:'hit_large' }[key];
-  if(sfx(sample, { rate:sfxRnd(0.08) })) return;
+  if(sfx(sample, { rate:sfxRnd(0.08), vol:V })) return;
   const r = Math.max(8, Math.min(26, radius||14));
   const t = (r-8)/18;   // 0 = en küçük, 1 = en büyük
   const freq = 980 - t*760;
   const dur  = 0.045 + t*0.09;
-  const vol  = 0.065 + t*0.045;
+  const vol  = (0.065 + t*0.045) * V;
   blip(freq, dur, t<0.5?'triangle':'sine', vol, freq*(0.55-t*0.1));
   if(boss) setTimeout(()=>blip(freq*0.55, dur*1.15, 'sine', vol*0.7, freq*0.4), 4);
 }
@@ -179,17 +250,18 @@ function playBlindBurst(){
    elektriksel bir çıtırtı. Boyuta göre ölçekleniyor (playHit ile aynı
    mantık): küçük düşman tiz bir çıtırtı, büyük/boss kalın ve boss'ta
    ekstra bir alt katman. */
-function playElectricHit(radius, boss){
+function playElectricHit(radius, boss, volMult){
   const key = boss ? 'boss' : (radius<12 ? 'sm' : radius<18 ? 'md' : 'lg');
-  if(!throttleSound('ehit_'+key, 40)) return;
+  const V = volScale(volMult);
+  if(!throttleByVolume('ehit_'+key, 40, V)) return;
   // Boyut farkı örnekte perde ile veriliyor: küçük hedef tiz, boss kalın.
   if(sfx('hit_electric', { rate: boss ? 0.72 : (key==='sm' ? 1.18 : key==='md' ? 1.0 : 0.88),
-                           vol:  boss ? 1.35 : 1 })) return;
+                           vol:  (boss ? 1.35 : 1) * V })) return;
   const r = Math.max(8, Math.min(26, radius||14));
   const t = (r-8)/18;
   const baseFreq = 1100 - t*550;
   const dur = 0.055 + t*0.05;
-  const vol = 0.09 + t*0.04;
+  const vol = (0.09 + t*0.04) * V;
   zapSound(baseFreq, dur, vol);
   if(boss) setTimeout(()=>zapSound(baseFreq*0.5, dur*1.1, vol*0.6), 4);
 }
