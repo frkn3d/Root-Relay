@@ -143,9 +143,11 @@ const AMBIENCE = {
   winter:            { f:'ambience_winter_wind.mp3',            v:0.016 },
   // --- dalga gerilimi katmanı ---
   battle:            { f:'ambience_battle_drone.mp3',           v:0.018 },
-  /* Ana menü teması. Ambiyans değil MÜZİK olduğu için biraz daha
-     yüksek; menüdeyken biyom dokusunun yerine geçer. */
-  menu_music:        { f:'music_main_menu.mp3',                 v:0.170 },
+  /* Ana menü teması. Ambiyans DEĞİL, müzik: menüde tek başına çalıyor
+     (biyom/hava/savaş katmanları orada susuyor) ve duyulması gereken
+     şey o. Bu yüzden ambiyans bandının (0.016-0.021) çok üstünde,
+     efekt seslerinin de üstünde. */
+  menu_music:        { f:'music_main_menu.mp3',                 v:0.450 },
 };
 
 /* Her biyomun kendi ambiyans havuzu (levelgen.js'teki BIOMES ile aynı

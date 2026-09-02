@@ -41,13 +41,23 @@ const EXTRA_UPGRADE_SURCHARGE = {
   poison: [100, 200, 300],
   fire:   [100, 200, 300],
 };
+/* SON YÜKSELTME TABANI — 3. yükseltme (seviye 2 -> 3) ucuza gelen
+   kulelerde fazla erişilebilir kalıyordu. Bu eşiğin ALTINDA kalan son
+   yükseltmelere düz bir zam biniyor; eşiği aşanlar (Havan, Zehir,
+   Şimşek, Ateş) zaten pahalı olduğu için dokunulmuyor. */
+const FINAL_UPGRADE_FLOOR = 500;
+const FINAL_UPGRADE_BUMP  = 100;
+
 function upgradeCost(t){
   const lvl = t.level||0;
   if(lvl>=3) return null;
   // Fiyatlar her zaman 5'in katı olsun — okunması kolay, tutarlı sayılar
   const base = Math.round(t.def.cost * UPGRADE_COST_MULT[lvl] / 5) * 5;
   const surcharge = (EXTRA_UPGRADE_SURCHARGE[t.def.id] || [0,0,0])[lvl];
-  return base + surcharge;
+  let price = base + surcharge;
+  // lvl 2 = 3. (son) yükseltme
+  if(lvl === 2 && price < FINAL_UPGRADE_FLOOR) price += FINAL_UPGRADE_BUMP;
+  return price;
 }
 /* Aktif bölümün mevsim/biyom etkileri. Klasik bölümlerde tema
    olmadığı için nötr değerler döner. */
