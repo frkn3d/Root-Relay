@@ -360,9 +360,40 @@ function renderTowerSelectBtn(){
 const CARD_TAP_MOVE_PX = 12;
 let cardPressStart = null;
 
+/* Çekmece açıldığında, kartların HEMEN ÜSTÜNDE seçili kule türünün
+   atış/vuruş özetini küçük punto ile gösterir — oyuncu kart seçerken
+   neyi kurduğunu görmek için önce kurup panele bakmak zorunda kalmasın.
+   Değerler 0. seviye (yeni kurulacak kule) içindir ve bölümün
+   biyom/mevsim etkilerini de içerir (getTowerStats, engine-towers.js). */
+function renderTowerDrawerStats(){
+  const el = document.getElementById('towerDrawerStats');
+  if(!el) return;
+  const def = TOWER_TYPES[selectedType];
+  const st = getTowerStats({def, level:0});
+  const bits = [];
+  if(def.slowFactor){
+    bits.push(`🐌 %${Math.round((1-def.slowFactor)*100)}`);
+    bits.push(`⏳ ${st.slowDuration.toFixed(1)}sn`);
+  } else if(def.kind === 'fire'){
+    bits.push(`🌋 ${(st.dmg/st.rate).toFixed(1)}/sn`);
+  } else {
+    bits.push(`💥 ${Math.round(st.dmg)}`);
+  }
+  bits.push(`🎯 ${Math.round(st.range)}`);
+  if(def.kind === 'fire') bits.push('♾️ kesintisiz');
+  else bits.push(`⚡ ${(1/st.rate).toFixed(1)}/sn`);
+  if(st.splash>0)      bits.push(`💫 ${Math.round(st.splash)}`);
+  if(st.poisonDps>0)   bits.push(`☠️ ${Math.round(st.poisonDps)}/sn`);
+  if(st.burnDps>0)     bits.push(`🔥 ${Math.round(st.burnDps)}/sn · ${st.burnDuration.toFixed(0)}sn`);
+  if(st.chainCount>0)  bits.push(`⚡ ${st.chainCount} sıçrama`);
+  el.innerHTML = `<b style="color:${def.color}">${def.icon} ${def.name}</b>`
+    + bits.map(b=>`<span>${b}</span>`).join('');
+}
+
 function renderTowerDrawer(){
   const el = document.getElementById('towerDrawerRow');
   el.innerHTML='';
+  renderTowerDrawerStats();
   Object.values(TOWER_TYPES).forEach(def=>{
     const left = towersRemaining(def);
     const card=document.createElement('div');
@@ -464,6 +495,24 @@ function renderTowerPanel(){
   document.getElementById('tpName').textContent = t.def.name;
   document.getElementById('tpLevel').textContent = `Yükseltme: ${lvl}/3`;
 
+  /* YÜKSELTME ÖNİZLEMESİ — her satır "şu an" değerini gösterir; kule
+     yükseltilebiliyorsa yanında bir sonraki seviyede alacağı değer
+     yeşil bir ok ile yazılır. Böylece oyuncu parayı vermeden önce
+     TAM OLARAK hangi özelliğin ne kadar artacağını görür.
+     Kule şu an yükseltiliyorsa (pendingLevel) önizleme, biten
+     yükseltmenin hedef seviyesini gösterir. */
+  const targetLvl = (t.pendingLevel !== undefined && t.pendingLevel !== null) ? t.pendingLevel : lvl+1;
+  const nx = targetLvl <= 3 ? getTowerStats(t, targetLvl) : null;   // engine-towers.js
+
+  const statRow = (icon, label, curTxt, nextTxt)=>{
+    const up = (nextTxt !== null && nextTxt !== undefined && nextTxt !== curTxt)
+      ? `<i class="tp-up">▲ ${nextTxt}</i>` : '';
+    return `<div class="tp-stat-row"><span>${icon} ${label}</span><b>${curTxt}</b>${up}</div>`;
+  };
+  const num  = v => String(Math.round(v));
+  const sec  = v => v.toFixed(1)+'sn';
+  const perS = v => v.toFixed(1)+'/sn';
+
   let statsHtml = '';
   if(t.def.slowFactor){
     const slowPct = Math.round((1 - t.def.slowFactor) * 100);
@@ -473,26 +522,38 @@ function renderTowerPanel(){
       : '';
     statsHtml += `<div class="tp-stat-row"><span>🐌 Yavaşlatma</span><b>%${slowPct}</b></div>`;
     statsHtml += `<div class="tp-stat-row"><span>⏳ Süre</span><b>${st.slowDuration.toFixed(1)}sn${bonusTxt}</b></div>`;
+  } else if(t.def.kind === 'fire'){
+    // Lav huzmesi kesintisiz akar: "atış başına hasar" yerine saniyelik
+    // hasar anlamlı (bkz. engine-update.js "LAV HUZMESİ").
+    const lavaDps = c => c.dmg / c.rate;
+    statsHtml += statRow('🌋','Lav Hasarı', perS(lavaDps(st)), nx ? perS(lavaDps(nx)) : null);
   } else {
-    statsHtml += `<div class="tp-stat-row"><span>💥 Hasar</span><b>${Math.round(st.dmg)}</b></div>`;
+    statsHtml += statRow('💥','Hasar', num(st.dmg), nx ? num(nx.dmg) : null);
   }
-  statsHtml += `
-    <div class="tp-stat-row"><span>🎯 Menzil</span><b>${Math.round(st.range)}</b></div>
-    <div class="tp-stat-row"><span>⚡ Atış Hızı</span><b>${(1/st.rate).toFixed(1)}/sn</b></div>
-  `;
+
+  statsHtml += statRow('🎯','Menzil', num(st.range), nx ? num(nx.range) : null);
+  if(t.def.kind === 'fire'){
+    statsHtml += `<div class="tp-stat-row"><span>♾️ Atış</span><b>Kesintisiz</b></div>`;
+    statsHtml += statRow('📐','Koni', num(st.coneAngle*2*180/Math.PI)+'°', nx ? num(nx.coneAngle*2*180/Math.PI)+'°' : null);
+  } else {
+    statsHtml += statRow('⚡','Atış Hızı', perS(1/st.rate), nx ? perS(1/nx.rate) : null);
+  }
   if(t.def.splash>0){
-    statsHtml += `<div class="tp-stat-row"><span>💫 Alan Yarıçapı</span><b>${Math.round(st.splash)}</b></div>`;
+    statsHtml += statRow('💫','Alan Yarıçapı', num(st.splash), nx ? num(nx.splash) : null);
   }
   if(st.poisonDps>0){
-    statsHtml += `<div class="tp-stat-row"><span>☠️ Zehir</span><b>${Math.round(st.poisonDps)}/sn</b></div>`;
-    statsHtml += `<div class="tp-stat-row"><span>⏳ Süre</span><b>${st.poisonDuration.toFixed(1)}sn</b></div>`;
+    statsHtml += statRow('☠️','Zehir', perS(st.poisonDps), nx ? perS(nx.poisonDps) : null);
+    statsHtml += statRow('⏳','Süre', sec(st.poisonDuration), nx ? sec(nx.poisonDuration) : null);
   }
   if(st.burnDps>0){
-    statsHtml += `<div class="tp-stat-row"><span>🔥 Yanma</span><b>${Math.round(st.burnDps)}/sn</b></div>`;
-    statsHtml += `<div class="tp-stat-row"><span>⏳ Süre</span><b>${st.burnDuration.toFixed(1)}sn</b></div>`;
+    statsHtml += statRow('🔥','Yanma', perS(st.burnDps), nx ? perS(nx.burnDps) : null);
+    statsHtml += statRow('⏳','Süre', sec(st.burnDuration), nx ? sec(nx.burnDuration) : null);
   }
   if(st.chainCount>0){
-    statsHtml += `<div class="tp-stat-row"><span>⚡ Sıçrama</span><b>${st.chainCount} hedef</b></div>`;
+    statsHtml += statRow('⚡','Sıçrama', st.chainCount+' hedef', nx ? nx.chainCount+' hedef' : null);
+  }
+  if(nx){
+    statsHtml += `<div class="tp-stat-note">▲ = Seviye ${targetLvl}'te olacak değer</div>`;
   }
   document.getElementById('tpStats').innerHTML = statsHtml;
 
