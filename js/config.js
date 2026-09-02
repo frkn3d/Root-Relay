@@ -88,10 +88,13 @@ const TOWER_TYPES = {
   /* MANTAR HAVANI — artık hızlı bir havan değil, ağır bir TOP.
      Seyrek ama çok sert vuruyor ve isabet noktasında geniş bir alanı
      birden döven bir gülle patlaması bırakıyor.
-       • Atış hızı seviyeye göre elle belirlendi (rateByLevel): ilk
-         kurulumda 3 saniyede 1 atış, son seviyede saniyede 1 atış.
+       • Atış hızı seviyeye göre elle belirlendi (rateByLevel).
          Genel formül (rate * (1-lvl*0.15)) bu eğriyi veremediği için
          havana özel bir dizi kullanılıyor — bkz. getTowerStats.
+         Tüm seviyelerde %25 daha yavaş: atış/sn 0.75 ile çarpıldı,
+         yani aralıklar eski değerlerin 1/0.75'i (3.0 -> 4.0,
+         2.3 -> 3.07, 1.6 -> 2.13, 1.0 -> 1.33). İlk kurulumda
+         4 saniyede 1, son seviyede ~0.75 saniyede 1 atış.
        • Atış başına hasar 18 -> 40; seyrekleşen atışı telafi ediyor
          ve "tek gülle, ağır darbe" hissini veriyor.
        • Alan yarıçapı 58 -> 78; gülle yarıçap içindeki HERKESE tam
@@ -99,7 +102,7 @@ const TOWER_TYPES = {
      Menzili tüm seviyelerde %50 artırılmıştı (160 -> 240; son seviye
      ek menzili de 25 -> 37.5 ile aynı oranda ölçeklendi). */
   mortar: { id:'mortar', name:'Mantar Havanı',cost:130, range:240, rate:3.0,  dmg:40, splash:78, kind:'mortar', color:'#c9793f', icon:'💥', maxCount:3,
-            rateByLevel:[3.0, 2.3, 1.6, 1.0] },
+            rateByLevel:[4.0, 3.07, 2.13, 1.33] },
   ice:    { id:'ice',    name:'Don Peykesi',  cost:60,  range:140, rate:0.7,  dmg:0,  splash:0,  kind:'ice',    color:'#8fd9f0', icon:'❄️', slowFactor:0.42, slowDuration:5.6, maxCount:4 },
   /* ZEHİR SARMAŞIĞI — vuruşta az hasar, ardından zamana yayılı hasar.
      Zırhlı/kalabalık dalgalarda birikerek etkili olur. */
