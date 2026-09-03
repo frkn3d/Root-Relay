@@ -361,7 +361,19 @@ function playSfx(key, opts){
       try{
         const a = tpl.cloneNode();
         a.volume = Math.max(0, Math.min(1, vol));
-        if(o.rate) a.playbackRate = o.rate;
+        if(o.rate){
+          /* preservesPitch varsayılan olarak TRUE'dur: bu haldeyken
+             playbackRate perdeyi DEĞİŞTİRMEZ, sadece tempoyu değiştirir
+             ve bunu yapmak için pahalı bir zaman-esnetme (time-stretch)
+             algoritması çalıştırır. Yani kapatmak hem istediğimiz perde
+             kaymasını verir hem de İŞLEMCİ TASARRUFU sağlar. */
+          try{
+            a.preservesPitch = false;
+            a.mozPreservesPitch = false;
+            a.webkitPreservesPitch = false;
+          }catch(e){}
+          a.playbackRate = o.rate;
+        }
         const pr = a.play();
         if(pr && pr.catch) pr.catch(()=>{});
       }catch(e){}
@@ -378,6 +390,63 @@ function playSfx(key, opts){
 function sfxWobble(amount){
   const a = amount === undefined ? 0.06 : amount;
   return 1 + (Math.random()*2-1)*a;
+}
+
+/* ============================================================
+   PERDE SEÇİCİ (sfxPitch) — sfxWobble'ın iki eksiğini kapatır.
+
+   1) SAVRULMA MİKTARI SABİTTİ. Yükseltilmiş bir Lazer Kulesi 4x hızda
+      saniyede ~9 kez ateş ediyor (ölçüldü); ±%5 savrulma o tempoda
+      duyulmuyor ve ses tek bir tona yapışıyor. Artık savrulma, aynı
+      sesin ne sıklıkta tekrarlandığına göre açılıyor: seyrek çalarken
+      eskisi gibi ±%5, hızlı tekrarda ±%9. Üst sınır bilinçli olarak
+      dar — ±%9 yarım tondan biraz fazla; fark edilir ama örneği
+      "yanlış nota" gibi duyurmaz.
+
+   2) RASTGELE, TEKRARSIZ DEMEK DEĞİL. Düz rastgelede arka arkaya
+      neredeyse aynı perde çıkabiliyor ve makineli tüfek etkisi tam da
+      o anlarda geri geliyordu. Yeni değer, bir öncekine PITCH_MIN_STEP
+      kadar yakınsa karşı yakaya itiliyor; yani ardışık iki atış her
+      zaman duyulur biçimde farklı perdede.
+
+   PERFORMANS: ek maliyeti yok. Buffer kipinde playbackRate zaten
+   AudioBufferSourceNode'un kendi alanı — yeni düğüm, yeni nesne ya da
+   yeni bağlantı üretmez; oyun bu alanı zaten her atışta yazıyordu
+   (bkz. playShoot), burada değişen sadece YAZILAN DEĞER. Fonksiyonun
+   kendi maliyeti anahtar başına iki sayı okumak/yazmak.
+   ============================================================ */
+const PITCH_SPREAD_CALM = 0.05;   // seyrek çalarken ± savrulma
+const PITCH_SPREAD_FAST = 0.09;   // hızlı tekrarda ± savrulma
+const PITCH_FAST_MS     = 320;    // bu aralıktan sık gelen ses "hızlı" sayılır
+const PITCH_MIN_STEP    = 0.04;   // ardışık iki ses arası asgari perde farkı
+const pitchLastAt  = {};
+const pitchLastVal = {};
+
+function sfxPitch(key, calm, fast){
+  const cs = (calm === undefined) ? PITCH_SPREAD_CALM : calm;
+  const fs = (fast === undefined) ? PITCH_SPREAD_FAST : fast;
+  const now = (typeof performance !== 'undefined') ? performance.now() : Date.now();
+  const prevAt = pitchLastAt[key];
+  const gap = (prevAt === undefined) ? Infinity : (now - prevAt);
+  pitchLastAt[key] = now;
+  // 0 = seyrek, 1 = arka arkaya
+  const rush = Math.max(0, Math.min(1, 1 - gap / PITCH_FAST_MS));
+  const spread = cs + (fs - cs) * rush;
+  let r = 1 + (Math.random()*2 - 1) * spread;
+  const prev = pitchLastVal[key];
+  /* Asgari adım, sesin KENDİ aralığından geniş olamaz. Aksi halde dar
+     aralık isteyen bir ses (Mantar Havanı ±%3) itilirken kendi
+     sınırının dışına taşardı — yani "bu ses az savrulsun" ayarı
+     sessizce geçersiz olurdu. */
+  const step = Math.min(PITCH_MIN_STEP, spread);
+  if(prev !== undefined && Math.abs(r - prev) < step){
+    // Bir öncekiyle aynı tona düşüyor: karşı yakaya it.
+    const dir  = (prev > 1) ? -1 : 1;
+    const room = Math.max(0, spread - step);
+    r = 1 + dir * (step + Math.random()*room);
+  }
+  pitchLastVal[key] = r;
+  return r;
 }
 
 /* ============================================================

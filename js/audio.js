@@ -36,6 +36,11 @@ function sfx(key, opts){
   return (typeof playSfx === 'function') ? playSfx(key, opts) : false;
 }
 function sfxRnd(a){ return (typeof sfxWobble === 'function') ? sfxWobble(a) : 1; }
+/* Tekrar hızına duyarlı, ardışık tekrar üretmeyen perde seçici
+   (bkz. sfxPitch, sfx.js). sfx.js yüklenmemişse eski davranışa döner. */
+function sfxPch(key, calm, fast){
+  return (typeof sfxPitch === 'function') ? sfxPitch(key, calm, fast) : sfxRnd(calm);
+}
 
 function syncSoundButtons(){
   document.querySelectorAll('.sound-toggle-btn').forEach(btn=>{
@@ -181,9 +186,13 @@ function playShoot(kind, volMult){
   if(!throttleByVolume('shoot_'+kind, 45, V)) return;
   // Mantar Havanı artık bir TOP: örneği biraz pes çalıp yükselterek
   // diğer atışlardan ayrılan tok bir gümbürtü hâline getiriyoruz.
+  /* Perde savrulması artık atış TEMPOSUNA duyarlı (bkz. sfxPitch):
+     yükseltilmiş Lazer Kulesi 4x hızda saniyede ~9 kez ateş ediyor ve
+     sabit ±%5 o tempoda duyulmuyordu. Havan seyrek ateş ettiği için
+     kendi dar aralığını korur — onun kimliği "tok ve pes" olması. */
   const shotOpts = (kind==='mortar')
-    ? { rate:0.86*sfxRnd(0.03), vol:1.3*V }
-    : { rate:sfxRnd(0.05), vol:V };
+    ? { rate:0.86*sfxPch('shoot_mortar', 0.03, 0.05), vol:1.3*V }
+    : { rate:sfxPch('shoot_'+kind), vol:V };
   if(sfx('shoot_'+kind, shotOpts)) return;
   if(kind==='archer') blip(520,0.08,'triangle',0.11*V,420);
   else if(kind==='mage') blip(780,0.14,'sine',0.104*V,1100);   // örnekle aynı %20 kısma
@@ -226,7 +235,8 @@ function playHit(radius, boss, volMult){
   const V = volScale(volMult);
   if(!throttleByVolume('hit_'+key, 42, V)) return;
   const sample = { boss:'hit_boss', sm:'hit_small', md:'hit_medium', lg:'hit_large' }[key];
-  if(sfx(sample, { rate:sfxRnd(0.08), vol:V })) return;
+  // Atış sesiyle aynı mantık: hızlı tekrarda savrulma açılır.
+  if(sfx(sample, { rate:sfxPch('hit_'+key, 0.06, 0.10), vol:V })) return;
   const r = Math.max(8, Math.min(26, radius||14));
   const t = (r-8)/18;   // 0 = en küçük, 1 = en büyük
   const freq = 980 - t*760;
@@ -255,7 +265,13 @@ function playElectricHit(radius, boss, volMult){
   const V = volScale(volMult);
   if(!throttleByVolume('ehit_'+key, 40, V)) return;
   // Boyut farkı örnekte perde ile veriliyor: küçük hedef tiz, boss kalın.
-  if(sfx('hit_electric', { rate: boss ? 0.72 : (key==='sm' ? 1.18 : key==='md' ? 1.0 : 0.88),
+  /* Bu ses hiç savrulmuyordu: perde yalnızca hedef BOYUTUNA göre
+     seçiliyordu, dolayısıyla aynı boydaki hedeflere art arda vuran bir
+     zincir tek tona kilitleniyordu — şimşek saniyede en sık çalan
+     isabet sesi olduğu için en çok burada duyuluyordu. Boyut perdesi
+     korunup üstüne savrulma bindiriliyor. */
+  const ehBase = boss ? 0.72 : (key==='sm' ? 1.18 : key==='md' ? 1.0 : 0.88);
+  if(sfx('hit_electric', { rate: ehBase * sfxPch('ehit_'+key, 0.05, 0.09),
                            vol:  (boss ? 1.35 : 1) * V })) return;
   const r = Math.max(8, Math.min(26, radius||14));
   const t = (r-8)/18;
