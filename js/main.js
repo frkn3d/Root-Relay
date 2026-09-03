@@ -149,10 +149,20 @@ function findTowerAt(mx,my){
   return found;
 }
 
+/* Girişi yalnızca GÖRÜŞÜ KAPATAN ekranlar engeller.
+   Duraklatma tek başına engellemez: alt bardaki ⏸ zaten "dur ve
+   düşün" için var (bkz. toggleSimPause, engine-flow.js), harita
+   açık kalıyor — ama canvas kapalı olduğu için oyuncu düşündüğünü
+   uygulayamıyordu. Artık duraklıyken de kule dikilebiliyor.
+   Kurulumun donması ayrıca kodlanmadı, kendiliğinden geliyor:
+   duraklıyken loop() update() çağırmıyor, dolayısıyla buildLeft
+   olduğu yerde kalıyor. Kule dikilir, inşaatı oyun devam edince
+   ilerlemeye başlar. */
 function canvasInputBlocked(){
-  if(gameOver||gameWon||paused) return true;
+  if(gameOver||gameWon) return true;
   if(!document.getElementById('startScreen').classList.contains('hide')) return true;
   if(document.getElementById('shopOverlay').classList.contains('show')) return true;
+  if(document.getElementById('pauseOverlay').classList.contains('show')) return true;
   return false;
 }
 
