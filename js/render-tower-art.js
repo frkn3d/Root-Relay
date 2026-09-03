@@ -48,8 +48,11 @@ function drawArcherTower(t){
   ctx.save();
   drawBasePlinth(x,y,t.pulse);
 
-  const trunkGrad = ctx.createLinearGradient(x-10,y-16,x+10,y+8);
-  trunkGrad.addColorStop(0,'#8a5a34'); trunkGrad.addColorStop(1,'#6b4526');
+  const trunkGrad = cachedGrad('archerTrunk|'+x+'|'+y, ()=>{
+    const g_ = ctx.createLinearGradient(x-10,y-16,x+10,y+8);
+    g_.addColorStop(0,'#8a5a34'); g_.addColorStop(1,'#6b4526');
+    return g_;
+  });
   ctx.fillStyle=trunkGrad; ctx.strokeStyle='#2b1a0c'; ctx.lineWidth=2.5;
   roundedRect(x-10,y-16,20,24,6); ctx.fill(); ctx.stroke();
   ctx.strokeStyle='rgba(0,0,0,0.25)'; ctx.lineWidth=1;
@@ -58,10 +61,13 @@ function drawArcherTower(t){
   ctx.save(); ctx.translate(x,y-16); ctx.scale(pulse,pulse);
   ctx.beginPath(); ctx.ellipse(1,2,25,16,0,Math.PI,0);
   ctx.fillStyle='rgba(0,0,0,0.2)'; ctx.fill();
-  const capGrad = ctx.createRadialGradient(-8,-10,2,0,-2,28);
-  capGrad.addColorStop(0, brightenColor('#c3f0b8', lvl));
-  capGrad.addColorStop(0.45, brightenColor('#8fc482', lvl));
-  capGrad.addColorStop(1, brightenColor('#446f3f', lvl));
+  const capGrad = cachedGrad('archerCap|'+lvl, ()=>{
+    const g_ = ctx.createRadialGradient(-8,-10,2,0,-2,28);
+    g_.addColorStop(0, brightenColor('#c3f0b8', lvl));
+    g_.addColorStop(0.45, brightenColor('#8fc482', lvl));
+    g_.addColorStop(1, brightenColor('#446f3f', lvl));
+    return g_;
+  });
   ctx.beginPath(); ctx.ellipse(0,0,24,15,0,Math.PI,0);
   ctx.fillStyle=capGrad; ctx.fill();
   ctx.lineWidth = 2.5 + lvl*0.4;
@@ -159,8 +165,11 @@ function drawMageTower(t){
   ctx.restore();
 
   // taş sütun — yukarı doğru daralan
-  const colGrad = ctx.createLinearGradient(x-11,y,x+11,y);
-  colGrad.addColorStop(0,'#20405e'); colGrad.addColorStop(0.5,'#74a6cf'); colGrad.addColorStop(1,'#20405e');
+  const colGrad = cachedGrad('mageCol|'+x+'|'+y, ()=>{
+    const g_ = ctx.createLinearGradient(x-11,y,x+11,y);
+    g_.addColorStop(0,'#20405e'); g_.addColorStop(0.5,'#74a6cf'); g_.addColorStop(1,'#20405e');
+    return g_;
+  });
   ctx.beginPath();
   ctx.moveTo(x-11, y+4);
   ctx.lineTo(x-7, y-22);
@@ -247,8 +256,11 @@ function drawIceTower(t){
   });
   ctx.restore();
 
-  const trunkGrad = ctx.createLinearGradient(x-9,y-14,x+9,y+6);
-  trunkGrad.addColorStop(0,'#8fd0e0'); trunkGrad.addColorStop(1,'#5589a0');
+  const trunkGrad = cachedGrad('iceTrunk|'+x+'|'+y, ()=>{
+    const g_ = ctx.createLinearGradient(x-9,y-14,x+9,y+6);
+    g_.addColorStop(0,'#8fd0e0'); g_.addColorStop(1,'#5589a0');
+    return g_;
+  });
   ctx.fillStyle=trunkGrad; ctx.strokeStyle='#1c3540'; ctx.lineWidth=2.5;
   roundedRect(x-9,y-14,18,20,5); ctx.fill(); ctx.stroke();
   ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.lineWidth=1;
@@ -308,9 +320,12 @@ function drawPoisonTower(t){
   drawBasePlinth(x,y,t.pulse);
 
   // gövde: sarmaşık sarılı kütük
-  const g = ctx.createLinearGradient(x-10,y-20,x+10,y+6);
-  g.addColorStop(0, brightenColor('#5f8f3a', lvl));
-  g.addColorStop(1, brightenColor('#33581f', lvl));
+  const g = cachedGrad('poisonBody|'+x+'|'+y+'|'+lvl, ()=>{
+    const g_ = ctx.createLinearGradient(x-10,y-20,x+10,y+6);
+    g_.addColorStop(0, brightenColor('#5f8f3a', lvl));
+    g_.addColorStop(1, brightenColor('#33581f', lvl));
+    return g_;
+  });
   ctx.fillStyle=g; ctx.strokeStyle='#16290d'; ctx.lineWidth=2.5;
   roundedRect(x-10,y-20,20,28,7); ctx.fill(); ctx.stroke();
 
@@ -367,8 +382,11 @@ function drawBoltTower(t){
   drawBasePlinth(x,y,t.pulse);
 
   // direk
-  const g = ctx.createLinearGradient(x-7,y-34,x+7,y+4);
-  g.addColorStop(0,'#8d93a1'); g.addColorStop(0.5,'#5a6070'); g.addColorStop(1,'#3a3f4c');
+  const g = cachedGrad('boltBody|'+x+'|'+y, ()=>{
+    const g_ = ctx.createLinearGradient(x-7,y-34,x+7,y+4);
+    g_.addColorStop(0,'#8d93a1'); g_.addColorStop(0.5,'#5a6070'); g_.addColorStop(1,'#3a3f4c');
+    return g_;
+  });
   ctx.fillStyle=g; ctx.strokeStyle='#1d2029'; ctx.lineWidth=2.5;
   roundedRect(x-7,y-34,14,38,4); ctx.fill(); ctx.stroke();
   // yatay kuşaklar
@@ -425,8 +443,11 @@ function drawFireTower(t){
   drawBasePlinth(x,y,t.pulse);
 
   // yakıt tankı
-  const tankGrad = ctx.createLinearGradient(x-10,y-24,x+10,y+2);
-  tankGrad.addColorStop(0,'#5a4038'); tankGrad.addColorStop(0.5,'#3a2620'); tankGrad.addColorStop(1,'#241511');
+  const tankGrad = cachedGrad('fireTank|'+x+'|'+y, ()=>{
+    const g_ = ctx.createLinearGradient(x-10,y-24,x+10,y+2);
+    g_.addColorStop(0,'#5a4038'); g_.addColorStop(0.5,'#3a2620'); g_.addColorStop(1,'#241511');
+    return g_;
+  });
   ctx.fillStyle=tankGrad; ctx.strokeStyle='#160b08'; ctx.lineWidth=2.5;
   roundedRect(x-10,y-24,20,26,6); ctx.fill(); ctx.stroke();
   ctx.strokeStyle='rgba(0,0,0,0.35)'; ctx.lineWidth=1.4;
@@ -506,10 +527,13 @@ function drawMortarTower(t){
 
   // gövde (perçinli)
   const lvl = t.level||0;
-  const grad=ctx.createRadialGradient(x-6,y-2,3,x,y+4,22);
-  grad.addColorStop(0, brightenColor('#eeb27a', lvl));
-  grad.addColorStop(0.6, brightenColor('#c9793f', lvl));
-  grad.addColorStop(1, brightenColor('#8a4a20', lvl));
+  const grad = cachedGrad('mortarBase|'+x+'|'+y+'|'+lvl, ()=>{
+    const g_ = ctx.createRadialGradient(x-6,y-2,3,x,y+4,22);
+    g_.addColorStop(0, brightenColor('#eeb27a', lvl));
+    g_.addColorStop(0.6, brightenColor('#c9793f', lvl));
+    g_.addColorStop(1, brightenColor('#8a4a20', lvl));
+    return g_;
+  });
   ctx.beginPath(); ctx.ellipse(x,y+4,20,15,0,0,Math.PI*2);
   ctx.fillStyle=grad; ctx.fill();
   ctx.lineWidth = 2.5 + lvl*0.4;

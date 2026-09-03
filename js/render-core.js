@@ -56,6 +56,12 @@ function brightenColor(hex, level){
    Sprite'lar cihazın gerçek çözünürlüğünde (mevcut dönüşüm ölçeği)
    pişirilir, yoksa ölçeklenip bulanıklaşırdı.
    ============================================================ */
+/* ANAHTAR KURALI: gradyanın görüntüsünü etkileyen HER ŞEY anahtarda
+   olmalı — koordinatlar, ölçüler ve renkleri belirleyen değişkenler
+   (ör. kule seviyesi, düşman rengi, flash durumu). Eksik bir anahtar
+   sessiz bir görsel hataya yol açar: yükseltilmiş bir kule eski
+   seviyesinin rengiyle çizilir. assert_perf.js bunu kaynak üzerinden
+   denetler. */
 const GRAD_CACHE_MAX = 400;
 const _gradCache = new Map();
 
