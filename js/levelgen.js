@@ -94,7 +94,21 @@ const GEN = {
   MAX_PATH_RATIO: 5.2,             // yol uzunluğu / ekran yüksekliği tavanı
   MIN_SPOT_TO_PATH: 60,            // kule–yol asgari mesafesi (kaos önleme) — eskisinden (46) %30 fazla
   MIN_SPOT_TO_SPOT: 74,            // kule–kule asgari mesafesi
-  SPOTS_PER_LEN: 1/175,            // yol uzunluğu başına asgari nokta (175 birime 1 kule)
+  /* YOL UZUNLUĞU BAŞINA NOKTA — artık sabit değil, ZORLUKLA SEYRELİR.
+     Ölçüm (334 bölüm, sabit referans oyuncu, üç ayrı oyuncu gücü):
+     yapı noktası sayısı bölüm zorluğunun EN GÜÇLÜ belirleyicisiydi —
+       10-11 nokta -> %5 çok kolay / %67 zor
+       14-15 nokta -> %31 / %40
+       18-19 nokta -> %65 / %17
+     Sabit 1/175 yüzünden geç bölümler (yolları uzun) 17-18 nokta
+     alıyordu; düşman baskısı bu kadar kuleye yetişemediği için
+     zorluk eğrisi 400. bölümden sonra TERSİNE dönüyordu:
+       bölüm   1-100 -> %21 çok kolay
+       bölüm 601-700 -> %53 çok kolay
+     Aralık zorlukla açılınca uzun geç yollar aynı sayıda kule
+     almıyor. Erken bölümler (diff ~ 0) eskisiyle birebir aynı kalır. */
+  SPOT_SPACING_EASY: 175,          // diff 0 — eski sabit değer
+  SPOT_SPACING_HARD: 205,          // diff 1 — geç bölümlerde daha seyrek
   TOTAL_LEVELS: 1000,
   MIN_WAVES: 9,                    // bölüm başına asgari dalga sayısı
   MAX_WAVES: 18,                   // bölüm başına azami dalga sayısı
@@ -487,8 +501,12 @@ function routeStarvation(spots, paths){
 function placeSpots(rng, paths, diff, totalLen){
   const {MIN_SPOT_TO_PATH,MIN_SPOT_TO_SPOT,MAX_SPOTS} = GEN;
 
-  // KURAL 5: yol uzunluğuna göre asgari nokta sayısı
-  const minBySize = Math.ceil(totalLen * GEN.SPOTS_PER_LEN);
+  // KURAL 5: yol uzunluğuna göre asgari nokta sayısı.
+  // Aralık zorlukla açılır (bkz. GEN.SPOT_SPACING_*): uzun bir yol geç
+  // bölümde erken bölümdekiyle aynı sayıda kule taşımaz.
+  const spacing = GEN.SPOT_SPACING_EASY
+    + (GEN.SPOT_SPACING_HARD - GEN.SPOT_SPACING_EASY) * Math.max(0, Math.min(1, diff));
+  const minBySize = Math.ceil(totalLen / spacing);
   // KURAL 4: zorluğa göre ±1 oynama (taban biraz azaltıldı — çok uzun
   // yollu bölümlerde nokta sayısı fazla kalabalık görünüyordu)
   const wobble = rndInt(rng, -1, 1);
