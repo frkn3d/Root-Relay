@@ -151,9 +151,13 @@ function startWave(){
     // denseIntervalMult (config.js): 8. dalgadan itibaren hafif
     // türler birbirine daha yakın doğsun diye ek kısaltma.
     const dense = denseIntervalMult(g.type, waveIndex);
+    // Grubun temiz adımı; jitter bunun üstüne biner ama t'yi kaydırmaz.
+    const step = g.interval * bunch * dense;
     for(let i=0;i<g.count;i++){
       spawnTimeline.push({
-        t, type:g.type,
+        // spawnJitter (config.js): doğuşlar bant üzerinde gibi değil,
+        // birbirinden bağımsız küçük gecikmelerle gelsin.
+        t: t + spawnJitter(step), type:g.type,
         // Birden çok giriş varsa düşmanlar sırayla rotalara paylaştırılır
         pathIdx: routeCount>1 ? (routeCursor++ % routeCount) : 0,
         hp: def.hp*mult.hp, maxHp: def.hp*mult.hp,
@@ -182,10 +186,21 @@ function startWave(){
         minRadius: def.minRadius || 6,
         wobbleAmp: def.wobble || 0,
       });
-      t += g.interval * bunch * dense;
+      t += step;
     }
     t += GROUP_GAP * bunch; // config.js — gruplar arası nefes payı
   });
+
+  /* Son güvence: rastgele gecikme çakışmaların çoğunu ayırır ama
+     hepsini değil. Sıraladıktan sonra araya en az SPAWN_MIN_GAP
+     konur — böylece hiçbir iki düşman aynı anda belirmez. Sıra
+     önemli değil (updateWaveProgress her kare tüm listeyi tarar),
+     sıralama yalnızca bu geçiş için gerekli. */
+  spawnTimeline.sort((a,b)=>a.t-b.t);
+  for(let i=1;i<spawnTimeline.length;i++){
+    const prev = spawnTimeline[i-1].t;
+    if(spawnTimeline[i].t - prev < SPAWN_MIN_GAP) spawnTimeline[i].t = prev + SPAWN_MIN_GAP;
+  }
   waveElapsed=0; waveActive=true;
   setWaveBtnReady(false); // ui.js
   saveResume(currentLevelIdx, waveIndex);

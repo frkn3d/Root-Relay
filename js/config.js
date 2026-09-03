@@ -265,6 +265,36 @@ function denseIntervalMult(type, waveIndex){
   return DENSE_INTERVAL_MULT[type] || 1;
 }
 
+/* DOĞAL DOĞUŞ RİTMİ.
+   Çizelgedeki zamanlar matematiksel olarak eşit aralıklı: düşmanlar
+   aynı kapıdan, aynı ritimde, bant üzerinde gibi çıkıyor. Yoğun
+   dalgalarda aralık (bunch x dense ile) 0.16 sn'ye kadar iniyor ve
+   iki düşman sık sık AYNI simülasyon adımında beliriyor — tek bir
+   kütle gibi görünüyorlar.
+
+   Çözüm: her doğuşa KENDİ küçük gecikmesi. Gecikme 0.10 / 0.20 / 0.30
+   sn basamaklarından biri, üstüne ±%20 dalgalanma. Her zaman pozitif
+   (dalga erken başlamaz) ve aralığın ötesine taşmasın diye o grubun
+   adımıyla sınırlı; yoğun dalgalarda bu sınır devreye girer, seyrek
+   gruplarda basamaklar olduğu gibi uygulanır.
+
+   Gecikmeler BİRİKMEZ: her giriş, temiz zaman çizgisinin üstüne
+   yalnızca kendi sapmasını alır (bkz. startWave, engine-flow.js).
+
+   SPAWN_MIN_GAP: rastgelelik çoğu çakışmayı ayırır ama garanti etmez.
+   Çizelge kurulduktan sonra iki doğuş arasına en az bu kadar boşluk
+   zorlanır. Simülasyon alt adımı en fazla 0.034 sn olduğundan
+   (main.js MAX_STEP) 0.08 sn, normal hızda iki düşmanın asla aynı
+   adımda doğmayacağı anlamına gelir. */
+const SPAWN_JITTER_STEPS = [0.10, 0.20, 0.30];
+const SPAWN_MIN_GAP = 0.08;
+
+function spawnJitter(step){
+  const pick = SPAWN_JITTER_STEPS[Math.floor(Math.random()*SPAWN_JITTER_STEPS.length)];
+  const capped = Math.min(pick, step);
+  return capped * (0.8 + Math.random()*0.4);
+}
+
 /* ZIRHLI bu dalgadan itibaren sahaya çıkar. Hem klasik bölümler
    (generateWave) hem 1000 Bölüm üreticisi (generateWaveForGenerated,
    levelgen.js) aynı eşiği kullanır. */
