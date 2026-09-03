@@ -20,12 +20,22 @@ function drawBossAura(e){
   const c2 = warm ? 'rgba(200,150,40,0.02)'  : 'rgba(90,170,215,0.02)';
   const dotColor = warm ? 'rgba(255,235,180,0.6)' : 'rgba(230,250,255,0.55)';
 
-  const g = ctx.createRadialGradient(e.x,e.y,R*0.2,e.x,e.y,R);
-  g.addColorStop(0,c0);
-  g.addColorStop(0.7,c1);
-  g.addColorStop(1,c2);
-  ctx.beginPath(); ctx.arc(e.x,e.y,R,0,Math.PI*2);
+  /* Aura MUTLAK koordinatlarda çiziliyordu, yani boss her kımıldadığında
+     gradyan sıfırdan üretiliyordu. Yerel koordinata alındı (translate);
+     artık yalnızca yarıçap + renk ikilisine bağlı ve önbelleklenebilir.
+     Öteleme birebir aynı pikselleri verir. */
+  const g = cachedGrad('aura|'+R+'|'+warm, ()=>{
+    const g2 = ctx.createRadialGradient(0,0,R*0.2,0,0,R);
+    g2.addColorStop(0,c0);
+    g2.addColorStop(0.7,c1);
+    g2.addColorStop(1,c2);
+    return g2;
+  });
+  ctx.save();
+  ctx.translate(e.x, e.y);
+  ctx.beginPath(); ctx.arc(0,0,R,0,Math.PI*2);
   ctx.fillStyle=g; ctx.fill();
+  ctx.restore();
 
   // içeride savrulan zerrecikler — sınırı çember yerine bu belirtir
   for(let i=0;i<18;i++){
@@ -69,8 +79,11 @@ function drawBossEnemy(e){
     ctx.beginPath();
     ctx.moveTo(cx, cy-sz); ctx.lineTo(cx-sz*0.5, cy+sz*0.55); ctx.lineTo(cx+sz*0.5, cy+sz*0.55);
     ctx.closePath();
-    const cg=ctx.createLinearGradient(cx,cy-sz,cx,cy+sz*0.55);
-    cg.addColorStop(0,'#ffffff'); cg.addColorStop(1,'#4a90b5');
+    const cg = cachedGrad('bossShard|'+cx.toFixed(1)+'|'+cy.toFixed(1)+'|'+sz.toFixed(1), ()=>{
+      const g2 = ctx.createLinearGradient(cx,cy-sz,cx,cy+sz*0.55);
+      g2.addColorStop(0,'#ffffff'); g2.addColorStop(1,'#4a90b5');
+      return g2;
+    });
     ctx.fillStyle=cg; ctx.fill();
     ctx.strokeStyle='#12303f'; ctx.lineWidth=1.8; ctx.stroke();
   });
