@@ -41,12 +41,14 @@ function buildCost(def){
 const EXTRA_UPGRADE_SURCHARGE = {
   poison: [100, 200, 300],
   fire:   [150, 300, 540],
-  /* LAZER KULESİ — yalnızca son yükseltmeye zam: 420 -> 720 altın.
-     Tablodaki sayı neden 300 değil 400: 420'nin içindeki 100 altın
-     FINAL_UPGRADE_BUMP'tan geliyordu (taban 320, eşiğin altında).
-     Zam fiyatı eşiğin üstüne çıkarınca o 100 düşüyor; istenen +300'ü
-     tutturmak için tabloya 400 yazılıyor. 320 + 400 = 720. */
-  mage:   [0, 0, 400],
+  /* LAZER KULESİ — yalnızca son yükseltmeye zam. İki turda geldi:
+     önce 420 -> 720, sonra +180 ile 720 -> 900.
+     Tablodaki sayı neden 300+180 değil 400+180: ilk 420'nin içindeki
+     100 altın FINAL_UPGRADE_BUMP'tan geliyordu (taban 320, 500
+     eşiğinin altında). Zam fiyatı eşiğin üstüne çıkarınca o 100
+     düştü, ilk zammın net +300 kalması için tabloya 400 yazıldı.
+     320 + 580 = 900. */
+  mage:   [0, 0, 580],
 };
 /* SON YÜKSELTME TABANI — 3. yükseltme (seviye 2 -> 3) ucuza gelen
    kulelerde fazla erişilebilir kalıyordu. Bu eşiğin ALTINDA kalan son
