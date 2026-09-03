@@ -186,7 +186,7 @@ function playShoot(kind, volMult){
     : { rate:sfxRnd(0.05), vol:V };
   if(sfx('shoot_'+kind, shotOpts)) return;
   if(kind==='archer') blip(520,0.08,'triangle',0.11*V,420);
-  else if(kind==='mage') blip(780,0.14,'sine',0.13*V,1100);
+  else if(kind==='mage') blip(780,0.14,'sine',0.104*V,1100);   // örnekle aynı %20 kısma
   // Sentezlenmiş yedek de top gibi: daha pes, daha uzun bir gümbürtü.
   else if(kind==='mortar'){ blip(95,0.34,'square',0.17*V,42); setTimeout(()=>blip(210,0.10,'sawtooth',0.08*V,70), 15); }
   // Don Peykesi: eskisinden daha kısık ve kalın — parlak bir "ping"

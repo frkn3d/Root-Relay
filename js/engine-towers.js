@@ -34,12 +34,13 @@ function buildCost(def){
   return def.cost;
 }
 
-// Zehir Sarmaşığı ve Ateş Kulesi (alan/süre etkili, aynı seviyede diğer
-// kulelerden orantısız güçlü kalıyorlar) yükseltmelerine ekstra düz zam:
-// 1. yükseltme +100, 2. yükseltme +200, son yükseltme +300.
+/* Zehir Sarmaşığı ve Ateş Kulesi (alan/süre etkili, aynı seviyede diğer
+   kulelerden orantısız güçlü kalıyorlar) yükseltmelerine ekstra düz zam.
+   Taban zam ikisinde de +100 / +200 / +300 idi; Ateş Kulesi son ayarla
+   bunun üstüne +50 / +100 / +240 daha aldı, yani [150, 300, 540]. */
 const EXTRA_UPGRADE_SURCHARGE = {
   poison: [100, 200, 300],
-  fire:   [100, 200, 300],
+  fire:   [150, 300, 540],
 };
 /* SON YÜKSELTME TABANI — 3. yükseltme (seviye 2 -> 3) ucuza gelen
    kulelerde fazla erişilebilir kalıyordu. Bu eşiğin ALTINDA kalan son

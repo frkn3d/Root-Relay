@@ -29,7 +29,8 @@ function sfxUrl(file){ return SFX_DIR + file + '?v=' + SFX_VER; }
 const SFX = {
   // --- kule atışları ---
   shoot_archer:  { f:'shoot_archer.mp3',  v:0.30 },
-  shoot_mage:    { f:'shoot_mage.mp3',    v:0.32 },
+  // Lazer Kulesi kesintisiz sayılacak kadar sık ateş ediyor; %20 kısıldı (0.32 -> 0.256)
+  shoot_mage:    { f:'shoot_mage.mp3',    v:0.256 },
   shoot_mortar:  { f:'shoot_mortar.mp3',  v:0.34 },
   shoot_ice:     { f:'shoot_ice.mp3',     v:0.22 },
   shoot_poison:  { f:'shoot_poison.mp3',  v:0.20 },
