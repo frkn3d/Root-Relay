@@ -4,22 +4,39 @@
    yeni bir kule tipi eklerken sadece buraya bir fonksiyon yazılır ve
    render-towers.js'teki drawTower() dağıtıcısına bağlanır.
    ============================================================ */
+/* Kaide her kulede birebir aynı — tek fark konumu. Bu yüzden artık
+   YEREL koordinatlarda çiziliyor (önce translate): gradyan da her
+   kule için ayrı değil, tek bir önbellek girdisi oluyor. Öteleme
+   tam sayı aritmetiği olduğu için görüntü birebir aynı kalır. */
 function drawBasePlinth(x,y,pulse){
-  ctx.beginPath(); ctx.ellipse(x,y+16,20,7,0,0,Math.PI*2);
+  ctx.save();
+  ctx.translate(x, y);
+  /* Kaide çizimi tamamen sabit (pulse hiç kullanılmıyor): 24 çizim
+     çağrısı yerine tek bir drawImage. Kutu, çizimin taştığı en geniş
+     alan — kenar çizgisi ve yosun tutamları dahil. */
+  staticSprite('plinth', [-22, -2, 44, 24], drawPlinthArt);
+  ctx.restore();
+}
+
+function drawPlinthArt(){
+  ctx.beginPath(); ctx.ellipse(0,16,20,7,0,0,Math.PI*2);
   ctx.fillStyle='rgba(0,0,0,0.32)'; ctx.fill();
-  const grad = ctx.createRadialGradient(x-4,y+6,2,x,y+10,20);
-  grad.addColorStop(0,'#a8a191'); grad.addColorStop(0.6,'#84806f'); grad.addColorStop(1,'#4c4839');
-  ctx.beginPath(); ctx.ellipse(x,y+10,18,8,0,0,Math.PI*2);
+  const grad = cachedGrad('plinth', ()=>{        // render-core.js
+    const g = ctx.createRadialGradient(-4,6,2,0,10,20);
+    g.addColorStop(0,'#a8a191'); g.addColorStop(0.6,'#84806f'); g.addColorStop(1,'#4c4839');
+    return g;
+  });
+  ctx.beginPath(); ctx.ellipse(0,10,18,8,0,0,Math.PI*2);
   ctx.fillStyle=grad; ctx.fill();
   ctx.lineWidth=2.5; ctx.strokeStyle='#241f16'; ctx.stroke();
   // taş dokusu benekleri
   [[-9,7],[6,10],[-2,5],[10,6]].forEach(([dx,dy])=>{
-    ctx.beginPath(); ctx.ellipse(x+dx,y+dy,2,1.2,0.3,0,Math.PI*2);
+    ctx.beginPath(); ctx.ellipse(dx,dy,2,1.2,0.3,0,Math.PI*2);
     ctx.fillStyle='rgba(0,0,0,0.15)'; ctx.fill();
   });
   // kenarda küçük yosun tutamları
   [[-15,10,'#5a8a4f'],[13,11,'#4f7a45'],[3,13,'#6b9e5c']].forEach(([dx,dy,c])=>{
-    ctx.beginPath(); ctx.ellipse(x+dx,y+dy,3.2,2,0,0,Math.PI*2);
+    ctx.beginPath(); ctx.ellipse(dx,dy,3.2,2,0,0,Math.PI*2);
     ctx.fillStyle=c; ctx.fill();
   });
 }
@@ -107,17 +124,14 @@ function drawArcherTower(t){
     ctx.restore();
   }
 
-  ctx.beginPath(); ctx.arc(x, y-8, 3.5+lvl*0.5+((t.pulse||0)*2), 0, Math.PI*2);
-  ctx.fillStyle='#ffd27a'; ctx.shadowColor='#ffd27a'; ctx.shadowBlur=10+lvl*3; ctx.fill();
-  ctx.shadowBlur=0;
+  // glowDot (render-core.js): shadowBlur yerine önbelleklenmiş sprite
+  glowDot(x, y-8, 3.5+lvl*0.5+((t.pulse||0)*2), '#ffd27a', '#ffd27a', 10+lvl*3);
 
   for(let i=0;i<2+lvl;i++){
     const ang = t0*1.3 + i*(Math.PI*2/(2+lvl));
     const fx = x+Math.cos(ang)*18, fy = y-14+Math.sin(ang*1.4)*10;
-    ctx.beginPath(); ctx.arc(fx,fy,1.6,0,Math.PI*2);
-    ctx.fillStyle='#fff3b0'; ctx.shadowColor='#ffe08a'; ctx.shadowBlur=6; ctx.fill();
+    glowDot(fx, fy, 1.6, '#fff3b0', '#ffe08a', 6);
   }
-  ctx.shadowBlur=0;
   ctx.restore();
 }
 
@@ -273,9 +287,7 @@ function drawIceTower(t){
     ctx.beginPath(); ctx.arc(mx,my,3,0,Math.PI*2);
     ctx.fillStyle='rgba(220,248,255,0.5)'; ctx.fill();
   }
-  ctx.beginPath(); ctx.arc(x,y-22,3.5+lvl*0.5+((t.pulse||0)*2.5),0,Math.PI*2);
-  ctx.fillStyle='#eafcff'; ctx.shadowColor='#8fd9f0'; ctx.shadowBlur=12+lvl*4; ctx.fill();
-  ctx.shadowBlur=0;
+  glowDot(x, y-22, 3.5+lvl*0.5+((t.pulse||0)*2.5), '#eafcff', '#8fd9f0', 12+lvl*4);
 
   // düşen kar taneleri — seviye ile çoğalır
   for(let i=0;i<3+lvl;i++){
@@ -342,9 +354,7 @@ function drawPoisonTower(t){
     ctx.fill();
   }
 
-  ctx.beginPath(); ctx.arc(x, y-10, 3+lvl*0.4+((t.pulse||0)*2), 0, Math.PI*2);
-  ctx.fillStyle='#d9ff9e'; ctx.shadowColor='#9fdc5c'; ctx.shadowBlur=10+lvl*3; ctx.fill();
-  ctx.shadowBlur=0;
+  glowDot(x, y-10, 3+lvl*0.4+((t.pulse||0)*2), '#d9ff9e', '#9fdc5c', 10+lvl*3);
   ctx.restore();
 }
 
@@ -384,15 +394,10 @@ function drawBoltTower(t){
     ctx.moveTo(0,-14);
     ctx.lineTo(Math.cos(a)*11, -14+Math.sin(a)*11);
     ctx.strokeStyle='#b9c4d6'; ctx.lineWidth=2.2; ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(Math.cos(a)*11, -14+Math.sin(a)*11, 2, 0, Math.PI*2);
-    ctx.fillStyle='#fff3a8'; ctx.shadowColor='#ffe066'; ctx.shadowBlur=8; ctx.fill();
-    ctx.shadowBlur=0;
+    glowDot(Math.cos(a)*11, -14+Math.sin(a)*11, 2, '#fff3a8', '#ffe066', 8);
   }
   // merkez çekirdek
-  ctx.beginPath(); ctx.arc(0,-16,4+lvl*0.6+((t.pulse||0)*3),0,Math.PI*2);
-  ctx.fillStyle='#fffbe0'; ctx.shadowColor='#ffe066'; ctx.shadowBlur=16+lvl*4; ctx.fill();
-  ctx.shadowBlur=0;
+  glowDot(0, -16, 4+lvl*0.6+((t.pulse||0)*3), '#fffbe0', '#ffe066', 16+lvl*4);
   ctx.restore();
 
   // etrafta çakan kıvılcımlar
@@ -580,8 +585,6 @@ function drawMortarTower(t){
     ctx.fillStyle=`rgba(180,180,175,${0.28*(1-cyc)})`; ctx.fill();
   }
 
-  ctx.beginPath(); ctx.arc(x,y-16,2+lvl*0.4+(t.pulse||0)*2,0,Math.PI*2);
-  ctx.fillStyle='#ffb84a'; ctx.shadowColor='#ff8a2a'; ctx.shadowBlur=8+lvl*3; ctx.fill();
-  ctx.shadowBlur=0;
+  glowDot(x, y-16, 2+lvl*0.4+(t.pulse||0)*2, '#ffb84a', '#ff8a2a', 8+lvl*3);
   ctx.restore();
 }

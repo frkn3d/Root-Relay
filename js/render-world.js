@@ -8,7 +8,11 @@ function roadPalette(){
   return { edge:'#c9a463', fill:'#dab876', speck:'rgba(120,80,40,0.35)' };
 }
 
-function drawPath(){
+/* Yolun DEĞİŞMEYEN kısmı: gölge/kenar/dolgu katmanları, orta şerit,
+   çakıl dokusu. Hiçbiri animasyonlu değil — bu yüzden her karede değil,
+   bölüm başına bir kez statik sahne katmanına pişirilir
+   (bkz. ensureScene, engine-canvas.js). */
+function drawPathBase(){
   const pal = roadPalette();
   ctx.save();
   ctx.lineCap='round'; ctx.lineJoin='round';
@@ -57,7 +61,11 @@ function drawPath(){
     });
   });
   ctx.restore();
+}
 
+/* Yolun ANİMASYONLU kısmı: çıkışın nabız gibi atan halkası. Her karede
+   çizilmek zorunda, o yüzden statik katmanın dışında kaldı. */
+function drawPathMarkers(){
   // Giriş ve çıkış işaretleri — her rotanın kendi uçları.
   // Giriş (düşman doğuşu) yeşil, çıkış (röleye ulaşılan uç) kırmızı —
   // trafik ışığı mantığıyla: yeşilden gelir, kırmızıya (tehlike/röle)

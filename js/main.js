@@ -86,7 +86,30 @@ if(window.ResizeObserver){
   else observeBars();
 }
 
+/* ============================================================
+   KARE HIZI TAVANI.
+   requestAnimationFrame ekranın tazeleme hızında çağrılır; 90 Hz ve
+   120 Hz telefonlarda bu, saniyede 90-120 kez tam simülasyon + tam
+   çizim demek. Oyun yavaş tempolu bir tower defense — 60 kare/sn
+   görsel olarak tavan; üstü yalnızca pil ve ısı olarak geri dönüyor.
+
+   Tavan görüntüyü DEĞİŞTİRMEZ: aynı kareler, sadece gereksiz
+   tekrarları atlanmış oluyor. 60 Hz ekranda hiçbir kare düşmez
+   (tolerans 1 ms), 120 Hz'de her ikinci çağrı, 90 Hz'de üçte biri
+   atlanır — birikmeli sayaç sayesinde 90 Hz'de de ~60'a oturur,
+   45'e düşmez.
+   ============================================================ */
+const TARGET_FPS = 60;
+const FRAME_MS = 1000 / TARGET_FPS;
+let nextFrameAt = 0;
+
 function loop(now){
+  requestAnimationFrame(loop);
+  if(now < nextFrameAt - 1) return;
+  // Uzun bir duraklamadan sonra (sekme arkaplandayken) sayacı sıfırla,
+  // yoksa geri dönüşte birikmiş kareleri arka arkaya işlemeye çalışır.
+  nextFrameAt = (now > nextFrameAt + FRAME_MS) ? now + FRAME_MS : nextFrameAt + FRAME_MS;
+
   const raw = Math.min((now-lastTime)/1000, 0.05);
   lastTime = now;
   if(!paused){
@@ -107,14 +130,19 @@ function loop(now){
       guard++;
     }
   }
-  render();
+  /* ANA MENÜ AÇIKKEN ÇİZME.
+     Giriş ekranı (.start-screen) tuvali tamamen örten opak bir
+     katman — arkasında oyun sahasını çizmek saniyede 60 kez tam
+     görünmez bir kare üretmek demekti. Menüde beklerken telefonun
+     ısınmasının sebeplerinden biri buydu. Ekran gizlenir gizlenmez
+     bir sonraki karede çizim kendiliğinden geri döner. */
+  if(!document.body.classList.contains('in-menu')) render();
   // Ses kütüphanesi ilk dokunuştan sonra asenkron yüklendiği için ortam
   // katmanı ilk denemede başlayamamış olabilir; saniyede bir tazelenir.
   if(now - lastAmbienceCheck > 1000){
     lastAmbienceCheck = now;
     if(typeof updateAmbience === 'function') updateAmbience();
   }
-  requestAnimationFrame(loop);
 }
 let lastAmbienceCheck = 0;
 

@@ -4,14 +4,28 @@
    En önce yüklenmeli: LW/LH ve ctx buradan gelir.
    ============================================================ */
 const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
+/* let, const değil: statik sahne katmanı pişirilirken geçici olarak
+   offscreen bir bağlama yönlendiriliyor (bkz. ensureScene). */
+let ctx = canvas.getContext('2d');
 const LW = 600, LH = 1000;
 let dpr = 1;
+
+/* Statik sahne katmanı (ayrıntı için aşağıya, ensureScene'e bak).
+   Bildirimi burada: setupCanvasDPR ilk çağrıldığında bu değişken
+   zaten tanımlı olmalı. */
+const sceneCanvas = document.createElement('canvas');
+let bakedSceneKey = null;
+function invalidateScene(){ bakedSceneKey = null; }
 
 function setupCanvasDPR(){
   dpr = Math.max(1, Math.min(window.devicePixelRatio||1, 2.5));
   canvas.width = LW*dpr; canvas.height = LH*dpr;
   ctx.setTransform(dpr,0,0,dpr,0,0);
+  /* Pişmiş sprite'lar cihaz çözünürlüğüne bağlı; DPR değişince
+     hepsi geçersiz (bkz. render-core.js). */
+  if(typeof clearRenderCaches === 'function') clearRenderCaches();
+  // Sahne katmanı da cihaz çözünürlüğünde pişmişti
+  bakedSceneKey = null;
 }
 setupCanvasDPR();
 window.addEventListener('resize', setupCanvasDPR);
@@ -104,6 +118,45 @@ function bakeBackground(theme){
       bctx.beginPath(); bctx.arc(x,y,1+Math.random()*1.8,0,Math.PI*2);
       bctx.fillStyle='rgba(255,255,255,0.4)'; bctx.fill();
     }
+  }
+}
+
+/* ============================================================
+   STATİK SAHNE KATMANI.
+   Arka plan dokusu + yol + dekor (ağaç, taş, çalı) hiç değişmez ama
+   her karede yeniden çiziliyordu: üretilmiş bir bölümde bu tek başına
+   karede ~850 çizim çağrısı demekti. Hepsi bölüm/tema başına BİR KEZ
+   bu tuvale pişirilip her karede tek bir drawImage ile basılıyor.
+
+   Tuval cihazın gerçek çözünürlüğünde (LW*dpr) tutuluyor — daha küçük
+   olsaydı büyütülüp bulanıklaşırdı, yani görüntü değişirdi. Bu yüzden
+   DPR değişince de yeniden pişer.
+   ============================================================ */
+function ensureScene(){
+  ensureBackground();
+  const key = (level ? (level.id || '') + '#' + (level.levelNo || '') : 'none')
+            + '|' + bakedThemeKey + '|' + dpr;
+  if(key === bakedSceneKey) return;
+  bakedSceneKey = key;
+
+  sceneCanvas.width = Math.round(LW*dpr);
+  sceneCanvas.height = Math.round(LH*dpr);
+  const sctx = sceneCanvas.getContext('2d');
+  sctx.setTransform(dpr,0,0,dpr,0,0);
+  sctx.clearRect(0,0,LW,LH);
+  sctx.drawImage(bgCanvas,0,0,LW,LH);
+
+  /* Çizim fonksiyonları global ctx'e yazıyor; pişirme sırasında onu
+     geçici olarak bu tuvale yönlendiriyoruz. Tek global kapsam
+     mimarisinde en az müdahaleli yol bu (bkz. index.html yükleme
+     sırası notu). */
+  const real = ctx;
+  ctx = sctx;
+  try {
+    if(typeof drawPathBase === 'function') drawPathBase();
+    if(typeof drawProps === 'function') drawProps();
+  } finally {
+    ctx = real;
   }
 }
 

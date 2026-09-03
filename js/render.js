@@ -16,9 +16,11 @@ function render(){
   ctx.save();
   if(shake>0) ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
   ctx.clearRect(-20,-20,LW+40,LH+40);
-  ensureBackground();
-  ctx.drawImage(bgCanvas,0,0);
-  drawPath(); drawDirectionArrows(); drawProps(); drawSpots();
+  /* Arka plan + yol + dekor tek bir pişmiş katman (bkz. ensureScene,
+     engine-canvas.js). Eskiden bunlar her karede yeniden çiziliyordu. */
+  ensureScene();
+  ctx.drawImage(sceneCanvas,0,0,LW,LH);
+  drawPathMarkers(); drawDirectionArrows(); drawSpots();
   // Katman sırası: boss auraları ve menzil halkaları zeminde,
   // sonra düşmanlar, en üstte kuleler — kuleler arkada kalmasın.
   enemies.forEach(drawBossAura);

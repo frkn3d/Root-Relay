@@ -76,10 +76,13 @@ function drawBossEnemy(e){
   });
 
   // gövde
-  const bg = ctx.createRadialGradient(-R*0.3,-R*0.35,4,0,0,R);
-  bg.addColorStop(0, flash ? '#ffffff' : '#d8f4ff');
-  bg.addColorStop(0.4, flash ? '#ffffff' : e.body);
-  bg.addColorStop(1, e.body2);
+  const bg = cachedGrad('bossBody|'+R+'|'+flash+'|'+e.body+'|'+e.body2, ()=>{
+    const g2 = ctx.createRadialGradient(-R*0.3,-R*0.35,4,0,0,R);
+    g2.addColorStop(0, flash ? '#ffffff' : '#d8f4ff');
+    g2.addColorStop(0.4, flash ? '#ffffff' : e.body);
+    g2.addColorStop(1, e.body2);
+    return g2;
+  });
   ctx.beginPath(); ctx.arc(0,0,R,0,Math.PI*2);
   ctx.fillStyle=bg; ctx.fill();
   ctx.lineWidth=3.5; ctx.strokeStyle='#0e2836'; ctx.stroke();
@@ -98,8 +101,11 @@ function drawBossEnemy(e){
     ctx.beginPath();
     ctx.moveTo(x, -h); ctx.lineTo(x-R*0.13, R*0.1); ctx.lineTo(x+R*0.13, R*0.1);
     ctx.closePath();
-    const g=ctx.createLinearGradient(x,-h,x,R*0.1);
-    g.addColorStop(0,'#ffffff'); g.addColorStop(1,'#5fa8cc');
+    const g = cachedGrad('bossCrown|'+x.toFixed(1)+'|'+h.toFixed(1)+'|'+R, ()=>{
+      const g2 = ctx.createLinearGradient(x,-h,x,R*0.1);
+      g2.addColorStop(0,'#ffffff'); g2.addColorStop(1,'#5fa8cc');
+      return g2;
+    });
     ctx.fillStyle=g; ctx.fill();
     ctx.strokeStyle='#0e2836'; ctx.lineWidth=1.8; ctx.stroke();
   }
@@ -146,8 +152,11 @@ function drawBossEnemy(e){
   ctx.fillStyle='rgba(0,0,0,0.55)';
   ctx.fillRect(-w/2, -R-20, w, 7);
   const frac = Math.max(0, e.hp/e.maxHp);
-  const hg = ctx.createLinearGradient(-w/2,0,w/2,0);
-  hg.addColorStop(0,'#ff6b6b'); hg.addColorStop(1,'#ffd36b');
+  const hg = cachedGrad('hpbar|'+w, ()=>{
+    const g2 = ctx.createLinearGradient(-w/2,0,w/2,0);
+    g2.addColorStop(0,'#ff6b6b'); g2.addColorStop(1,'#ffd36b');
+    return g2;
+  });
   ctx.fillStyle=hg;
   ctx.fillRect(-w/2, -R-20, w*frac, 7);
   ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=1.5;
@@ -173,10 +182,13 @@ function drawCubeEnemy(e){
   ctx.rotate(spin);
   const s = R*1.55;
 
-  const g = ctx.createLinearGradient(-s/2,-s/2,s/2,s/2);
-  g.addColorStop(0, flash ? '#ffffff' : '#ffd9a8');
-  g.addColorStop(0.45, flash ? '#ffffff' : e.body);
-  g.addColorStop(1, e.body2);
+  const g = cachedGrad('cube|'+s.toFixed(1)+'|'+flash+'|'+e.body+'|'+e.body2, ()=>{
+    const g2 = ctx.createLinearGradient(-s/2,-s/2,s/2,s/2);
+    g2.addColorStop(0, flash ? '#ffffff' : '#ffd9a8');
+    g2.addColorStop(0.45, flash ? '#ffffff' : e.body);
+    g2.addColorStop(1, e.body2);
+    return g2;
+  });
   ctx.fillStyle = g;
   ctx.strokeStyle = '#4a2308';
   ctx.lineWidth = Math.max(1.6, R*0.11);
@@ -264,9 +276,12 @@ function drawFlaskEnemy(e){
   ctx.lineTo(R*0.26, -R*0.95);
   ctx.closePath();
 
-  const g = ctx.createLinearGradient(-R, -R, R, R);
-  g.addColorStop(0, flash ? '#ffffff' : 'rgba(215,245,230,0.92)');
-  g.addColorStop(1, flash ? '#ffffff' : 'rgba(150,205,180,0.85)');
+  const g = cachedGrad('shieldBody|'+R+'|'+flash, ()=>{
+    const g2 = ctx.createLinearGradient(-R, -R, R, R);
+    g2.addColorStop(0, flash ? '#ffffff' : 'rgba(215,245,230,0.92)');
+    g2.addColorStop(1, flash ? '#ffffff' : 'rgba(150,205,180,0.85)');
+    return g2;
+  });
   ctx.fillStyle = g; ctx.fill();
   ctx.lineWidth = 2.2; ctx.strokeStyle = '#1e4a34'; ctx.stroke();
 
@@ -357,10 +372,13 @@ function drawCocoonEnemy(e){
   // koza gövdesi — organik, oval
   ctx.beginPath();
   ctx.ellipse(0, 0, R*0.86, R*1.05, 0, 0, Math.PI*2);
-  const g = ctx.createRadialGradient(-R*0.25,-R*0.3,2,0,0,R*1.15);
-  g.addColorStop(0, flash?'#ffffff':'#ff9a5c');
-  g.addColorStop(0.55, flash?'#ffffff':e.body);
-  g.addColorStop(1, flash?'#ffffff':e.body2);
+  const g = cachedGrad('cocoon|'+R+'|'+flash+'|'+e.body+'|'+e.body2, ()=>{
+    const g2 = ctx.createRadialGradient(-R*0.25,-R*0.3,2,0,0,R*1.15);
+    g2.addColorStop(0, flash?'#ffffff':'#ff9a5c');
+    g2.addColorStop(0.55, flash?'#ffffff':e.body);
+    g2.addColorStop(1, flash?'#ffffff':e.body2);
+    return g2;
+  });
   ctx.fillStyle=g; ctx.fill();
   ctx.lineWidth=2.2; ctx.strokeStyle='#3a0f05'; ctx.stroke();
 
@@ -429,10 +447,13 @@ function drawArmorPlate(e){
   const spark = Math.max(0, e.armorFlash || 0) / 0.28;
 
   // gövde: dikey çelik gradyanı + hafif kubbe hissi
-  const g = ctx.createLinearGradient(0, cy-h/2, 0, cy+h/2);
-  g.addColorStop(0,    '#e2e9ef');
-  g.addColorStop(0.42, '#9fadb9');
-  g.addColorStop(1,    '#5b6773');
+  const g = cachedGrad('plate|'+cy+'|'+h, ()=>{
+    const gr = ctx.createLinearGradient(0, cy-h/2, 0, cy+h/2);
+    gr.addColorStop(0,    '#e2e9ef');
+    gr.addColorStop(0.42, '#9fadb9');
+    gr.addColorStop(1,    '#5b6773');
+    return gr;
+  });
   ctx.beginPath();
   ctx.moveTo(-w/2, cy - h*0.42);
   ctx.quadraticCurveTo(0, cy - h*0.62, w/2, cy - h*0.42);   // üst kavis
@@ -516,8 +537,15 @@ function drawEnemy(e){
     });
   }
 
-  const grad=ctx.createRadialGradient(-e.radius*0.3,-e.radius*0.3,2,0,0,e.radius);
-  grad.addColorStop(0,'#fff'); grad.addColorStop(0.15,bodyColor); grad.addColorStop(1,e.body2);
+  /* Gövde gradyanı yerel koordinatlarda (ctx.translate zaten yapıldı),
+     yani yalnızca yarıçap ve iki renge bağlı. Aynı türden onlarca
+     düşman aynı gradyanı paylaşır — karede tek tek üretilmesi boşunaydı
+     (bkz. cachedGrad, render-core.js). */
+  const grad = cachedGrad('body|'+e.radius+'|'+bodyColor+'|'+e.body2, ()=>{
+    const g = ctx.createRadialGradient(-e.radius*0.3,-e.radius*0.3,2,0,0,e.radius);
+    g.addColorStop(0,'#fff'); g.addColorStop(0.15,bodyColor); g.addColorStop(1,e.body2);
+    return g;
+  });
   ctx.beginPath(); ctx.arc(0,0,e.radius,0,Math.PI*2);
   ctx.fillStyle=grad; ctx.lineWidth=2.5; ctx.strokeStyle='#241a10'; ctx.fill(); ctx.stroke();
 

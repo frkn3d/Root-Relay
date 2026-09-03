@@ -88,6 +88,7 @@ function loadLevel(idx){
   pathDecor = levelPaths.map((p,i)=>buildPathDecor(p, pathLens[i]));
   // Kurulamaz şeritler uygulanır (bkz. reseatBuildSpots)
   spots = reseatBuildSpots(level.spots, levelPaths);
+  invalidateScene();   // engine-canvas.js — yol/dekor yeniden pişsin
   gold = level.startGold;
   lives = level.startLives;
   startLivesEffective = lives;   // yıldız hesabı için taban

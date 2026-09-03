@@ -25,10 +25,9 @@ function drawLevelAura(t){
     ctx.strokeStyle = t.def.color+'55';
     ctx.lineWidth = 1.6;
     ctx.stroke();
-    ctx.beginPath(); ctx.arc(px,py,2.2,0,Math.PI*2);
-    ctx.fillStyle = col;
-    ctx.shadowColor = t.def.color; ctx.shadowBlur = 8;
-    ctx.fill();
+    // glowDot (render-core.js): bu üç nokta karedeki shadowBlur'ün
+    // en büyük kaynağıydı (13 kulede 39 bulanıklık geçişi/kare).
+    glowDot(px, py, 2.2, col, t.def.color, 8);
   }
   ctx.restore();
 }
