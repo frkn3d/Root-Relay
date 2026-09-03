@@ -28,22 +28,22 @@ function startGeneratedLevel(seed, levelNo){
    kurallarına uymak zorunda: yola ne çok yakın ne de kopuk olacak,
    komşu noktaya binmeyecek.
    ============================================================ */
-const SPOT_NUDGE_DY = [0, 18, 36, 54];        // şeritten ne kadar içeri
-const SPOT_NUDGE_DX = [0, 26, -26, 52, -52, 78, -78];
+const SPOT_NUDGE = [0, 18, 36, 54, 72];       // şeritten ne kadar içeri denenir
 const SPOT_MAX_TO_PATH = 190;                 // yoldan bu kadar uzak nokta işe yaramaz
 
 function reseatBuildSpots(raw, paths){
-  const minY = NO_BUILD_TOP, maxY = LH - NO_BUILD_BOTTOM;
+  const A = BUILD_AREA;                       // config.js
   const minPath = (typeof GEN !== 'undefined') ? GEN.MIN_SPOT_TO_PATH : 60;
   const minGap  = (typeof GEN !== 'undefined') ? GEN.MIN_SPOT_TO_SPOT : 74;
 
   const out = [], stray = [];
   raw.forEach(s=>{
-    if(s.y >= minY && s.y <= maxY) out.push({ x:s.x, y:s.y, occ:null });
+    if(insideBuildArea(s.x, s.y)) out.push({ x:s.x, y:s.y, occ:null });
     else stray.push(s);
   });
 
   function fits(x, y){
+    if(!insideBuildArea(x, y)) return false;
     let dp = Infinity;
     for(const p of paths) dp = Math.min(dp, distToPath(x, y, p));   // levelgen.js
     if(dp < minPath || dp > SPOT_MAX_TO_PATH) return false;
@@ -51,16 +51,24 @@ function reseatBuildSpots(raw, paths){
     return true;
   }
 
+  /* Şeride düşen noktayı en yakın kenardan içeri çeker. Hem dikey hem
+     yatay taşma olabilir (köşeler), o yüzden ikisi de sıkıştırılıyor;
+     sonra iki eksende de kademeli olarak biraz daha içeri denenir. */
   stray.forEach(s=>{
-    const top  = s.y < minY;
-    const edge = top ? minY : maxY;
-    const dir  = top ? 1 : -1;
-    for(const dy of SPOT_NUDGE_DY){
-      const y = edge + dir*dy;
-      for(const dx of SPOT_NUDGE_DX){
-        const x = s.x + dx;
-        if(x < 40 || x > LW-40) continue;
-        if(fits(x, y)){ out.push({ x:Math.round(x), y:Math.round(y), occ:null }); return; }
+    const cx = Math.min(Math.max(s.x, A.x0), A.x1);
+    const cy = Math.min(Math.max(s.y, A.y0), A.y1);
+    const inX = (s.x < A.x0) ? 1 : (s.x > A.x1 ? -1 : 0);
+    const inY = (s.y < A.y0) ? 1 : (s.y > A.y1 ? -1 : 0);
+    // Taşmadığı eksende yana kayarak da dene
+    const slideX = inX ? [0] : [0, 26, -26, 52, -52, 78, -78];
+    const slideY = inY ? [0] : [0, 26, -26, 52, -52];
+    for(const push of SPOT_NUDGE){
+      for(const sx of slideX){
+        for(const sy of slideY){
+          const x = cx + inX*push + sx;
+          const y = cy + inY*push + sy;
+          if(fits(x, y)){ out.push({ x:Math.round(x), y:Math.round(y), occ:null }); return; }
+        }
       }
     }
     // Hiçbir yere sığmadı — bu nokta bu bölümde yok sayılır.

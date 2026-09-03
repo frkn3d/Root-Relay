@@ -230,10 +230,36 @@ const TOWER_TYPES = {
    kule kör noktaya düşüyordu. Şerit çekmecenin tipik bir telefon
    ekranında kapladığı yüksekliğe göre seçildi.
 
-   Uygulaması: bkz. reseatBuildSpots (engine-flow.js). Şeride düşen
-   yapı noktaları SİLİNMEZ, içeri çekilir. */
+   YAN: aynı sorun soldan ve sağdan da var — kule gövdesi merkezinin
+   ~32 piksel yanına kadar uzanır (kaide 22, yükseltme rozeti 29) ve
+   çerçevenin yuvarlatılmış köşesi orayı kırpar. Üstteki kadar geniş
+   olmasına gerek yok, çünkü çizim yana yukarıdaki kadar taşmıyor.
+
+   Uygulaması iki yerde:
+     • Üretilmiş bölümler noktaları zaten bu dikdörtgenin İÇİNDE
+       üretir (spotGridCandidates, levelgen.js) — sonradan kırpılıp
+       savunma kapasitesi kaybetmesinler diye.
+     • Elle yazılmış klasik bölümler ve emniyet payı için
+       reseatBuildSpots (engine-flow.js) şeride düşeni siler değil,
+       içeri çeker. */
 const NO_BUILD_TOP    = 70;
 const NO_BUILD_BOTTOM = 130;
+const NO_BUILD_SIDE   = 46;
+
+/* Kule dikilebilir dikdörtgen — hem üretici hem yükleyici bunu kullanır.
+   LW/LH burada yok (engine-canvas.js sonra yükleniyor), sabit saha
+   ölçüsü 600x1000 doğrudan yazıldı. */
+const BUILD_AREA = {
+  x0: NO_BUILD_SIDE,
+  x1: 600 - NO_BUILD_SIDE,
+  y0: NO_BUILD_TOP,
+  y1: 1000 - NO_BUILD_BOTTOM,
+};
+
+function insideBuildArea(x, y){
+  return x >= BUILD_AREA.x0 && x <= BUILD_AREA.x1
+      && y >= BUILD_AREA.y0 && y <= BUILD_AREA.y1;
+}
 
 /* Kule hedefleme öncelikleri. 'first' varsayılan (çıkışa en yakın). */
 const TARGET_MODES = [
@@ -261,12 +287,17 @@ const LEVELS = [
       {x:-20,y:120},{x:460,y:120},{x:460,y:300},{x:140,y:300},{x:140,y:480},
       {x:460,y:480},{x:460,y:660},{x:140,y:660},{x:140,y:840},{x:460,y:840},{x:460,y:1000},
     ],
+    /* Noktalar kule dikilebilir dikdörtgenin (BUILD_AREA, yukarı) içinde
+       durmak zorunda; en üstteki ve en alttaki üç nokta bu yüzden
+       içeri alındı (130,55 -> 130,180 · 200,905 -> 88,870 ·
+       530,920 -> 530,870). Silinmediler: yeni konumlar da aynı
+       kuralları sağlıyor — yola en az 60, komşuya en az 74 piksel. */
     spots:[
-      {x:130,y:55}, {x:330,y:185}, {x:530,y:210},
+      {x:130,y:180}, {x:330,y:185}, {x:530,y:210},
       {x:400,y:235}, {x:200,y:365}, {x:60,y:390},
       {x:400,y:415}, {x:200,y:545}, {x:530,y:570},
       {x:400,y:595}, {x:200,y:725}, {x:60,y:750},
-      {x:400,y:775}, {x:200,y:905}, {x:530,y:920},
+      {x:400,y:775}, {x:88,y:870}, {x:530,y:870},
     ],
     difficulty:{ hpGrowth:0.16, speedGrowth:0.025, speedCap:1.5, countBase:7, countGrowth:1.85 },
     waveOverrides:{
@@ -285,13 +316,17 @@ const LEVELS = [
       {x:520,y:400},{x:520,y:560},{x:200,y:560},{x:200,y:720},{x:520,y:720},
       {x:520,y:880},{x:300,y:880},{x:300,y:1000},
     ],
+    /* Aynı kural (bkz. Bölüm 1): şeride taşan yedi nokta içeri alındı.
+       Bölümün savunma kapasitesi korunsun diye SİLİNMEDİLER — hepsi
+       yola 60, komşuya 74 pikselden yakın olmayan en yakın geçerli
+       konuma taşındı. */
     spots:[
-      {x:400,y:35}, {x:560,y:155}, {x:250,y:160},
-      {x:110,y:295}, {x:30,y:320},
-      {x:180,y:335}, {x:420,y:465}, {x:575,y:480},
+      {x:400,y:150}, {x:554,y:154}, {x:250,y:160},
+      {x:110,y:295}, {x:46,y:450},
+      {x:180,y:335}, {x:420,y:465}, {x:554,y:350},
       {x:260,y:495}, {x:460,y:625}, {x:130,y:640},
-      {x:260,y:655}, {x:460,y:785}, {x:575,y:800},
-      {x:410,y:945}, {x:230,y:940},
+      {x:260,y:655}, {x:460,y:785}, {x:554,y:670},
+      {x:394,y:820}, {x:230,y:870},
     ],
     difficulty:{ hpGrowth:0.21, speedGrowth:0.03, speedCap:1.65, countBase:8, countGrowth:2.15 },
     waveOverrides:{

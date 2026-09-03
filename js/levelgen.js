@@ -100,6 +100,12 @@ const GEN = {
   MAX_WAVES: 18,                   // bölüm başına azami dalga sayısı
   LONG_PATH_CHANCE: 0.8,           // bölümlerin bu oranı uzun/karmaşık yol alır
   MAX_SPOTS: 18,                   // kule dikme noktası üst sınırı — hiçbir bölüm bunu aşamaz
+  /* Çok rotalı bölümlerde (2 giriş ya da 2 çıkış) oyuncu iki ayrı
+     hattı aynı anda tutmak zorunda; 18 nokta ikiye bölününce her
+     kola 9 düşüyor ve ikisi de savunulamıyordu. Bu bölümlerde sınır
+     biraz yükseliyor — kule TÜRÜ başına satın alma limitleri
+     (TOWER_TYPES.maxCount) zaten toplamı 24'te tutuyor. */
+  MAX_SPOTS_MULTI: 22,
 };
 
 /* ---------- Zorluk eğrisi ----------
@@ -158,12 +164,20 @@ function cellCenter(cx, cy){
    hizasına uyan düzenli sıra/sütunlar halinde durur. */
 const SPOT_GRID_COLS = GRID_COLS * 3;
 const SPOT_GRID_ROWS = GRID_ROWS * 3;
+/* Aday ızgarası — YALNIZCA kule dikilebilir dikdörtgenin içi
+   (BUILD_AREA, config.js). Eskiden tüm sahaya yayılıyordu ve şeride
+   düşenler bölüm yüklenirken kırpılıyordu; yani üretici, sonradan
+   çöpe gidecek noktalar üretip bazı bölümleri savunmasız bırakıyordu
+   (en kötüsü 18 noktadan 12'ye düşüyordu). Artık üretici ile
+   yükleyici aynı dikdörtgeni biliyor. */
 function spotGridCandidates(){
   const cw = GEN.W / SPOT_GRID_COLS, ch = GEN.H / SPOT_GRID_ROWS;
   const pts = [];
   for(let cx=0; cx<SPOT_GRID_COLS; cx++){
     for(let cy=0; cy<SPOT_GRID_ROWS; cy++){
-      pts.push({ x: cw*(cx+0.5), y: ch*(cy+0.5) });
+      const x = cw*(cx+0.5), y = ch*(cy+0.5);
+      if(!insideBuildArea(x, y)) continue;    // config.js
+      pts.push({ x, y });
     }
   }
   return pts;
@@ -428,6 +442,48 @@ function distToPath(px, py, pts){
   return best;
 }
 
+/* ============================================================
+   ROTA PAYI — her rotanın kendi kule kotası.
+
+   Eski yerleştirme tek bir havuza bakıyordu: "yolun 165 pikseli
+   içindeki herhangi bir yer" uygundu. Çok girişli/çıkışlı bölümlerde
+   bu, bir rotanın diğerinin payını yemesine yol açıyordu — ölçümde
+   bazı rotaya yalnızca 3 kule noktası düşüyordu, yani o kol pratikte
+   savunulamıyordu.
+
+   Kota uzunlukla ölçekleniyor ama TABANI var: kısa bir rota, kısa
+   olduğu için kolay geçilecek bir kestirme olmasın diye birim
+   uzunluk başına DAHA YOĞUN kule alır.
+     1000 px yol -> 6 nokta (170 px'e bir kule)
+     2500 px yol -> 12 nokta (208 px'e bir kule)
+   ============================================================ */
+const SPOT_SERVE_RANGE = 165;   // bu mesafedeki nokta o yolu dövebilir
+const SERVE_PER_LEN    = 210;   // uzun rotalarda her bu kadar px'e bir kule
+const MIN_SERVE        = 6;     // en kısa rota bile bundan az alamaz
+const MAX_SERVE        = 12;
+
+function routeServiceNeed(len){
+  return Math.max(MIN_SERVE, Math.min(MAX_SERVE, Math.ceil(len / SERVE_PER_LEN)));
+}
+
+/* Bir rotayı kaç nokta dövebiliyor */
+function countServing(spots, path){
+  let n = 0;
+  for(const s of spots) if(distToPath(s.x, s.y, path) < SPOT_SERVE_RANGE) n++;
+  return n;
+}
+
+/* Bölümün en kötü rotası kotasının ne kadar altında? 0 = sorun yok.
+   generateLevel bunu yolu yeniden şekillendirmek için kullanır. */
+function routeStarvation(spots, paths){
+  let worst = 0;
+  for(const p of paths){
+    const need = routeServiceNeed(polyLen(p));
+    worst = Math.max(worst, need - countServing(spots, p));
+  }
+  return worst;
+}
+
 function placeSpots(rng, paths, diff, totalLen){
   const {MIN_SPOT_TO_PATH,MIN_SPOT_TO_SPOT,MAX_SPOTS} = GEN;
 
@@ -440,8 +496,9 @@ function placeSpots(rng, paths, diff, totalLen){
   // Üst sınır: kule dikme noktası hiçbir şekilde MAX_SPOTS'u aşamaz.
   // Uzun yollu bölümlerde minBySize tek başına bu sınırı aşabildiğinden
   // hem hedef hem de aşağıdaki gevşetme geri dönüşü buna göre kırpılır.
-  const target = Math.min(rawTarget, MAX_SPOTS);
-  const minTarget = Math.min(minBySize, MAX_SPOTS);
+  const cap = paths.length > 1 ? GEN.MAX_SPOTS_MULTI : MAX_SPOTS;
+  const target = Math.min(rawTarget, cap);
+  const minTarget = Math.min(minBySize, cap);
 
   // Kuleler artık serbest rastgele koordinatlarda değil, yolun kullandığı
   // ızgaranın 3 katı sıklıkta bir ALT IZGARA üzerindeki adaylardan seçilir
@@ -466,6 +523,24 @@ function placeSpots(rng, paths, diff, totalLen){
     return true;
   }
 
+  /* FAZ 1 — ROTA PAYI. En kısa rotadan başlanır: o en kırılgan olan,
+     ve uzun rota nasılsa geniş bir alandan besleniyor. Adaylar
+     karıştırılmış sırada geziliyor (yakınlık sırasına göre değil),
+     yoksa noktalar yolun dibine dizilip dağılım bozulurdu. */
+  const byLen = paths.map(p=>({ p, len: polyLen(p) })).sort((a,b)=>a.len-b.len);
+  const share = Math.max(MIN_SERVE, Math.floor(cap / paths.length) + 1);
+  byLen.forEach(r=>{
+    const need = Math.min(routeServiceNeed(r.len), share);
+    let have = countServing(spots, r.p);
+    if(have >= need) return;
+    for(const c of candidates){
+      if(have >= need || spots.length >= cap) break;
+      if(distToPath(c.x, c.y, r.p) >= SPOT_SERVE_RANGE) continue;
+      if(tryAdd(c.x, c.y, MIN_SPOT_TO_PATH, SPOT_SERVE_RANGE, MIN_SPOT_TO_SPOT)) have++;
+    }
+  });
+
+  /* FAZ 2 — genel doldurma: kalan bütçe sahanın tamamına dağılır. */
   candidates.forEach(c=>{
     if(spots.length >= target) return;
     tryAdd(c.x, c.y, MIN_SPOT_TO_PATH, 165, MIN_SPOT_TO_SPOT);
@@ -474,10 +549,16 @@ function placeSpots(rng, paths, diff, totalLen){
   // Hedefe ulaşılamadıysa (aday ızgarası bu kısıtlarla yetersiz kaldıysa)
   // kısıtı kademeli gevşetip aynı aday listesini tekrar dener.
   // (minTarget zaten MAX_SPOTS'a kırpılı — bu döngü de üst sınırı asla aşamaz)
+  /* Gevşetme, aralığı SPOT_GAP_FLOOR'un altına indiremez: iki kule
+     görsel olarak üst üste binmesin. Son seviye bir kulenin kaidesi
+     ~46 piksel geniş, 60 piksel aralık onları ayrı tutar. Eskiden
+     taban 38'e kadar iniyordu ve nadiren de olsa iki kule birbirine
+     yapışıyordu. */
+  const SPOT_GAP_FLOOR = 60;
   let relax = 0;
   while(spots.length < minTarget && relax < 3){
     relax++;
-    const minGap = MIN_SPOT_TO_SPOT - relax*12;
+    const minGap = Math.max(SPOT_GAP_FLOOR, MIN_SPOT_TO_SPOT - relax*12);
     const minPath = MIN_SPOT_TO_PATH - relax*6;
     candidates.forEach(c=>{
       if(spots.length >= minTarget) return;
@@ -797,13 +878,51 @@ function generateLevel(seed, levelNo){
      aynı tohumdan türetilir, yani sonuç yine deterministiktir. */
   const CAP = GEN.H * GEN.MAX_PATH_RATIO;
   const scales = [1, 0.8, 0.65, 0.5, 0.4];
-  let routes = null, totalLen = 0;
-  for(let i=0;i<scales.length;i++){
-    const rngTry = makeRng(hashSeed(seed + '#' + levelNo));
-    routes = buildRoutes(rngTry, diff, scales[i]);
-    totalLen = routes.paths.reduce((s,p)=>s+polyLen(p), 0);
-    if(totalLen <= CAP) break;
+
+  function shapeRoutes(salt){
+    let r = null, len = 0;
+    for(let i=0;i<scales.length;i++){
+      const rngTry = makeRng(hashSeed(seed + '#' + levelNo + salt));
+      r = buildRoutes(rngTry, diff, scales[i]);
+      len = r.paths.reduce((s,p)=>s+polyLen(p), 0);
+      if(len <= CAP) break;
+    }
+    return { routes:r, totalLen:len };
   }
+
+  /* KURAL 8: HER ROTA SAVUNULABİLİR OLMALI.
+     Bazı yol şekilleri, kuleyi koyacak yer bırakmıyor: kol kenara
+     yapışıyor, ya da iki rota birbirine öyle yakın geçiyor ki
+     aralarına nokta sığmıyor. Sonuç, oyuncunun döveMEDİĞİ bir
+     kestirme — bir bölümü haksız yere kaybettiren şey bu.
+
+     placeSpots artık her rotaya kendi kotasını ayırıyor
+     (bkz. routeServiceNeed); yine de kota dolmuyorsa sorun kule
+     yerleştirmede değil YOLUN ŞEKLİNDE demektir. O yüzden yol
+     yeniden üretiliyor: her deneme aynı tohumdan ama farklı bir
+     tuzdan türetildiği için sonuç hâlâ deterministik, sadece o
+     bölüm başka bir şekil alıyor.
+
+     En iyi deneme saklanıyor: hiçbiri kusursuz değilse en az aç
+     kalan şekil kullanılır — yani kural asla bölümü bozamaz,
+     yalnızca iyileştirir. */
+  const SHAPE_SALTS = ['', '#s2', '#s3', '#s4', '#s5', '#s6'];
+  let best = null, bestScore = Infinity;
+
+  for(const salt of SHAPE_SALTS){
+    const attempt = shapeRoutes(salt);
+    /* Deneme yerleştirmesi TEK KULLANIMLIK bir akışla yapılır; asıl
+       akış (rng) aşağıda, yalnızca kazanan şekil için bir kez
+       tüketilir. Böylece yeniden şekillendirme gerekmeyen bölümlerde
+       rastgele dizisi eskisiyle birebir aynı kalır — tema, dekor ve
+       dalga kompozisyonu kaymaz. */
+    const probe = makeRng(hashSeed(seed + '#' + levelNo + '#rest'));
+    const sp = placeSpots(probe, attempt.routes.paths, diff, attempt.totalLen);
+    const starve = routeStarvation(sp, attempt.routes.paths);
+    if(starve < bestScore){ bestScore = starve; best = attempt; }
+    if(starve === 0) break;
+  }
+  const routes = best.routes, totalLen = best.totalLen;
 
   // Yerleşim ve tema için ayrı bir akış (yol denemelerinden etkilenmesin)
   const rng = makeRng(hashSeed(seed + '#' + levelNo + '#rest'));
