@@ -494,13 +494,22 @@ function syncAmbienceWithSoundPref(){
 }
 
 /* ============================================================
-   DÜŞMAN AYAK SESLERİ — her düşman için ayrı ayrı çalmak kakofoni
-   olurdu (bir dalgada 100+ birim olabiliyor). Bunun yerine sahada
-   BULUNAN HER TÜR için, o türün hızına göre belirlenen aralıklarla
-   tek bir adım sesi çalınır; üstüne genel bir hız sınırı konur.
+   DÜŞMAN AYAK SESLERİ — HER BİRİM KENDİ ADIMINI ATAR.
+   Önceden tür başına tek sayaç vardı: sahadaki bütün sürüngenler
+   aynı anda tek bir adım sesi çıkarıyordu, bölük yürüyüşü gibi
+   duyuluyordu. Artık her düşmanın kendi sayacı var ve aralığı
+   kendi tempo çarpanıyla (e.gait, engine-update.js) ölçekleniyor —
+   yani sesler animasyonuyla aynı ritimde ve birbirinden bağımsız.
+
+   Kalabalıkta bu çok fazla örnek demek olurdu; iki fren var:
+     walkGate — iki adım sesi arasındaki asgari boşluk (global)
+     ses düzeyi — kalabalık arttıkça TEK adım kısılır; toplam
+                  gürültü adım sayısından gelsin, tek tek
+                  yükseklikten değil.
+   Sayaç düşmanın kendi üzerinde (e.stepT) tutuluyor, böylece
+   birim ölünce temizlenecek ayrı bir tablo kalmıyor.
    ============================================================ */
-const walkTimers = {};
-let walkGate = 0;             // türler arası asgari boşluk (saniye)
+let walkGate = 0;             // iki adım arası asgari boşluk (saniye)
 
 function updateWalkSounds(dt){
   if(!soundEnabled || sfxMode === 'off' || sfxMode === 'idle') return;
@@ -508,26 +517,26 @@ function updateWalkSounds(dt){
 
   walkGate -= dt;
 
-  // Sahadaki türleri say — kalabalık tür biraz daha yüksek duyulsun.
-  const counts = {};
-  for(let i=0;i<enemies.length;i++){
-    const ty = enemies[i].type;
-    if(ty) counts[ty] = (counts[ty]||0) + 1;
+  const n = enemies.length;
+  // 1 birim: tam ses, 4 birim: ~0.6, 16 birim: ~0.4
+  const vol = Math.max(0.34, Math.min(1, 1.15 / (0.8 + Math.log2(1+n)*0.5)));
+
+  for(let i=0;i<n;i++){
+    const e = enemies[i];
+    const def = ENEMY_TYPES[e.type];
+    if(!def || !SFX['walk_'+e.type]) continue;
+
+    // Hızlı birim sık, ağır birim seyrek adımlar; e.gait bireysel fark
+    let interval = Math.max(0.35, Math.min(2.2, 0.9 / Math.max(0.25, def.speed))) * (e.gait || 1);
+    // Donmuş birim ağır ağır yürür, adımı da seyrekleşir
+    if(e.slowT > 0 && e.slowFactor > 0) interval /= e.slowFactor;
+
+    if(e.stepT === undefined) e.stepT = Math.random()*interval;   // ilk adım rastgele anda
+    e.stepT -= dt;
+    if(e.stepT > 0) continue;
+    e.stepT = interval;
+    if(walkGate > 0) continue;   // az önce başkası bastı; bu adım yutulur
+    if(playSfx('walk_'+e.type, { vol, rate:(e.stepPitch || 1)*sfxWobble(0.05) }))
+      walkGate = 0.085;
   }
-
-  Object.keys(walkTimers).forEach(ty=>{ if(!counts[ty]) delete walkTimers[ty]; });
-
-  Object.keys(counts).forEach(ty=>{
-    const def = ENEMY_TYPES[ty];
-    if(!def || !SFX['walk_'+ty]) return;
-    // Hızlı birim sık, ağır birim seyrek adımlar
-    const interval = Math.max(0.35, Math.min(2.2, 0.9 / Math.max(0.25, def.speed)));
-    if(walkTimers[ty] === undefined) walkTimers[ty] = Math.random()*interval;
-    walkTimers[ty] -= dt;
-    if(walkTimers[ty] > 0) return;
-    walkTimers[ty] = interval;
-    if(walkGate > 0) return;             // başka bir tür az önce çaldı
-    const crowd = Math.min(1.6, 0.7 + Math.log2(1 + counts[ty])*0.25);
-    if(playSfx('walk_'+ty, { vol:crowd, rate:sfxWobble(0.08) })) walkGate = 0.07;
-  });
 }

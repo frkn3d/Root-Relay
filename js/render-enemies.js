@@ -123,13 +123,15 @@ function drawBossEnemy(e){
   ctx.beginPath(); ctx.moveTo(-R*0.55,eyeY-R*0.32); ctx.lineTo(-R*0.12,eyeY-R*0.12); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(R*0.55,eyeY-R*0.32); ctx.lineTo(R*0.12,eyeY-R*0.12); ctx.stroke();
 
-  // etrafında dönen buz parçaları
+  // etrafında dönen buz parçaları — fxPhase her boss'un yörüngesini
+  // kaydırır, yoksa sahadaki bütün Don Efendileri aynı anda döner.
+  const ph = e.fxPhase || 0;
   for(let i=0;i<5;i++){
-    const ang = t0*0.9 + i*(Math.PI*2/5);
-    const rr = R+16+Math.sin(t0*2+i)*4;
+    const ang = t0*0.9 + i*(Math.PI*2/5) + ph;
+    const rr = R+16+Math.sin(t0*2+i+ph)*4;
     ctx.save();
     ctx.translate(Math.cos(ang)*rr, Math.sin(ang)*rr*0.7);
-    ctx.rotate(t0*2+i);
+    ctx.rotate(t0*2+i+ph);
     ctx.beginPath(); ctx.moveTo(0,-4); ctx.lineTo(-3,3); ctx.lineTo(3,3); ctx.closePath();
     ctx.fillStyle='rgba(220,248,255,0.85)'; ctx.fill();
     ctx.restore();
@@ -439,7 +441,7 @@ function drawEnemy(e){
     ctx.font='700 10px "Baloo 2", sans-serif';
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillStyle='rgba(180,255,210,0.9)';
-    ctx.fillText('+', 0, -e.radius - 6 - ((t0*20)%10));
+    ctx.fillText('+', 0, -e.radius - 6 - (((t0 + (e.fxPhase||0))*20)%10));
   }
 
   // ZEHİR: yükselen yeşil kabarcıklar — ateşle ORTAK yuvayı paylaşır,
@@ -448,8 +450,9 @@ function drawEnemy(e){
     const t0 = performance.now()/1000;
     ctx.beginPath(); ctx.arc(0,0,e.radius+1,0,Math.PI*2);
     ctx.fillStyle='rgba(150,220,80,0.28)'; ctx.fill();
+    const ph = e.fxPhase || 0;
     for(let i=0;i<3;i++){
-      const cyc = (t0*1.1 + i*0.33) % 1;
+      const cyc = (t0*1.1 + i*0.33 + ph) % 1;
       const bx = (i-1)*e.radius*0.45;
       const by = -cyc*(e.radius+10);
       ctx.beginPath(); ctx.arc(bx, by, 1.6*(1-cyc*0.5), 0, Math.PI*2);
@@ -463,6 +466,9 @@ function drawEnemy(e){
      yuvasını paylaştığı için ayrım dotKind ile yapılır. */
   if(e.dotT > 0 && e.dotKind === 'fire'){
     const t0 = performance.now()/1000;
+    // fxPhase: her yanan düşmanın alevi kendi fazında oynasın —
+    // yoksa sahadaki bütün alevler aynı anda titrer.
+    const ph = e.fxPhase || 0;
     const flick = 0.75 + Math.sin(t0*17 + e.bounce)*0.25;
 
     // 1) gövdeyi saran sıcak hale
@@ -476,8 +482,8 @@ function drawEnemy(e){
     // 2) gövdenin çevresini saran alev dilleri — her biri kendi fazında
     const tongues = 7;
     for(let i=0;i<tongues;i++){
-      const a = i*(Math.PI*2/tongues) + Math.sin(t0*1.3+i)*0.12;
-      const wob = 0.6 + 0.4*Math.sin(t0*11 + i*2.3);
+      const a = i*(Math.PI*2/tongues) + Math.sin(t0*1.3+i+ph)*0.12;
+      const wob = 0.6 + 0.4*Math.sin(t0*11 + i*2.3 + ph);
       const h = (e.radius*0.62 + 5) * wob;          // dilin boyu
       const w = e.radius*0.30;                      // dilin genişliği
       const bx = Math.cos(a)*e.radius*0.92;
@@ -487,7 +493,7 @@ function drawEnemy(e){
       // Diller gövdeye dik değil, her zaman YUKARI uzanır (alev
       // yerçekimine karşı yükselir) — böylece top gibi değil, yanan
       // bir şey görünür. Hafif sallanma rüzgâr hissi verir.
-      ctx.rotate(Math.cos(t0*3+i)*0.22);
+      ctx.rotate(Math.cos(t0*3+i+ph)*0.22);
       ctx.beginPath();
       ctx.moveTo(-w/2, 0);
       ctx.quadraticCurveTo(-w*0.55, -h*0.55, 0, -h);
@@ -503,8 +509,8 @@ function drawEnemy(e){
 
     // 3) tepede yükselen ana alev + kopan korlar
     for(let i=0;i<4;i++){
-      const cyc = (t0*1.7 + i*0.26) % 1;
-      const bx = (i-1.5)*e.radius*0.42 + Math.sin(t0*4+i)*1.6;
+      const cyc = (t0*1.7 + i*0.26 + ph) % 1;
+      const bx = (i-1.5)*e.radius*0.42 + Math.sin(t0*4+i+ph)*1.6;
       const by = -e.radius*0.6 - cyc*(e.radius+16);
       const r  = 2.4*(1-cyc*0.75);
       ctx.beginPath(); ctx.arc(bx,by,r,0,Math.PI*2);

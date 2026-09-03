@@ -8,6 +8,26 @@
    değeriyle bildirir: false → update() o kare erken durur.
    ============================================================ */
 
+/* Her düşmanın KENDİNE AİT yürüyüş kimliği. Aynı anda doğan birimler
+   bölük hâlinde adım atmasın diye dördü de rastgele:
+     bounce    — salınımın başlangıç fazı (nerede duruyor)
+     gait      — salınımın tempo çarpanı (ne hızda sallanıyor). Yürüme
+                 HIZINI değiştirmez, yalnızca animasyon ve ayak sesi
+                 ritmini; böylece iki birim asla aynı adımda kalmaz,
+                 üstelik zamanla birbirlerinden gitgide ayrışırlar.
+     fxPhase   — alev/kabarcık/yörünge gibi süre tabanlı efektlerin fazı
+     stepPitch — ayak sesinin perdesi; her birim biraz farklı duyulur
+   Tek yerde toplandı çünkü düşmanlar üç ayrı noktada doğuyor
+   (dalga çizelgesi, Kuluçka'nın yavruları, bölünen küp). */
+function gaitTraits(){
+  return {
+    bounce:    Math.random()*10,
+    gait:      0.80 + Math.random()*0.45,
+    fxPhase:   Math.random()*Math.PI*2,
+    stepPitch: 0.92 + Math.random()*0.16
+  };
+}
+
 /* Dalga zaman çizelgesini ilerletir, sırası gelen düşmanları doğurur
    ve dalga temizlendiyse sonrakine hazırlanır.
    false → son dalga da bitti, bölüm kazanıldı. */
@@ -21,7 +41,7 @@ function updateWaveProgress(dt){
           entry.spawned=true;
           enemies.push({
             ...entry, dist:0, flashT:0,
-            bounce:Math.random()*10, slowT:0, slowFactor:1,
+            ...gaitTraits(), slowT:0, slowFactor:1,
             // Her birim kendi salınım fazı/frekansı/genliğiyle doğar;
             // aksi halde aynı anda doğanlar senkronize hareket eder.
             wobbleT: Math.random()*Math.PI*2,
@@ -110,7 +130,9 @@ function updateEnemyMovement(dt){
       e.spin = (e.spin||0) + dt*(2.5 + off*2) * (e.spinDir || 1);
     }
 
-    e.bounce += dt*e.speed*slowMult*9;
+    // gait: bireysel tempo çarpanı — aynı türden iki birim bile
+    // birbirinden farklı hızda sallanır ve zamanla ayrışır.
+    e.bounce += dt*e.speed*slowMult*9*(e.gait || 1);
     if(e.flashT>0) e.flashT -= dt*3;
     if(e.blockFlash>0) e.blockFlash -= dt*3;
     if(e.slowT>0) e.slowT -= dt;
@@ -133,7 +155,7 @@ function updateEnemyMovement(dt){
           gold: Math.max(1, Math.round(def.gold*m.goldMul)), dmgToLives: def.dmgToLives,
           pathIdx: e.pathIdx || 0,
           dist: Math.max(0, e.dist - 12),
-          flashT:0, slowT:0, slowFactor:1, bounce:Math.random()*10,
+          flashT:0, slowT:0, slowFactor:1, ...gaitTraits(),
           wobbleT:Math.random()*Math.PI*2, wobbleSeed:Math.random()*2.2,
           wobbleScale:0.65+Math.random()*0.7, wobblePhase2:Math.random()*Math.PI*2,
           spin:Math.random()*Math.PI*2, spinDir:Math.random()<0.5?-1:1,
@@ -599,7 +621,7 @@ function resolveEnemyDeaths(){
             spin: Math.random()*Math.PI*2,
             spinDir: Math.random()<0.5 ? -1 : 1,
             flashT: 0, slowT: e.slowT, slowFactor: e.slowFactor,
-            bounce: Math.random()*10,
+            ...gaitTraits(),
           });
         }
         for(let i=0;i<10;i++){
