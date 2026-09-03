@@ -155,7 +155,8 @@ function showMenuPage(id){
     p.classList.toggle('active', p.id===id);
   });
   if(id==='menuMain') { refreshGemDisplay(); refreshContinueButton(); }
-  if(id==='menuLevels') renderStartLevelList();
+  if(id==='menuAdventure') advRenderWorld();      // adventure-ui.js
+  if(id==='menuRegion')    advRenderRegion();     // adventure-ui.js
   if(id==='menuStats') renderStatsScreen();
 }
 
@@ -210,21 +211,23 @@ function refreshGemDisplay(){
   if(b) b.textContent = g;
 }
 
+/* "Devam Et" maceranın sıradaki bölümünü gösterir. Hiç oynanmamışsa
+   düğme yine de aktiftir — o zaman 1. bölümü açar, yani oyuna en kısa
+   giriş yolu olur. */
 function refreshContinueButton(){
   const btn = document.getElementById('mmContinue');
   if(!btn) return;
-  const r = getResume();
-  if(r && LEVELS[r.levelIdx]){
-    btn.disabled = false;
-    btn.textContent = `▶ Devam Et — ${LEVELS[r.levelIdx].name}`;
-  } else {
-    btn.disabled = true;
-    btn.textContent = '▶ Devam Et';
-  }
+  const n = advNextPlayable();                 // adventure-ui.js
+  const r = regionOf(n);
+  btn.disabled = false;
+  btn.textContent = `▶ Devam Et — ${r.short} ${localIndexOf(n)}`;
 }
 
-function openStartScreen(){
-  showMenuPage('menuMain');
+/* page verilmezse ana menü açılır. Macera içinden gelen oyuncu
+   yolculuğun kaldığı yere dönsün diye bölge haritası da istenebilir
+   (bkz. goToMainMenu, engine-flow.js). */
+function openStartScreen(page){
+  showMenuPage(page || 'menuMain');
   document.body.classList.add('in-menu');
   if(typeof updateAmbience === 'function') updateAmbience();   // sfx.js — menü teması girsin
   document.getElementById('startScreen').classList.remove('hide');
@@ -243,18 +246,12 @@ function closeStartScreen(){
   }
 }
 
-/* ---- Bölüm kilitleri ----
-   TEST AŞAMASI: kilitler geçici olarak kapalı. Yayına geçerken
-   UNLOCK_ALL değerini false yapmak yeterli. */
-const UNLOCK_ALL = true;
-
-function isLevelUnlocked(idx){
-  if(UNLOCK_ALL) return true;
-  if(idx <= 0) return true;
-  const prev = LEVELS[idx-1];
-  if(!prev) return false;
-  return getLevelProgress(prev.id).bestStars > 0;
-}
+/* Klasik bölüm kilitleri ve "Bölüm Seç" listesi kaldırıldı.
+   O ekran yalnızca elle yazılmış iki bölümü listeliyordu ve
+   UNLOCK_ALL=true olduğu için kilit mantığı zaten hiç çalışmıyordu.
+   Yerini Macera aldı: kilitler artık adventure.js'te, gerçek 1000
+   bölümün yıldız kaydından türetiliyor. LEVELS dizisi duruyor —
+   loadLevel(0) hâlâ açılış durumunu kuruyor. */
 
 /* ============================================================
    1000 BÖLÜM — bölüm numarası girip doğrudan oynama
@@ -262,8 +259,9 @@ function isLevelUnlocked(idx){
    Bölümler tek bir sabit tohumdan üretilir; oyuncunun girdiği sayı
    bölüm numarasıdır. Böylece herkes aynı 1000 bölümü oynar ve
    "Bölüm 347" herkeste aynı haritadır.
+
+   WORLD_SEED levelgen.js'te tanımlı — Macera da aynı sabiti kullanıyor.
    ============================================================ */
-const WORLD_SEED = 'root-relay';
 
 function currentLevelNo(){
   const el = document.getElementById('seedInput');
@@ -304,46 +302,6 @@ function renderStars(n){
   let s='';
   for(let i=0;i<3;i++) s += i<n ? '⭐' : '☆';
   return s;
-}
-
-function renderStartLevelList(){
-  const el = document.getElementById('ssLevelList');
-  if(!el) return;
-  el.innerHTML='';
-  LEVELS.forEach((lv,i)=>{
-    const prog = getLevelProgress(lv.id);
-    const unlocked = isLevelUnlocked(i);
-    const card=document.createElement('div');
-    card.className='ss-level-card' + (unlocked ? '' : ' locked');
-
-    if(unlocked){
-      card.innerHTML = `
-        <div class="ss-level-info">
-          <div class="ss-level-name">${lv.name}</div>
-          <div class="ss-level-stars">${renderStars(prog.bestStars)}</div>
-          <div class="ss-level-best">${prog.bestWave>0 ? 'En iyi dalga: '+prog.bestWave+'/'+lv.waveCount : 'Henüz oynanmadı'}</div>
-        </div>
-        <div class="ss-level-play">▶</div>
-      `;
-      card.addEventListener('pointerup', ()=>{
-        playMenuTap();
-        loadLevel(i);
-        saveResume(i, 0);
-        closeStartScreen();
-      });
-    } else {
-      const prevName = LEVELS[i-1] ? LEVELS[i-1].name : '';
-      card.innerHTML = `
-        <div class="ss-level-info">
-          <div class="ss-level-name">${lv.name}</div>
-          <div class="ss-level-locked">🔒 ${prevName} bölümünü tamamla</div>
-        </div>
-        <div class="ss-level-play locked">🔒</div>
-      `;
-      card.addEventListener('pointerup', ()=>{ playError(); });
-    }
-    el.appendChild(card);
-  });
 }
 
 function renderTowerSelectBtn(){

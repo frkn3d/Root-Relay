@@ -1227,3 +1227,203 @@ body.in-menu .leaf-particles .leaf{ animation-play-state:running, running; }
   font-size:10px; line-height:1.65; color:var(--cream-dim);
 }
 .howto-sec p b{ color:var(--cream); }
+
+/* ============================================================
+   MACERA — dünya haritası ve bölge ilerleme yolu
+   ============================================================ */
+
+/* Macera sayfaları diğer menü sayfalarından geniş: harita dar bir
+   sütuna sıkışırsa izometrik detay okunmaz hale geliyor. */
+.menu-page.adv-page{
+  max-width:none; width:100%; height:100%;
+  justify-content:flex-start; gap:0;
+}
+
+.menu-btn.adventure{
+  background:linear-gradient(180deg, #3c6b46, #2a4d33);
+  border-color:#579463;
+  color:#eaf7e4;
+}
+.menu-btn.adventure:active{ transform:scale(0.97); }
+
+/* ---- dünya haritası ---- */
+
+.adv-top{
+  width:100%; display:flex; align-items:baseline; justify-content:space-between;
+  gap:10px; padding:2px 12px 8px;
+}
+.adv-head{
+  font-family:'Baloo 2', sans-serif; font-weight:800;
+  font-size:20px; color:var(--gold); text-shadow:0 2px 0 rgba(0,0,0,0.4);
+}
+.adv-totals{
+  font-family:'JetBrains Mono', monospace; font-size:10px;
+  color:var(--cream-dim); letter-spacing:0.3px;
+}
+.adv-totals b{ color:var(--cream); }
+
+/* Harita kabı: dikeyde kaydırılır, yatayda tam oturur. */
+.adv-world{
+  position:relative; width:100%; flex:1 1 auto; min-height:0;
+  overflow-y:auto; overflow-x:hidden;
+  border-radius:12px;
+  border:2px solid var(--line);
+  background:#2a4a58;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.adv-world canvas{ display:block; width:100%; }
+.adv-markers{ position:absolute; inset:0; pointer-events:none; }
+
+/* Bölge tabelası — canvas'ın üstünde gerçek bir buton. */
+.adv-marker{
+  position:absolute; transform:translate(-50%, -100%);
+  pointer-events:auto;
+  display:flex; align-items:center; gap:7px;
+  padding:6px 10px 6px 7px;
+  background:rgba(14,28,22,0.86);
+  border:2px solid rgba(244,192,74,0.55);
+  border-radius:11px;
+  box-shadow:0 6px 14px rgba(0,0,0,0.45);
+  cursor:pointer; font:inherit; color:var(--cream);
+  backdrop-filter:blur(2px);
+  transition:transform .12s ease, border-color .18s ease;
+}
+.adv-marker:active{ transform:translate(-50%, -100%) scale(0.96); }
+/* Tabelanın altındaki küçük sivri uç adayı işaret eder */
+.adv-marker::after{
+  content:''; position:absolute; left:50%; bottom:-7px;
+  transform:translateX(-50%);
+  border-left:6px solid transparent; border-right:6px solid transparent;
+  border-top:7px solid rgba(244,192,74,0.55);
+}
+.adv-marker.locked{
+  border-color:rgba(140,150,150,0.4);
+  background:rgba(18,22,24,0.8);
+  color:#93a0a2;
+}
+.adv-marker.locked::after{ border-top-color:rgba(140,150,150,0.4); }
+.adv-marker.complete{ border-color:#7fe3a0; }
+.adv-marker.complete::after{ border-top-color:#7fe3a0; }
+/* Oyuncunun şu an bulunduğu bölge nabız atar */
+.adv-marker.here{ animation:advPulse 2.1s ease-in-out infinite; }
+@keyframes advPulse{
+  0%,100%{ box-shadow:0 6px 14px rgba(0,0,0,0.45), 0 0 0 0 rgba(244,192,74,0.42); }
+  50%    { box-shadow:0 6px 14px rgba(0,0,0,0.45), 0 0 0 9px rgba(244,192,74,0); }
+}
+.am-ic{ font-size:19px; line-height:1; }
+.am-body{ display:flex; flex-direction:column; gap:2px; min-width:88px; }
+.am-name{
+  font-family:'Baloo 2', sans-serif; font-weight:700;
+  font-size:12px; line-height:1.1; white-space:nowrap;
+}
+.am-bar{
+  display:block; height:4px; border-radius:3px;
+  background:rgba(255,255,255,0.16); overflow:hidden;
+}
+.am-bar i{ display:block; height:100%; background:var(--gold); border-radius:3px; }
+.am-count{
+  font-family:'JetBrains Mono', monospace; font-size:8.5px;
+  color:var(--cream-dim); letter-spacing:0.2px;
+}
+
+/* ---- bölge ilerleme yolu ---- */
+
+.rg-top{
+  width:100%; display:flex; align-items:center; gap:10px; padding:2px 10px 6px;
+}
+.rg-back{
+  flex:0 0 auto; width:34px; height:34px; border-radius:9px;
+  background:var(--panel); border:2px solid var(--line); color:var(--cream);
+  font-size:16px; line-height:1; cursor:pointer;
+}
+.rg-back:active{ transform:scale(0.94); }
+.rg-titles{ display:flex; flex-direction:column; gap:1px; min-width:0; }
+.rg-name{
+  font-family:'Baloo 2', sans-serif; font-weight:800; font-size:17px;
+  color:var(--gold); line-height:1.1; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
+}
+.rg-sub{
+  font-family:'JetBrains Mono', monospace; font-size:9px; color:var(--cream-dim);
+}
+.rg-prog{
+  width:calc(100% - 20px); height:5px; margin:0 10px 6px;
+  border-radius:4px; background:rgba(0,0,0,0.4); overflow:hidden;
+}
+.rg-prog-fill{ height:100%; background:var(--gold); border-radius:4px; transition:width .3s ease; }
+
+.rg-scroll{
+  position:relative; width:100%; flex:1 1 auto; min-height:0;
+  overflow-y:auto; overflow-x:hidden;
+  border-radius:12px; border:2px solid var(--line);
+  background:linear-gradient(180deg, #16281c, #101d15);
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.rg-inner{ position:relative; width:100%; }
+.rg-path{ position:absolute; left:0; top:0; pointer-events:none; }
+/* Patika: kalın koyu bir taban, üstünde bölgenin renginde ince bir şerit */
+.rg-trail-bg{ fill:none; stroke:rgba(0,0,0,0.45); stroke-width:22; stroke-linecap:round; }
+.rg-trail-fg{
+  fill:none; stroke:var(--rg-color, #5f9e52); stroke-width:13;
+  stroke-linecap:round; stroke-dasharray:2 15; opacity:0.85;
+}
+.rg-nodes{ position:absolute; inset:0; }
+
+/* Bölüm düğümü */
+.rg-node{
+  position:absolute; transform:translate(-50%, -50%);
+  width:50px; height:50px; border-radius:50%;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  border:3px solid var(--line);
+  background:var(--panel); color:var(--cream);
+  font:inherit; cursor:pointer; padding:0;
+  box-shadow:0 4px 0 rgba(0,0,0,0.45);
+  transition:transform .1s ease;
+}
+.rg-node:active{ transform:translate(-50%, -50%) scale(0.93); }
+.rn-face{
+  font-family:'Baloo 2', sans-serif; font-weight:800; font-size:15px; line-height:1;
+}
+.rg-node.locked{
+  background:#1b2320; border-color:#0b120d; color:#5d6b62;
+  box-shadow:none; cursor:default;
+}
+.rg-node.locked .rn-face{ font-size:16px; }
+/* Oynanabilir ama henüz geçilmemiş: dikkat çeksin */
+.rg-node.open{
+  background:linear-gradient(180deg, var(--rg-accent, #8fd07a), var(--rg-color, #5f9e52));
+  border-color:#f4c04a; color:#12261b;
+  animation:rgPulse 1.9s ease-in-out infinite;
+}
+@keyframes rgPulse{
+  0%,100%{ box-shadow:0 4px 0 rgba(0,0,0,0.45), 0 0 0 0 rgba(244,192,74,0.5); }
+  50%    { box-shadow:0 4px 0 rgba(0,0,0,0.45), 0 0 0 10px rgba(244,192,74,0); }
+}
+.rg-node.done{
+  background:linear-gradient(180deg, #3f6b47, #2b4b31);
+  border-color:#6fae7a;
+}
+/* Patron düğümü büyük ve kırmızı — uzaktan görülsün */
+.rg-node.boss{
+  width:64px; height:64px;
+  border-color:#e2504a;
+  background:linear-gradient(180deg, #4a2330, #2c1620);
+}
+.rg-node.boss .rn-face{ font-size:24px; }
+.rg-node.boss.done{ background:linear-gradient(180deg, #5a3a2a, #33211a); border-color:#f4c04a; }
+.rg-node.boss.locked{ border-color:#3a2226; }
+.rn-tag{
+  position:absolute; bottom:-13px; left:50%; transform:translateX(-50%);
+  font-family:'JetBrains Mono', monospace; font-size:7px; letter-spacing:1px;
+  color:#f0a09a; background:rgba(20,10,12,0.9);
+  padding:1px 5px; border-radius:4px; white-space:nowrap;
+}
+/* Kazanılan yıldızlar düğümün altında üç küçük nokta */
+.rn-stars{ display:flex; gap:2px; margin-top:2px; }
+.rn-stars i{
+  width:5px; height:5px; border-radius:50%;
+  background:rgba(0,0,0,0.35); display:block;
+}
+.rn-stars i.on{ background:var(--gold); box-shadow:0 0 4px rgba(244,192,74,0.8); }

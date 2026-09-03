@@ -200,7 +200,12 @@ function goToMainMenu(){
   syncPauseToggleBtn();
   closeTowerPanel();
   if(typeof closeTowerDrawer === 'function') closeTowerDrawer();
-  openStartScreen(); // ui.js
+  /* Macera içinden gelen oyuncu ana menüye değil, kaldığı BÖLGEye
+     döner: bölümü bitirip menüye çıkıp tekrar iki tık yapmak zorunda
+     kalmasın, sıradaki düğüm hemen karşısında olsun. */
+  const backToRegion = (typeof advInSession !== 'undefined') && advInSession
+                    && level && level.generated;
+  openStartScreen(backToRegion ? 'menuRegion' : 'menuMain'); // ui.js
   if(typeof updateAmbience === 'function') updateAmbience();   // sfx.js
 }
 
@@ -321,9 +326,16 @@ function endGame(win){
       addGems(newStars*5);
       // Zafer fanfarının üstüne binmesin diye ödül sesi biraz gecikir
       setTimeout(playGem, 900);                       // audio.js
-      // Bu bölüm ilk kez yıldızlandıysa sıradaki bölümün kilidi açıldı
-      if(prev.bestStars === 0 && !level.generated && LEVELS[currentLevelIdx+1]){
-        setTimeout(playLevelUnlock, 1500);            // audio.js
+      /* Bu bölüm ilk kez yıldızlandıysa sıradaki bölümün kilidi açıldı.
+         Üretilmiş bölümlerde bu Macera'nın kilididir (bkz. adventure.js);
+         dünya haritasının pişmiş görüntüsü de tazelenmeli, yoksa yeni
+         açılan bölge haritada gri kalırdı. */
+      if(prev.bestStars === 0){
+        if(typeof invalidateWorldBake === 'function') invalidateWorldBake();
+        const hasNext = level.generated
+          ? (level.levelNo < GEN.TOTAL_LEVELS)
+          : !!LEVELS[currentLevelIdx+1];
+        if(hasNext) setTimeout(playLevelUnlock, 1500);   // audio.js
       }
     }
     clearResume();

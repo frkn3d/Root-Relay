@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#12261b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
 <title>Root & Relay — Tower Defense</title>
-<link rel="stylesheet" href="css/style.css?v=80">
+<link rel="stylesheet" href="css/style.css?v=81">
 </head>
 <body class="in-menu">
 <div class="wrap">
@@ -65,7 +65,7 @@
           <div class="gem-bar"><span class="gem-ic">💎</span><b id="gemCount">0</b></div>
           <div class="menu-list">
             <button class="menu-btn primary" id="mmContinue">▶ Devam Et</button>
-            <button class="menu-btn" id="mmLevels">🗺️ Bölüm Seç</button>
+            <button class="menu-btn adventure" id="mmAdventure">🧭 Maceraya Başla</button>
             <button class="menu-btn" id="mmEndless">🌍 1000 Bölüm</button>
             <button class="menu-btn" id="mmStats">📊 İstatistikler</button>
             <button class="menu-btn" id="mmHowTo">❓ Nasıl Oynanır?</button>
@@ -97,10 +97,37 @@
           <button class="menu-btn back" data-back>← Geri</button>
         </div>
 
-        <div class="menu-page" id="menuLevels">
-          <div class="menu-head">Bölüm Seç</div>
-          <div class="ss-levels" id="ssLevelList"></div>
+        <!-- MACERA — dünya haritası. Sanat canvas'ta (adventure-map.js),
+             bölge tabelaları üstünde DOM buton olarak duruyor. -->
+        <div class="menu-page adv-page" id="menuAdventure">
+          <div class="adv-top">
+            <div class="adv-head">🧭 Macera</div>
+            <div class="adv-totals" id="advTotals"></div>
+          </div>
+          <div class="adv-world" id="advWorld">
+            <canvas id="advCanvas"></canvas>
+            <div class="adv-markers" id="advMarkers"></div>
+          </div>
           <button class="menu-btn back" data-back>← Geri</button>
+        </div>
+
+        <!-- MACERA — bölge ilerleme yolu. Bölümler aşağıdan yukarıya
+             kıvrılan bir patika üzerinde düğümler. -->
+        <div class="menu-page adv-page" id="menuRegion">
+          <div class="rg-top">
+            <button class="rg-back" id="rgBackBtn">←</button>
+            <div class="rg-titles">
+              <div class="rg-name" id="rgName"></div>
+              <div class="rg-sub" id="rgSub"></div>
+            </div>
+          </div>
+          <div class="rg-prog"><div class="rg-prog-fill" id="rgProgFill"></div></div>
+          <div class="rg-scroll" id="rgScroll">
+            <div class="rg-inner" id="rgInner">
+              <svg class="rg-path" id="rgPath" xmlns="http://www.w3.org/2000/svg"></svg>
+              <div class="rg-nodes" id="rgNodes"></div>
+            </div>
+          </div>
         </div>
 
         <div class="menu-page" id="menuHowTo">
@@ -146,6 +173,8 @@
               <p><b>🛡️ Zırhlı.</b> 8. dalgadan itibaren gelir; önünde <b>parçalanabilir bir plaka</b> taşır. Plaka ayaktayken gelen hasarın yalnızca küçük bir kısmı gövdeye işler, gerisi plakayı aşındırır. Bu yüzden zehir ve lav gibi <b>saniyede az hasar</b> veren silahlar plakaya karşı verimsizdir; havan güllesi ve lazer gibi <b>tek seferde sert vuranlar</b> plakayı hızla söker. Plaka kırılınca düşman savunmasız kalır — can çubuğunun üstündeki gri çubuk kaybolduğunda anlarsın. <b>Çok yavaş yürür:</b> asıl tehlike kendisi değil, kuleleri uzun süre üzerine kilitlerken <b>yanından geçenlerdir</b>.</p>
               <p><b>🔷 Küp bölünür ve hızlanır.</b> Ölen küp ikiye ayrılır; her küçülmede yavrular <b>belirgin şekilde hızlanır</b>. Küpü savunmanın <b>önünde</b> öldür, arkasında değil — yoksa hızlı küçükler çıkışa koşar.</p>
               <p><b>⏱️ Dalgalar sıkışır.</b> 8. dalgadan itibaren hafif birimler (Sürü, Koşucu, Spor) birbirine <b>daha yakın</b> doğar: aynı sayıda düşman, daha kısa sürede. Ağır birimler sıkışmaz.</p>
+              <p><b>🧭 Macera.</b> 1000 bölü<b>m</b> yedi <b>bölge</b>ye ayrılır: Yosun Vadisi, Kavak Kıyısı, Kuru Savan, Kızıl Çöl, Sisli Bataklık, Buz Tundrası ve Kül Dağları. Her bölgenin kendi biyomu ve mevsimi var; bir bölümü geçince sıradaki açılır. Bir bölümü <b>en az bir yıldızla</b> bitirmek onu geçmiş sayılır. <b>1000 Bölüm</b> menüsü de duruyor — oradan oynadığın bölümler macerada da geçilmiş görünür, ikisi aynı ilerlemeyi paylaşır.</p>
+              <p><b>💀 Patron bölümleri.</b> Her bölgenin <b>20 bölümde bir</b> patron bölümü vardır. Patron dövüşü henüz tasarlanmadı; şimdilik yolu <b>tıkamaz</b> — atlarsan bir sonraki bölüm yine açılır.</p>
               <p><b>⚖️ Geniş harita bedava değil.</b> Bir bölümün kaç yapı noktası verdiği artık <b>dalga baskısını</b> da belirler: bol kule alanı olan haritalarda düşmanlar <b>daha dayanıklı ve daha kalabalık</b> gelir, dar haritalarda ise <b>daha seyrek</b>. Amaç, bölümün zorluğunun haritanın çekilişine değil <b>kuleyi nereye koyduğuna</b> bağlı olması. Çok yollu bölümlerde ölçü <b>rota başına</b> düşen nokta sayısıdır — iki kolu birden tutmak zorunda olduğun için toplam nokta sayısı yanıltıcıdır.</p>
               <p><b>🌊 13. dalgadan sonra kalabalık.</b> Uzun bölümlerde 13. dalgadan itibaren her dalgaya <b>%20 daha fazla düşman</b> girer — ama dalga <b>uzamaz</b>. Aynı pencerede daha yoğun bir akış gelir; nefes alacak boşluk aramak yerine sürekli ateş edebilecek bir savunma kurman gerekir. (Boss sayısı artmaz.)</p>
               <p><b>👑 Boss dalgası.</b> Son dalgada tek Don Efendisi değil, aralıklarla <b>beş tane</b> gelir. Her biri etrafındaki kulelerin atış hızını yarıya düşürür — hepsini aynı hatta karşılamaya çalışma.</p>
@@ -338,34 +367,38 @@
      Öbek sırası: veri -> motor -> çizim -> arayüz -> giriş noktası -->
 
 <!-- Veri ve yardımcı katman -->
-<script src="js/config.js?v=91"></script>
-<script src="js/levelgen.js?v=80"></script>
-<script src="js/progress.js?v=68"></script>
-<script src="js/audio.js?v=79"></script>
+<script src="js/config.js?v=92"></script>
+<script src="js/levelgen.js?v=81"></script>
+<script src="js/progress.js?v=69"></script>
+<!-- Macera: 1000 bolumun ustundeki ilerleme ve gezinme katmani -->
+<script src="js/adventure.js?v=2"></script>
+<script src="js/adventure-map.js?v=2"></script>
+<script src="js/audio.js?v=80"></script>
 <!-- sound/ klasöründeki MP3 kütüphanesinin oynatıcısı; audio.js'ten SONRA
      gelmeli (ensureAudioCtx/soundEnabled oradan). -->
-<script src="js/sfx.js?v=16"></script>
+<script src="js/sfx.js?v=17"></script>
 
 <!-- Motor: durum ve simülasyon -->
-<script src="js/engine-canvas.js?v=103"></script>
-<script src="js/engine-state.js?v=101"></script>
-<script src="js/engine-towers.js?v=106"></script>
-<script src="js/engine-flow.js?v=108"></script>
-<script src="js/engine-update.js?v=108"></script>
-<script src="js/engine.js?v=101"></script>
+<script src="js/engine-canvas.js?v=104"></script>
+<script src="js/engine-state.js?v=102"></script>
+<script src="js/engine-towers.js?v=107"></script>
+<script src="js/engine-flow.js?v=109"></script>
+<script src="js/engine-update.js?v=109"></script>
+<script src="js/engine.js?v=102"></script>
 
 <!-- Çizim: yalnızca okur, durumu değiştirmez -->
-<script src="js/render-core.js?v=87"></script>
-<script src="js/render-world.js?v=87"></script>
-<script src="js/render-weather.js?v=85"></script>
-<script src="js/render-tower-art.js?v=87"></script>
-<script src="js/render-towers.js?v=87"></script>
-<script src="js/render-enemies.js?v=91"></script>
-<script src="js/render-fx.js?v=86"></script>
-<script src="js/render.js?v=86"></script>
+<script src="js/render-core.js?v=88"></script>
+<script src="js/render-world.js?v=88"></script>
+<script src="js/render-weather.js?v=86"></script>
+<script src="js/render-tower-art.js?v=88"></script>
+<script src="js/render-towers.js?v=88"></script>
+<script src="js/render-enemies.js?v=92"></script>
+<script src="js/render-fx.js?v=87"></script>
+<script src="js/render.js?v=87"></script>
 
 <!-- Arayüz ve giriş noktası -->
-<script src="js/ui.js?v=83"></script>
-<script src="js/main.js?v=81"></script>
+<script src="js/adventure-ui.js?v=2"></script>
+<script src="js/ui.js?v=84"></script>
+<script src="js/main.js?v=82"></script>
 </body>
 </html>

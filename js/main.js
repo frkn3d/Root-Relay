@@ -343,7 +343,12 @@ document.getElementById('soundBtn').addEventListener('pointerup', toggleSound);
 document.getElementById('soundBtnPause').addEventListener('pointerup', toggleSound);
 
 /* ---- Ana menü gezinme ---- */
-document.getElementById('mmLevels').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuLevels'); });
+document.getElementById('mmAdventure').addEventListener('pointerup', ()=>{
+  ensureAudioCtx(); playMenuTap(); advOpenWorld();     // adventure-ui.js
+});
+document.getElementById('rgBackBtn').addEventListener('pointerup', ()=>{
+  playMenuTap(); showMenuPage('menuAdventure');
+});
 document.getElementById('mmEndless').addEventListener('pointerup', ()=>{
   playMenuTap();
   showMenuPage('menuSeed');
@@ -373,6 +378,7 @@ function playSelectedGenLevel(){
   playMenuTap();
   const n = currentLevelNo();
   inp.value = n;                 // sınır dışıysa düzeltilmiş hali görünsün
+  advClearSession();  // adventure.js — bu giriş Macera akışı değil
   startGeneratedLevel(WORLD_SEED, n);
 }
 
@@ -399,12 +405,14 @@ function updateLevelNavVisibility(){
 document.getElementById('levelPrevBtn').addEventListener('pointerup', ()=>{
   if(!generatedLevel || generatedLevel.levelNo <= 1) return;
   playMenuTap();
+  advClearSession();  // adventure.js — bu giriş Macera akışı değil
   startGeneratedLevel(WORLD_SEED, generatedLevel.levelNo - 1);
   showWaveToast('Bölüm ' + generatedLevel.levelNo);
 });
 document.getElementById('levelNextBtn').addEventListener('pointerup', ()=>{
   if(!generatedLevel || generatedLevel.levelNo >= GEN.TOTAL_LEVELS) return;
   playMenuTap();
+  advClearSession();  // adventure.js — bu giriş Macera akışı değil
   startGeneratedLevel(WORLD_SEED, generatedLevel.levelNo + 1);
   showWaveToast('Bölüm ' + generatedLevel.levelNo);
 });
@@ -429,15 +437,15 @@ document.querySelectorAll('[data-back]').forEach(btn=>{
   btn.addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage(btn.dataset.back || 'menuMain'); });
 });
 
+/* "Devam Et" artık maceranın sıradaki bölümünü açar. Eskiden yalnızca
+   elle yazılmış iki bölüm için çalışıyordu (getResume + LEVELS); o iki
+   bölüm menüden kalkınca düğmenin karşılığı da kalmamıştı. */
 document.getElementById('mmContinue').addEventListener('pointerup', ()=>{
   const btn = document.getElementById('mmContinue');
   if(btn.disabled) return;
-  const r = getResume();
-  if(!r || !LEVELS[r.levelIdx]) return;
   ensureAudioCtx();
   playMenuTap();
-  loadLevel(r.levelIdx);
-  closeStartScreen();
+  advContinue();                                       // adventure-ui.js
 });
 
 document.getElementById('resetProgressBtn').addEventListener('pointerup', ()=>{
@@ -452,7 +460,7 @@ document.getElementById('resetProgressBtn').addEventListener('pointerup', ()=>{
     setTimeout(()=>{ btn.textContent='🗑️ Fabrika Ayarlarına Dön'; }, 1500);
     refreshGemDisplay();
     refreshContinueButton();
-    renderStartLevelList();
+    invalidateWorldBake();   // adventure-map.js — kilitler yeniden çizilsin
     loadLevel(0);            // oyun durumunu da başa al
   } else {
     btn.dataset.confirm='1';

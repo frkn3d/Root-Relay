@@ -80,12 +80,96 @@ const BIOMES = {
     decor:'rock', decorDensity:0.9 },
 };
 
+/* ============================================================
+   BÖLGELER — 1000 bölümün coğrafyası
+
+   Eskiden her bölümün biyomu tamamen tohuma bağlıydı: 347. bölüm çöl,
+   348. bataklık, 349. tundra olabiliyordu. Bu, tek tek bölümler için
+   sorun değildi ama bir DÜNYA HARİTASI çizilemez hale getiriyordu —
+   haritada "çöl bölgesi" diye gösterebileceğin bitişik bir bölüm
+   kümesi yoktu.
+
+   Artık 1000 bölüm yedi bölgeye ayrılıyor ve her bölgenin baskın bir
+   biyomu var. Bölge içinde tam tekdüzelik de istemiyoruz: bölümlerin
+   bir kısmı komşu biyomlardan geliyor (biomeMix), mevsim de bölgenin
+   kendi mevsim döngüsü içinde 7 bölümde bir dönüyor. Yani bölge
+   tanınır ama sıkıcı değil.
+
+   ÖNEMLİ — bölge sırası zorluk eğrisini DEĞİŞTİRMEZ. Zorluk hâlâ
+   yalnızca bölüm numarasına bağlı (difficultyFor). Bölgeler zorluğun
+   üstüne binen bir coğrafya katmanı; oyuncuya nerede olduğunu ve ne
+   kadar yol aldığını gösterir.
+   ============================================================ */
+const REGIONS = [
+  { id:'vadi',    name:'Yosun Vadisi',   short:'Vadi',
+    from:1,   to:120, biome:'forest',        alt:['mediterranean','swamp'],
+    seasons:['spring','summer'],            biomeMix:0.72,
+    color:'#5f9e52', accent:'#8fd07a', icon:'🌲',
+    blurb:'Yolculuğun başladığı yer. Yumuşak toprak, bol ağaç, sakin dalgalar.' },
+  { id:'kiyi',    name:'Kavak Kıyısı',   short:'Kıyı',
+    from:121, to:260, biome:'mediterranean', alt:['forest','savanna'],
+    seasons:['spring','summer','autumn'],   biomeMix:0.70,
+    color:'#7d9a45', accent:'#b9d16a', icon:'🫒',
+    blurb:'Zeytinlikler ve taşlı patikalar. Yollar burada ilk kez ikiye ayrılıyor.' },
+  { id:'savan',   name:'Kuru Savan',     short:'Savan',
+    from:261, to:400, biome:'savanna',       alt:['desert','mediterranean'],
+    seasons:['summer','autumn'],            biomeMix:0.70,
+    color:'#a89a4a', accent:'#ddc86e', icon:'🦁',
+    blurb:'Uzun otlar ve uzun yollar. Açık arazi, uzun menzilli kuleyi ödüllendirir.' },
+  { id:'col',     name:'Kızıl Çöl',      short:'Çöl',
+    from:401, to:540, biome:'desert',        alt:['savanna','volcanic'],
+    seasons:['summer','autumn'],            biomeMix:0.74,
+    color:'#c08c46', accent:'#e8bc6a', icon:'🏜️',
+    blurb:'Gölge yok, sığınak yok. Kuleyi nereye koyduğun burada en çok önemli.' },
+  { id:'batak',   name:'Sisli Bataklık', short:'Bataklık',
+    from:541, to:680, biome:'swamp',         alt:['forest','tundra'],
+    seasons:['autumn','spring'],            biomeMix:0.72,
+    color:'#4c6b4a', accent:'#7fae74', icon:'🐊',
+    blurb:'Dar geçitler ve puslu görüş. Yavaşlatan kuleler burada altın değerinde.' },
+  { id:'tundra',  name:'Buz Tundrası',   short:'Tundra',
+    from:681, to:840, biome:'tundra',        alt:['swamp','volcanic'],
+    seasons:['winter'],                     biomeMix:0.78,
+    color:'#7f97a6', accent:'#cfe6f2', icon:'❄️',
+    blurb:'Donmuş düzlükler. Kışın kendi kuralları var; don burada bedava gelmiyor.' },
+  { id:'kul',     name:'Kül Dağları',    short:'Kül',
+    from:841, to:1000, biome:'volcanic',     alt:['tundra','desert'],
+    seasons:['winter','autumn'],            biomeMix:0.80,
+    color:'#8a5a52', accent:'#d98a70', icon:'🌋',
+    blurb:'Yolculuğun sonu. Kül, lav ve en kalabalık dalgalar.' },
+];
+
+/* Bölge başına kaç bölümde bir patron dövüşü. Bölge içi sıraya göre
+   sayılır: bir bölgenin 20., 40., 60. bölümü patron bölümüdür. */
+const BOSS_EVERY = 20;
+
+function regionOf(levelNo){
+  for(let i=0;i<REGIONS.length;i++)
+    if(levelNo >= REGIONS[i].from && levelNo <= REGIONS[i].to) return REGIONS[i];
+  return REGIONS[REGIONS.length-1];
+}
+function regionIndexOf(levelNo){
+  for(let i=0;i<REGIONS.length;i++)
+    if(levelNo >= REGIONS[i].from && levelNo <= REGIONS[i].to) return i;
+  return REGIONS.length-1;
+}
+function regionById(id){ return REGIONS.find(r=>r.id===id) || null; }
+function regionLevelCount(r){ return r.to - r.from + 1; }
+/* Bölge içi sıra (1 tabanlı) */
+function localIndexOf(levelNo){ return levelNo - regionOf(levelNo).from + 1; }
+/* Patron bölümü mü? Bölge içi sıra BOSS_EVERY'nin katıysa evet. */
+function isBossLevel(levelNo){ return localIndexOf(levelNo) % BOSS_EVERY === 0; }
+
 /* 3 yol tipi — renk ve doku farkı */
 const ROAD_TYPES = {
   dirt:   { id:'dirt',   name:'Toprak', edge:'#c9a463', fill:'#dab876', speck:'rgba(120,80,40,0.35)' },
   stone:  { id:'stone',  name:'Taş',    edge:'#8e8b83', fill:'#a9a69c', speck:'rgba(60,58,54,0.35)' },
   asphalt:{ id:'asphalt',name:'Asfalt', edge:'#4a4d52', fill:'#5d6167', speck:'rgba(20,20,22,0.4)' },
 };
+
+/* Dünyanın tohumu. 1000 bölümün tamamı bundan üretilir; herkeste
+   "Bölüm 347" aynı haritadır. Hem 1000 Bölüm menüsü hem Macera aynı
+   sabiti kullanır (ui.js, adventure.js). */
+const WORLD_SEED = 'root-relay';
 
 /* ---------- Kural sabitleri ---------- */
 const GEN = {
@@ -575,18 +659,31 @@ function placeSpots(rng, paths, diff, totalLen){
 }
 
 /* ---------- Tema seçimi ---------- */
+/* Tema artık bölüm numarasının düştüğü BÖLGEden geliyor (bkz. REGIONS).
+
+   RNG ÇEKİLİŞ SAYISI KORUNDU (3 adet). Bu fonksiyon üretim zincirinin
+   ortasında çağrılıyor; bir çekiliş eksik ya da fazla tüketmek
+   kendisinden SONRA gelen her şeyi (yol, yapı noktaları, dalgalar)
+   kaydırırdı. Değerlerin kullanımı değişti, sayısı değişmedi —
+   1000 bölümün geometrisi birebir aynı kaldı. */
 function pickTheme(rng, levelNo){
-  const seasonIds = Object.keys(SEASONS);
-  const biomeIds  = Object.keys(BIOMES);
-  const roadIds   = Object.keys(ROAD_TYPES);
+  const roadIds = Object.keys(ROAD_TYPES);
+  const r = regionOf(levelNo);
 
-  // Mevsim yavaşça dönsün ama tohuma göre kayabilsin
-  const seasonOffset = rndInt(rng, 0, 3);
-  const season = seasonIds[(Math.floor((levelNo-1)/7) + seasonOffset) % 4];
+  const seasonOffset = rndInt(rng, 0, 3);   // 1. çekiliş
+  const mixRoll      = rng();               // 2. çekiliş
+  const road         = pick(rng, roadIds);  // 3. çekiliş
 
-  // Bitki örtüsü ve yol tipi tamamen tohuma bağlı
-  const biome = pick(rng, biomeIds);
-  const road  = pick(rng, roadIds);
+  // Mevsim bölgenin kendi döngüsünde 7 bölümde bir dönüyor
+  const season = r.seasons[(Math.floor((levelNo-1)/7) + seasonOffset) % r.seasons.length];
+
+  // Bölümlerin çoğu bölgenin baskın biyomu; gerisi komşu biyomlardan
+  // geliyor ki bölge tanınır olsun ama tekdüze olmasın.
+  let biome = r.biome;
+  if(mixRoll >= r.biomeMix && r.alt.length){
+    const k = Math.floor((mixRoll - r.biomeMix) / (1 - r.biomeMix) * r.alt.length);
+    biome = r.alt[Math.min(r.alt.length - 1, k)];
+  }
 
   return { season, biome, road };
 }
