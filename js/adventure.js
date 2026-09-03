@@ -52,15 +52,31 @@ function advLevelId(n){ return 'gen-' + WORLD_SEED + '-' + n; }
 function advStars(n){ return getLevelProgress(advLevelId(n)).bestStars || 0; }
 function advIsDone(n){ return advStars(n) > 0; }
 
-/* KİLİT KURALI
-   Bir bölüm, kendinden öncekini geçtiysen açılır. Tek istisna patron
-   bölümleri: onlar ilerlemeyi TIKAMAZ. Patron dövüşü henüz tasarlanmadı
-   ve tasarlandığında da yolculuğu durduran bir duvar değil, isteğe bağlı
-   bir meydan okuma olacak — atlayan oyuncu yoluna devam edebilmeli. */
+/* BÖLGELER NASIL AÇILIR — iki mod
+
+   'chain'  (varsayılan): tek bir zincir. 121. bölüm ancak 120 geçilince
+            açılır, dolayısıyla Kavak Kıyısı da o zaman açılır. Klasik
+            ilerleme; oyuncu yolculuğu baştan sona sırayla yaşar.
+
+   'open'   : her bölgenin İLK bölümü baştan açıktır, bölge içi zincir
+            aynen işler. Oyuncu gerçekten "tema seçerek" başlar; çölden
+            de bataklıktan da girebilir. Bölgeler zorluk sırasına göre
+            dizili olduğu için 7. bölgeden başlayan biri duvara toslar —
+            bu modda bölge kartlarındaki zorluk göstergesi önem kazanır.
+
+   İkisi de destekleniyor; değiştirmek için tek satır. */
+const ADV_UNLOCK_MODE = 'chain';
+
 function advIsUnlocked(n){
-  if(n <= 1) return true;
   if(n < 1 || n > GEN.TOTAL_LEVELS) return false;
+  if(n === 1) return true;
+  // 'open' modunda her bölgenin ilk bölümü baştan açık
+  if(ADV_UNLOCK_MODE === 'open' && n === regionOf(n).from) return true;
   if(advIsDone(n-1)) return true;
+  /* Patron bölümleri ilerlemeyi TIKAMAZ. Patron dövüşü henüz
+     tasarlanmadı ve tasarlandığında da yolculuğu durduran bir duvar
+     değil, isteğe bağlı bir meydan okuma olacak — atlayan oyuncu
+     yoluna devam edebilmeli. */
   if(isBossLevel(n-1)) return (n-2 < 1) || advIsDone(n-2);
   return false;
 }
