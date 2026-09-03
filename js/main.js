@@ -128,6 +128,12 @@ let pressTimer = null;
 let pressStartPos = null;
 let pressTower = null;
 let longPressFired = false;
+/* Yeşil yükseltme rozetine basıldığında panel pointerdown'da açılıyor.
+   Bu bayrak olmadan aynı jestin pointerup'ı "boşluğa dokunuldu" sayıp
+   paneli hemen kapatıyordu: panel yalnızca parmak basılı dururken
+   görünüyor, bırakınca kayboluyordu. Bayrak, jestin işini bitirdiğini
+   pointerup'a bildirir. */
+let badgeHandled = false;
 // Kule çekmecesi açıkken canvas'ta başlayan dokunuşun izi — çekmeceyi
 // yalnızca GERÇEK bir dokunuş (az hareket) kapatsın; çekmecedeki
 // kartları kaydırmaya çalışırken parmak birkaç piksel canvas'a taşarsa
@@ -158,13 +164,16 @@ canvas.addEventListener('pointerdown',(e)=>{
   }
   const {x:mx,y:my} = pointerToLogical(e.clientX,e.clientY);
 
-  /* Yeşil yükseltme rozetine dokunulduysa paneli DOĞRUDAN aç —
-     basılı tutmaya gerek yok. Rozet kulenin dokunma yarıçapının
+  /* Yeşil yükseltme rozetine dokunulduysa paneli DOĞRUDAN aç. Hem kısa
+     dokunuş hem basılı tutma aynı işi yapar; panel parmak kalkınca da
+     açık kalır (bkz. badgeHandled). Rozet kulenin dokunma yarıçapının
      dışında durduğu için normal kule dokunuşuyla çakışmıyor. */
   const badgeTower = findUpgradeBadgeAt(mx, my);   // engine-towers.js
   if(badgeTower){
+    cancelPress();              // varsa önceki basılı-tutma durumunu temizle
+    badgeHandled = true;        // ...ve pointerup bu jesti yok saysın
     openTowerPanel(badgeTower);
-    cancelPress();
+    if(navigator.vibrate){ try{ navigator.vibrate(10); }catch(err){} }
     return;
   }
 
@@ -196,6 +205,7 @@ canvas.addEventListener('pointermove',(e)=>{
 function cancelPress(){
   clearTimeout(pressTimer); pressTimer=null;
   pressStartPos=null; pressTower=null; longPressFired=false;
+  badgeHandled=false;
   pressProgressTower=null; drawerDismissStart=null;
 }
 canvas.addEventListener('pointercancel', cancelPress);
@@ -212,6 +222,12 @@ canvas.addEventListener('pointerup',(e)=>{
     // aksi halde çekmecedeki kartları kaydırmaya çalışan bir parmağın
     // canvas'a birkaç piksel taşması çekmeceyi anında kapatıyordu.
     if(moved <= MOVE_CANCEL_PX) closeTowerDrawer();
+    cancelPress();
+    return;
+  }
+  if(badgeHandled){
+    // Panel bu jestin pointerdown'ında açıldı; parmak kalkarken
+    // aşağıdaki "boşluğa dokunuldu" dalı onu kapatmasın.
     cancelPress();
     return;
   }
