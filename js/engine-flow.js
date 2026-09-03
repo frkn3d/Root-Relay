@@ -154,16 +154,26 @@ function startWave(){
     // Grubun temiz adımı; jitter bunun üstüne biner ama t'yi kaydırmaz.
     const step = g.interval * bunch * dense;
     for(let i=0;i<g.count;i++){
+      /* hpTiers (bkz. ENEMY_TYPES.flask): aynı türden birimler farklı
+         dayanıklılıkta gelsin diye seçilen kat. Tanımı olmayan
+         türlerde 1, yani hiçbir şey değişmez. */
+      const tier = def.hpTiers
+        ? def.hpTiers[Math.floor(Math.random()*def.hpTiers.length)]
+        : 1;
       spawnTimeline.push({
         // spawnJitter (config.js): doğuşlar bant üzerinde gibi değil,
         // birbirinden bağımsız küçük gecikmelerle gelsin.
         t: t + spawnJitter(step), type:g.type,
         // Birden çok giriş varsa düşmanlar sırayla rotalara paylaştırılır
         pathIdx: routeCount>1 ? (routeCursor++ % routeCount) : 0,
-        hp: def.hp*mult.hp, maxHp: def.hp*mult.hp,
+        hp: def.hp*mult.hp*tier, maxHp: def.hp*mult.hp*tier, hpTier: tier,
         speed: def.speed*mult.speed*m.enemySpeedMul,
-        radius: def.radius, body:def.body, body2:def.body2, shape:def.shape, eyes:def.eyes,
-        gold: Math.max(1, Math.round(def.gold*m.goldMul)), dmgToLives: def.dmgToLives,
+        // Kat, gövdeyi de büyütür: 1x -> 15, 2x -> 17, 3x -> 19 yarıçap.
+        // Oyuncu hangi şişenin sert olduğunu vurmadan önce görsün.
+        radius: Math.round(def.radius * (1 + (tier-1)*0.13)),
+        body:def.body, body2:def.body2, shape:def.shape, eyes:def.eyes,
+        // Üç kat emek isteyen birim üç kat da ödesin
+        gold: Math.max(1, Math.round(def.gold*m.goldMul*tier)), dmgToLives: def.dmgToLives,
         boss: !!def.boss, label: def.label,
         auraRadius: def.auraRadius || 0, auraSlow: def.auraSlow || 0,
         allyBuffTypes: def.allyBuffTypes || null, allySpeedBuff: def.allySpeedBuff || 0, allyDmgResist: def.allyDmgResist || 0,

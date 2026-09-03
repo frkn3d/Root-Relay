@@ -61,12 +61,33 @@ const ENEMY_TYPES = {
      çevredeki düşmanları iyileştirir. Öncelik sırası kurmayı
      zorunlu kılar: önce şişeyi mi yoksa etrafındakileri mi? */
   flask:    { hp:64, speed:0.55, radius:15, gold:11, dmgToLives:1, label:'Şişe',    shape:'flask',  body:'#7fe0a8', body2:'#2f7a52', eyes:2,
-              /* İyileştirme gücü 7 -> 21 (3 katı): geç dalgalarda düşman
-                 canları büyüdükçe saniyede 7 can fark edilmez olmuştu,
-                 şişe "öldürünce sorun çıkaran" değil sadece bir düşman
-                 gibi davranıyordu. Yarıçap ve süre aynı; artan tek şey
-                 birikintinin saniyede verdiği can. */
-              healRadius:58, healPerSec:21, healDuration:45 },
+              /* İyileştirme gücü ve süresi iki turda büyüdü:
+                 güç 7 -> 21 -> 28, süre 45 -> 65 sn. Geç dalgalarda
+                 düşman canları büyüdükçe küçük bir iyileşme fark
+                 edilmiyordu; şişe "öldürünce sorun çıkaran" değil
+                 sadece bir düşman gibi davranıyordu. Yarıçap (58)
+                 kasten aynı: etki güçlü ama YEREL kalsın, oyuncu
+                 birikintinin dışında dövüşerek kaçınabilsin.
+                 Birikinti ömrü boyunca toplam 1820 can.
+
+                 NEDEN 28, DAHA YÜKSEK DEĞİL: son seviye Ateş
+                 Kulesi'nin tek hedefe verdiği toplam hasar 32/sn
+                 (14.9 huzme + 17.1 yanma). İyileştirme 32'ye
+                 çıkarılsaydı birikinti içindeki bir düşmanı tam
+                 yükseltilmiş bir Ateş Kulesi ASLA öldüremezdi —
+                 bu bir denge tercihi değil, oyuncunun hata sanacağı
+                 bir duvar olurdu. 28'de her kule net hasar vermeye
+                 devam ediyor (Ateş +4, Zehir +7, Okçu +10, Şimşek
+                 +22, Lazer/Havan +27 hasar/sn).
+
+                 hpTiers: her şişe aynı dayanıklılıkta gelmiyor —
+                 eşit olasılıkla 1x, 2x veya 3x canla doğuyor. Kat
+                 hem cana hem (okunabilir olsun diye) gövde boyutuna
+                 ve düşen altına yansır: büyük şişeyi kırmak üç kat
+                 emek ister, üç kat da öder. Böylece "şişeyi önce
+                 öldür" kararı her seferinde aynı hesap olmuyor. */
+              healRadius:58, healPerSec:28, healDuration:65,
+              hpTiers:[1, 2, 3] },
   /* BÜYÜK BOSS — çok yavaş, çok dayanıklı. Etrafında bir don fırtınası
      taşır: auraRadius içindeki kulelerin atış hızını auraSlow oranında
      düşürür (0.5 = %50 yavaş). */
