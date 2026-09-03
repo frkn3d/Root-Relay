@@ -392,6 +392,100 @@ function drawCocoonEnemy(e){
   ctx.restore();
 }
 
+/* ZIRHLI'nın göğüs plakası — gövdenin ÜSTÜNE, gözlerin ALTINA çizilir
+   ki hem plaka baskın dursun hem düşman "yüzsüz bir kalkan" olmasın.
+   Plaka aşındıkça çatlaklar çoğalır, kırılınca yerinde yalnızca kopmuş
+   kayışlar kalır: oyuncu tek bakışta hangi aşamada olduğunu görür.
+   Durumun kaynağı e.armor / e.armorMax (bkz. applyDamage,
+   engine-update.js); burada hiçbir şey hesaplanmaz, yalnızca çizilir. */
+function drawArmorPlate(e){
+  const R = e.radius;
+  const cy = R*0.16;                       // plakanın merkezi biraz aşağıda
+  const w = R*1.62, h = R*1.34;
+  const broken = !(e.armor > 0);
+
+  ctx.save();
+
+  if(broken){
+    // Kopmuş kayışlar — plakanın nereden söküldüğü belli olsun
+    ctx.strokeStyle = '#4a3a2a'; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+    [-1, 1].forEach(s=>{
+      ctx.beginPath();
+      ctx.moveTo(s*w*0.42, cy - h*0.42);
+      ctx.quadraticCurveTo(s*w*0.56, cy - h*0.05, s*w*0.34, cy + h*0.30);
+      ctx.stroke();
+    });
+    // yerinden sökülmüş perçin izleri
+    ctx.fillStyle = 'rgba(30,24,18,0.45)';
+    [[-0.34,-0.30],[0.34,-0.30],[-0.30,0.34],[0.30,0.34]].forEach(([px,py])=>{
+      ctx.beginPath(); ctx.arc(px*w, cy+py*h, 1.5, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.restore();
+    return;
+  }
+
+  const frac = Math.max(0, Math.min(1, e.armor / (e.armorMax || 1)));
+  const wear = 1 - frac;                   // 0 = yepyeni, 1 = kopmak üzere
+  const spark = Math.max(0, e.armorFlash || 0) / 0.28;
+
+  // gövde: dikey çelik gradyanı + hafif kubbe hissi
+  const g = ctx.createLinearGradient(0, cy-h/2, 0, cy+h/2);
+  g.addColorStop(0,    '#e2e9ef');
+  g.addColorStop(0.42, '#9fadb9');
+  g.addColorStop(1,    '#5b6773');
+  ctx.beginPath();
+  ctx.moveTo(-w/2, cy - h*0.42);
+  ctx.quadraticCurveTo(0, cy - h*0.62, w/2, cy - h*0.42);   // üst kavis
+  ctx.lineTo(w/2, cy + h*0.14);
+  ctx.quadraticCurveTo(0, cy + h*0.62, -w/2, cy + h*0.14);  // sivri alt uç
+  ctx.closePath();
+  ctx.fillStyle = spark > 0 ? '#ffffff' : g;
+  ctx.fill();
+  ctx.lineWidth = 2.2; ctx.strokeStyle = '#2b333c'; ctx.stroke();
+
+  // orta sırt
+  ctx.beginPath();
+  ctx.moveTo(0, cy - h*0.46); ctx.lineTo(0, cy + h*0.44);
+  ctx.strokeStyle = 'rgba(40,50,60,0.55)'; ctx.lineWidth = 1.6; ctx.stroke();
+
+  // perçinler
+  ctx.fillStyle = '#eef3f7'; ctx.strokeStyle = '#39434d'; ctx.lineWidth = 0.9;
+  [[-0.34,-0.26],[0.34,-0.26],[-0.30,0.24],[0.30,0.24]].forEach(([px,py])=>{
+    ctx.beginPath(); ctx.arc(px*w, cy+py*h, 1.7, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  });
+
+  /* Çatlaklar — aşınmayla birlikte çoğalır (0, 1, 2, 3).
+     Konumları sabit bir tablodan geliyor: her karede rastgele
+     çizilirse plaka titrer gibi görünürdü. */
+  const cracks = Math.floor(wear * 4);
+  if(cracks > 0){
+    const lines = [
+      [[-0.30,-0.34],[-0.06,-0.02],[-0.18, 0.26]],
+      [[ 0.32,-0.20],[ 0.08, 0.06],[ 0.22, 0.36]],
+      [[-0.02,-0.44],[ 0.14,-0.10],[-0.10, 0.14]],
+    ];
+    ctx.strokeStyle = 'rgba(26,32,38,0.75)'; ctx.lineWidth = 1.4; ctx.lineJoin = 'round';
+    for(let i=0;i<Math.min(cracks, lines.length);i++){
+      ctx.beginPath();
+      lines[i].forEach(([px,py], k)=>{
+        const x = px*w, y = cy + py*h;
+        if(k === 0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      });
+      ctx.stroke();
+    }
+  }
+
+  // isabet kıvılcımı
+  if(spark > 0){
+    ctx.beginPath();
+    ctx.arc(0, cy, R*0.9*(0.5+spark*0.6), 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(255,246,200,'+(0.75*spark)+')';
+    ctx.lineWidth = 2; ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
 function drawEnemy(e){
   if(e.shape==='boss'){ drawBossEnemy(e); return; }
   if(e.shape==='cube'){ drawCubeEnemy(e); return; }
@@ -419,6 +513,16 @@ function drawEnemy(e){
   grad.addColorStop(0,'#fff'); grad.addColorStop(0.15,bodyColor); grad.addColorStop(1,e.body2);
   ctx.beginPath(); ctx.arc(0,0,e.radius,0,Math.PI*2);
   ctx.fillStyle=grad; ctx.lineWidth=2.5; ctx.strokeStyle='#241a10'; ctx.fill(); ctx.stroke();
+
+  if(e.armorMax > 0) drawArmorPlate(e);
+
+  /* Plaka koptuğu anda beyaz bir şok halkası — kırılmanın oyuncunun
+     gözünden kaçmaması için (sesi de eşlik eder, bkz. playArmorHit). */
+  if(e.armorBroke > 0){
+    const k = e.armorBroke / 0.6;
+    ctx.beginPath(); ctx.arc(0, 0, e.radius*(1.1 + (1-k)*1.1), 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(226,236,244,'+(0.8*k)+')'; ctx.lineWidth = 2.5; ctx.stroke();
+  }
 
   if(e.slowT>0){
     ctx.beginPath(); ctx.arc(0,0,e.radius+2,0,Math.PI*2);
@@ -544,5 +648,11 @@ function drawEnemy(e){
   const w=e.radius*2.1;
   ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(-w/2,-e.radius-14,w,4);
   ctx.fillStyle='#7fe3b4'; ctx.fillRect(-w/2,-e.radius-14,w*(e.hp/e.maxHp),4);
+  // ZIRH ÇUBUĞU — canın hemen üstünde, çelik grisi. Plaka bitince
+  // tamamen kaybolur; "artık savunmasız" mesajı çubuğun yokluğu.
+  if(e.armorMax > 0 && e.armor > 0){
+    ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(-w/2,-e.radius-19,w,3);
+    ctx.fillStyle='#c3ced9'; ctx.fillRect(-w/2,-e.radius-19,w*(e.armor/e.armorMax),3);
+  }
   ctx.restore();
 }

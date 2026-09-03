@@ -67,6 +67,22 @@ const ENEMY_TYPES = {
   cocoon:   { hp:70, speed:0.5, radius:18, gold:15, dmgToLives:1, label:'Kıvılcım Kozası', shape:'cocoon',
               body:'#ff7a3f', body2:'#7a1f0a', eyes:0, deathBlindRadius:100, deathBlindDuration:2.5 },
 
+  /* ZIRHLI — önünde parçalanabilir bir metal plaka taşır.
+     Plaka ayaktayken gelen hasarın TAMAMI plakayı aşındırır ama
+     gövdeye yalnızca armorSoak kadarı (%30) işler. Yani saniyede
+     az hasar veren silahlar (zehir, lav, şimşek zinciri) plakaya
+     karşı verimsiz; tek seferde sert vuranlar (havan güllesi,
+     lazer) plakayı hızla söker. Plaka bitince tamamen savunmasız.
+
+     Kalkan Taşıyıcı'dan farkı: onun kalkanı YÖNE bağlı ve hiç
+     kırılmaz; bunun plakası yöne bakmaz ama tükenir. İkisi farklı
+     soru soruyor — "nereden vuruyorsun" ve "ne kadar sert vuruyorsun".
+
+     ARMOR_FROM_WAVE'den (5) itibaren diğerlerinin arasına karışır. */
+  armor:    { hp:40, speed:0.5, radius:18, gold:17, dmgToLives:1, label:'Zırhlı', shape:'armored',
+              body:'#9aa6b2', body2:'#404b57', eyes:2,
+              armorHp:55, armorSoak:0.30 },
+
   /* SÜRÜ ANASI — Don Efendisi'nin tersi: kuleleri değil müttefiklerini
      güçlendirir. Kendisi zayıf; yakınındaki Spor/Sürü'ye hız ve hafif
      hasar direnci verir. Onu öncelikli öldürmek dalgayı belirgin
@@ -230,6 +246,30 @@ function bunchIntervalMult(waveIndex, waveCount){
   return waveIndex >= Math.floor(waveCount/2) ? 0.6 : 1;
 }
 
+/* BELİRLİ TÜRLER DAHA SIK GELSİN.
+   Hafif ve hızlı birimler (sürü, koşucu, spor) 8. dalgadan itibaren
+   birbirine daha yakın doğar: aynı sayıda düşman, daha kısa sürede.
+   Amaç bölümün ortasından sonra tempoyu yükseltmek — kuleler onları
+   tek tek rahatça temizleyemesin.
+
+   Ağır birimlere (kabuklu, ur, zırhlı, boss) bilinçli olarak
+   dokunulmuyor: onları sıkıştırmak heyecan değil, aşılmaz bir duvar
+   üretirdi. İlk 7 dalga da tamamen muaf; oyunun açılışı sakin kalsın.
+
+   bunchIntervalMult ile ÇARPILARAK uygulanır (bkz. startWave),
+   yani bölümün ikinci yarısında iki etki üst üste biner. */
+const DENSE_FROM_WAVE = 8;
+const DENSE_INTERVAL_MULT = { swarm:0.68, sprinter:0.72, spore:0.78 };
+function denseIntervalMult(type, waveIndex){
+  if(waveIndex < DENSE_FROM_WAVE) return 1;
+  return DENSE_INTERVAL_MULT[type] || 1;
+}
+
+/* ZIRHLI bu dalgadan itibaren sahaya çıkar. Hem klasik bölümler
+   (generateWave) hem 1000 Bölüm üreticisi (generateWaveForGenerated,
+   levelgen.js) aynı eşiği kullanır. */
+const ARMOR_FROM_WAVE = 5;
+
 function waveCountMultiplier(waveIndex){
   let m;
   if(waveIndex <= 1) m = 1.0;
@@ -248,7 +288,24 @@ const SPAWN_GAP = 2.1;   // grup içi aralık çarpanı
 const GROUP_GAP = 1.3;   // gruplar arası ek bekleme (saniye)
 
 function generateWave(level, waveIndex){
-  if(level.waveOverrides && level.waveOverrides[waveIndex]) return level.waveOverrides[waveIndex];
+  /* Elle yazılmış dalga da olsa üretilmiş dalga da olsa ZIRHLI aynı
+     kuralla katılsın diye kompozisyon önce kuruluyor, ekleme sonra
+     yapılıyor. slice(): waveOverrides tablosu sabit veridir, üstüne
+     push edersek her çağrıda (renderWavePreview de çağırıyor) bir
+     zırhlı daha birikirdi. */
+  const groups = (level.waveOverrides && level.waveOverrides[waveIndex])
+    ? level.waveOverrides[waveIndex].slice()
+    : baseWaveGroups(level, waveIndex);
+
+  /* ZIRHLI — kalabalık değil, "önce bunu kim kıracak?" sorusunu
+     soran birkaç engel. Sayısı dalgayla birlikte yavaşça artar. */
+  if(waveIndex >= ARMOR_FROM_WAVE && !groups.some(g => g.type === 'armor'))
+    groups.push({ type:'armor', count: Math.max(1, Math.floor(waveIndex/2)), interval: 1.4*SPAWN_GAP });
+
+  return groups;
+}
+
+function baseWaveGroups(level, waveIndex){
   const p = level.difficulty;
   const mult = waveCountMultiplier(waveIndex);
   const count = Math.round((p.countBase + Math.floor(waveIndex * p.countGrowth)) * mult);

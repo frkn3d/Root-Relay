@@ -563,6 +563,9 @@ function buildWaves(rng, diff, levelNo){
   // %35 ihtimalle havuza girer (tohuma bağlı, o yüzden aynı bölüm
   // numarası her zaman aynı sonucu verir — "rastgele ama deterministik").
   if(levelNo > 8 && rng() < 0.35) pool.push('swarmqueen');
+  // ZIRHLI: havuza erken girer ama dalga eşiği (ARMOR_FROM_WAVE)
+  // sahaya çıkmasını 5. dalgadan öncesine bırakmaz.
+  if(diff > 0.18) pool.push('armor');
 
   // Havuzdan bazen bir tür çıkarılır — aynı havuz her bölümde
   // aynı hissi vermesin diye. (En az 2 tür kalır.) 50-1000 arası "zor
@@ -894,7 +897,10 @@ function generateWaveForGenerated(level, waveIndex){
 
   // Arketip, hangi türün ağır basacağını ve ritmi belirler. KÜP artık
   // ayrı bir dalga değil — diğer türlerle birlikte normal havuzdan gelir.
-  const baseIntervals = { swarm:0.40, sprinter:0.75, spore:0.75, husk:1.20, brute:1.70, flask:1.50, cocoon:2.2, swarmqueen:1.8, cube:3.2 };
+  const baseIntervals = { swarm:0.40, sprinter:0.75, spore:0.75, husk:1.20, brute:1.70, flask:1.50, cocoon:2.2, swarmqueen:1.8, cube:3.2, armor:1.60 };
+  // ZIRHLI arketip paylarına girmiyor: her dalgada birkaç tane olsun
+  // istiyoruz, arketipe göre dalgayı domine etmesin.
+  const ARMOR_SHARE = 0.10;
   // ŞİŞE yalnızca son 3 dalgada görünür — her dalgada çıkması hem
   // tekrara düşürüyor hem de erken dalgaları gereksiz zorlaştırıyordu.
   const isLateWave = waveIndex > level.waveCount - 3;
@@ -908,7 +914,10 @@ function generateWaveForGenerated(level, waveIndex){
     if(type === 'flask' && !isLateWave) return;
     if(type === 'cocoon' && !isVeryLateWave) return;
     if(type === 'cube' && isVeryEarlyWave) return;
-    const share = arch.shares[type] !== undefined ? arch.shares[type] : 0.2;
+    // ZIRHLI (config.js ARMOR_FROM_WAVE): 5. dalgadan önce çıkmaz
+    if(type === 'armor' && waveIndex < ARMOR_FROM_WAVE) return;
+    const share = type === 'armor' ? ARMOR_SHARE
+                : (arch.shares[type] !== undefined ? arch.shares[type] : 0.2);
     const c = Math.max(1, Math.round(count * share));
     const interval = (baseIntervals[type] || 0.8) * arch.pace;
     groups.push({type, count:c, interval:Math.round(interval*100)/100});

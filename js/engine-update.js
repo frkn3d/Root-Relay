@@ -135,6 +135,8 @@ function updateEnemyMovement(dt){
     e.bounce += dt*e.speed*slowMult*9*(e.gait || 1);
     if(e.flashT>0) e.flashT -= dt*3;
     if(e.blockFlash>0) e.blockFlash -= dt*3;
+    if(e.armorFlash>0) e.armorFlash -= dt*3.5;
+    if(e.armorBroke>0) e.armorBroke -= dt*1.6;
     if(e.slowT>0) e.slowT -= dt;
 
     /* KULUÇKA: yaşadığı sürece belirli aralıklarla yavru bırakır.
@@ -178,7 +180,9 @@ function updateEnemyMovement(dt){
     if(e.dotT > 0){
       if(e.dotKind === 'fire') burning = true;
       e.dotT -= dt;
-      e.hp -= (e.dotDps||0) * dt * (1-(e.queenDmgResist||0));
+      // Zırh yanmayı/zehiri de yer: sürekli küçük hasar plakaya karşı
+      // bilinçli olarak verimsiz. Plaka bu tıkla koparsa duyulsun.
+      if(applyDamage(e, (e.dotDps||0) * dt) === 'break') playArmorHit('break');
       if(e.dotT <= 0){ e.dotT = 0; e.dotDps = 0; e.dotKind = null; }
     }
   });
@@ -323,7 +327,7 @@ function updateTowers(dt){
           while(diff >  Math.PI) diff -= Math.PI*2;
           while(diff < -Math.PI) diff += Math.PI*2;
           if(Math.abs(diff) > cone) return;
-          if(dps>0) e.hp -= dps*dt*(1-(e.queenDmgResist||0));
+          if(dps>0 && applyDamage(e, dps*dt) === 'break') playArmorHit('break');
           e.flashT = Math.max(e.flashT||0, 0.35);
           // ATEŞ vs DON: aynı hedefte bir arada duramaz — lav,
           // üzerindeki yavaşlatmayı/donu hemen eritir.
@@ -392,6 +396,61 @@ function updateTowers(dt){
   });
 }
 
+/* ============================================================
+   HASAR UYGULAMA — tek kapı. Hasar veren her yol buradan geçer:
+   mermi, gülle patlaması, lazer, şimşek zinciri, lav huzmesi,
+   zehir/yanma. Sürü Anası'nın hasar direnci ve ZIRHLI'nın plakası
+   tek yerde işlensin diye toplandı.
+
+   ZIRH: plaka ayaktayken gelen hasarın TAMAMI plakayı aşındırır,
+   gövdeye yalnızca armorSoak kadarı işler. Sonuç: saniyede az hasar
+   veren silahlar plakaya karşı verimsiz, tek seferde sert vuranlar
+   plakayı hızla söker.
+
+   Dönen değer sesi ve görsel geri bildirimi seçer:
+     'shield' plakaya çarptı · 'break' plaka bu vuruşla koptu
+     'body'   ete işledi     ·  null   hasar yok
+   ============================================================ */
+function applyDamage(e, dmg){
+  if(!(dmg > 0)) return null;
+  const resist = 1 - (e.queenDmgResist || 0);
+  if(e.armor > 0){
+    e.armor -= dmg;
+    e.hp -= dmg * (e.armorSoak || 0) * resist;
+    if(e.armor <= 0){
+      e.armor = 0;
+      e.armorBroke = 0.6;                // kırılma parlaması (render-enemies.js)
+      for(let i=0;i<14;i++){             // savrulan metal parçaları
+        const a = Math.random()*Math.PI*2, sp = 60+Math.random()*130;
+        particles.push({x:e.x, y:e.y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp-20,
+          life:0.35+Math.random()*0.25, color: i%2 ? '#d7dee6' : '#7c8794'});
+      }
+      return 'break';
+    }
+    e.armorFlash = 0.28;
+    return 'shield';
+  }
+  e.hp -= dmg * resist;
+  return 'body';
+}
+
+/* İsabetin sesi: zırhlı düşmanda plakanın durumu belirler, diğerlerinde
+   her zamanki boyut tabanlı vuruş sesi çalar. */
+function playImpact(e, res, volMult, electric){
+  if(res === 'shield' || res === 'break' || (res === 'body' && e.armorMax > 0)){
+    playArmorHit(res, volMult);          // audio.js
+    return;
+  }
+  if(electric) playElectricHit(e.radius, e.boss, volMult);
+  else         playHit(e.radius, e.boss, volMult);
+}
+
+/* Hasar yazısının rengi — plakaya inen vuruşlar çelik grisi olsun ki
+   oyuncu "bu hasar gövdeye işlemedi" bilgisini anında görsün. */
+function dmgTextColor(res, normal){
+  return res === 'shield' ? '#cfd8e3' : normal;
+}
+
 /* Mesafe kat etmeyen (anında değen) bir isabeti uygular — şu an
    yalnızca Lazer Kulesi kullanıyor. Mermi isabetiyle aynı kuralları
    izler: Kalkan Taşıyıcı önden gelen darbeyi seker, Yansıtıcı atan
@@ -410,10 +469,10 @@ function applyDirectHit(tower, tgt, dmg, originX, originY, volMult){
       return false;
     }
   }
-  tgt.hp -= dmg * (1-(tgt.queenDmgResist||0));
+  const res = applyDamage(tgt, dmg);
   tgt.flashT = 1;
-  playHit(tgt.radius, tgt.boss, volMult);
-  floatTexts.push({x:tgt.x,y:tgt.y,text:'-'+Math.round(dmg),life:0.6,vy:-30,color:'#bfe4ff'});
+  playImpact(tgt, res, volMult, false);
+  floatTexts.push({x:tgt.x,y:tgt.y,text:'-'+Math.round(dmg),life:0.6,vy:-30,color:dmgTextColor(res,'#bfe4ff')});
   for(let i=0;i<5;i++) particles.push({x:tgt.x,y:tgt.y,vx:(Math.random()-0.5)*90,vy:(Math.random()-0.5)*90,life:0.35,color:tower.def.color});
 
   /* YANSITICI: hasarın bir kısmını atan kuleye geri yansıtır;
@@ -461,8 +520,7 @@ function updateProjectiles(dt){
         let caught = 0;
         enemies.forEach(e=>{
           if(Math.hypot(e.x-ix,e.y-iy)<=p.splash){
-            e.hp -= p.dmg * (1-(e.queenDmgResist||0)); e.flashT=1;
-            playHit(e.radius, e.boss, p.volMult);
+            playImpact(e, applyDamage(e, p.dmg), p.volMult, false); e.flashT=1;
             caught++;
           }
         });
@@ -506,9 +564,10 @@ function updateProjectiles(dt){
           for(let i=0;i<4;i++) particles.push({x:p.x,y:p.y,vx:(Math.random()-0.5)*70,vy:(Math.random()-0.5)*70,life:0.25,color:'#dce8ff'});
         } else {
           if(p.dmg > 0){
-            tgt.hp -= p.dmg * (1-(tgt.queenDmgResist||0)); tgt.flashT=1;
-            if(p.kind==='bolt') playElectricHit(tgt.radius, tgt.boss, p.volMult); else playHit(tgt.radius, tgt.boss, p.volMult);
-            floatTexts.push({x:p.x,y:p.y,text:'-'+Math.round(p.dmg),life:0.6,vy:-30,color:p.kind==='mage'?'#bfe4ff':'#ffe3c2'});
+            const res = applyDamage(tgt, p.dmg); tgt.flashT=1;
+            playImpact(tgt, res, p.volMult, p.kind==='bolt');
+            floatTexts.push({x:p.x,y:p.y,text:'-'+Math.round(p.dmg),life:0.6,vy:-30,
+              color:dmgTextColor(res, p.kind==='mage'?'#bfe4ff':'#ffe3c2')});
 
             /* YANSITICI: hasarın bir kısmını atan kuleye geri yansıtır.
                Kule kısa süre aşırı yüklenir ve ateş edemez. */
@@ -554,10 +613,11 @@ function updateProjectiles(dt){
               }
               if(!next) break;
               dmg *= p.chainFalloff;
-              next.hp -= dmg * (1-(next.queenDmgResist||0)); next.flashT = 1;
-              playElectricHit(next.radius, next.boss, p.volMult);
+              const chainRes = applyDamage(next, dmg); next.flashT = 1;
+              playImpact(next, chainRes, p.volMult, true);
               arcs.push({x1:cur.x, y1:cur.y, x2:next.x, y2:next.y, life:0.22});
-              floatTexts.push({x:next.x,y:next.y,text:'-'+Math.round(dmg),life:0.5,vy:-26,color:'#fff3a8'});
+              floatTexts.push({x:next.x,y:next.y,text:'-'+Math.round(dmg),life:0.5,vy:-26,
+                color:dmgTextColor(chainRes,'#fff3a8')});
               hitSet.add(next);
               cur = next;
             }

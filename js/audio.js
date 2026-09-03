@@ -283,6 +283,27 @@ function playKill(boss){
   setTimeout(()=>blip(1320,0.09,'triangle',0.11,1760), 45);
 }
 
+/* ZIRHLI düşmanın isabet sesi üç durumda farklı:
+     'shield' — plaka ayakta: metalik, tok bir çınlama
+     'break'  — plaka bu vuruşla koptu: aynı metal örnek, pes ve yüksek
+     'body'   — plaka gitti: normal, etli bir darbe
+   Kırılma tek seferlik bir olay olduğu için throttle'a takılmaz;
+   oyuncunun o anı kaçırmaması gerekiyor. */
+function playArmorHit(state, volMult){
+  const V = volScale(volMult);
+  if(state === 'break'){
+    if(sfx('hit_armor_shield', { rate:0.66, vol:1.5*V })) return;
+    blip(150, 0.30, 'square', 0.17*V, 58);
+    setTimeout(()=>blip(420, 0.14, 'sawtooth', 0.08*V, 180), 25);
+    return;
+  }
+  const shielded = state === 'shield';
+  if(!throttleByVolume(shielded ? 'hit_armor_s' : 'hit_armor_b', 42, V)) return;
+  if(sfx(shielded ? 'hit_armor_shield' : 'hit_armor_body', { rate:sfxRnd(0.07), vol:V })) return;
+  if(shielded) blip(720, 0.09, 'square', 0.080*V, 540);
+  else         blip(300, 0.09, 'sine',   0.075*V, 175);
+}
+
 /* Kalkan Taşıyıcı önden gelen mermiyi sektirdiğinde */
 function playShieldDeflect(){
   if(!throttleSound('deflect',60)) return;

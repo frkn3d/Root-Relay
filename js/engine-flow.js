@@ -148,6 +148,9 @@ function startWave(){
   groups.forEach(g=>{
     const def = ENEMY_TYPES[g.type];
     seenEnemyTypes.add(g.type);
+    // denseIntervalMult (config.js): 8. dalgadan itibaren hafif
+    // türler birbirine daha yakın doğsun diye ek kısaltma.
+    const dense = denseIntervalMult(g.type, waveIndex);
     for(let i=0;i<g.count;i++){
       spawnTimeline.push({
         t, type:g.type,
@@ -162,6 +165,11 @@ function startWave(){
         allyBuffTypes: def.allyBuffTypes || null, allySpeedBuff: def.allySpeedBuff || 0, allyDmgResist: def.allyDmgResist || 0,
         healRadius: def.healRadius || 0, healPerSec: def.healPerSec || 0, healDuration: def.healDuration || 0,
         blockArc: def.blockArc || 0,
+        // ZIRHLI plakası — can gibi dalga çarpanıyla ölçeklenir,
+        // yoksa geç dalgalarda kâğıttan kalırdı.
+        armor: (def.armorHp || 0) * mult.hp,
+        armorMax: (def.armorHp || 0) * mult.hp,
+        armorSoak: def.armorSoak || 0,
         broodEvery: def.broodEvery || 0, broodType: def.broodType || null, broodMax: def.broodMax || 0, broodT: 0, broodCount: 0,
         overloadSec: def.overloadSec || 0, overloadChance: def.overloadChance || 0,
         splitsLeft: def.splits || 0,
@@ -174,7 +182,7 @@ function startWave(){
         minRadius: def.minRadius || 6,
         wobbleAmp: def.wobble || 0,
       });
-      t += g.interval * bunch;
+      t += g.interval * bunch * dense;
     }
     t += GROUP_GAP * bunch; // config.js — gruplar arası nefes payı
   });

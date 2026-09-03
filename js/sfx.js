@@ -44,6 +44,9 @@ const SFX = {
   hit_boss:      { f:'hit_boss.mp3',      v:0.38 },
   hit_electric:  { f:'hit_electric.mp3',  v:0.26 },
   hit_shield:    { f:'hit_shield_deflect.mp3', v:0.30 },
+  // ZIRHLI: plaka ayaktayken metalik/tok, plaka kırıldıktan sonra etli
+  hit_armor_shield:{ f:'hit_armor_shield.mp3', v:0.28 },
+  hit_armor_body:  { f:'hit_armor_body.mp3',   v:0.26 },
   hit_burn:      { f:'hit_fire_burn.mp3', v:0.02 },   // sürekli cızırdadığı için kütüphanenin en kısığı
 
   // --- düşman olayları ---
@@ -71,6 +74,7 @@ const SFX = {
   walk_frostlord:    { f:'walk_frostlord.mp3',    v:0.20 },
   walk_cocoon:       { f:'walk_cocoon.mp3',       v:0.12 },
   walk_swarmqueen:   { f:'walk_swarmqueen.mp3',   v:0.12 },
+  walk_armor:        { f:'walk_armor.mp3',        v:0.14 },
 
   // --- ekonomi / kule yönetimi ---
   coin:          { f:'coin_pickup.mp3',   v:0.22 },
