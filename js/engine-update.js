@@ -639,6 +639,23 @@ function updateExplosions(dt){
   explosions = explosions.filter(x=>x.life>0);
 }
 
+/* ============================================================
+   CESET İZİ — ölen düşmandan geriye kalan parçalar.
+   Sıradan parçacıklardan iki farkı var:
+     • sürtünme (drag) ile hızla yavaşlayıp YERE oturuyorlar,
+       savrulup ekrandan çıkmıyorlar;
+     • ömürleri CORPSE_LINGER kadar uzun.
+   Bu ek süre boyunca tam görünür duruyorlar; sönme her parçacıkta
+   olduğu gibi son 0.45 saniyede oluyor (drawParticles). Sonuç:
+   "ceset bir süre yerde kaldı, sonra yavaşça kayboldu".
+   ============================================================ */
+const CORPSE_LINGER = 0.5;   // ölüm efektlerine eklenen ek süre (sn)
+const CORPSE_DRAG   = 6.5;   // 1/sn — parçalar yere otursun diye
+
+function corpseParticle(x, y, vx, vy, life, color){
+  particles.push({ x, y, vx, vy, life: life + CORPSE_LINGER, color, drag: CORPSE_DRAG });
+}
+
 /* Canı biten düşmanlar: altın, ses, küp bölünmesi, şişe birikintisi,
    koza patlaması ve boss ölüm gösterisi. */
 function resolveEnemyDeaths(){
@@ -686,7 +703,7 @@ function resolveEnemyDeaths(){
         }
         for(let i=0;i<10;i++){
           const ang=(i/10)*Math.PI*2;
-          particles.push({x:e.x,y:e.y,vx:Math.cos(ang)*100,vy:Math.sin(ang)*100,life:0.35,color:e.body});
+          corpseParticle(e.x, e.y, Math.cos(ang)*100, Math.sin(ang)*100, 0.35, e.body);
         }
 
         // ENKAZ: kırılan şişenin yere döktüğü sıvı gibi, küpün
@@ -697,7 +714,9 @@ function resolveEnemyDeaths(){
           const a = Math.random()*Math.PI*2, d = 6 + Math.random()*(e.radius*0.9);
           pieces.push({ dx:Math.cos(a)*d, dy:Math.sin(a)*d, rot:Math.random()*Math.PI, size:3+Math.random()*4 });
         }
-        debris.push({ x:e.x, y:e.y, life:1.6, maxLife:1.6, color:e.body, color2:e.body2, pieces });
+        // Enkaz da CORPSE_LINGER kadar daha uzun yerde kalır (1.6 -> 2.1)
+        const debrisLife = 1.6 + CORPSE_LINGER;
+        debris.push({ x:e.x, y:e.y, life:debrisLife, maxLife:debrisLife, color:e.body, color2:e.body2, pieces });
       }
 
       // ŞİŞE KIRILMASI: yere dökülen sıvı uzun süre iyileştirir
@@ -712,8 +731,8 @@ function resolveEnemyDeaths(){
         // Kırılma efekti: cam kırıkları + sıvı sıçraması
         for(let i=0;i<22;i++){
           const ang=(i/22)*Math.PI*2, sp=60+Math.random()*110;
-          particles.push({x:e.x,y:e.y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,life:0.5,
-            color: i%3===0 ? '#dffbe9' : '#7fe0a8'});
+          corpseParticle(e.x, e.y, Math.cos(ang)*sp, Math.sin(ang)*sp, 0.5,
+            i%3===0 ? '#dffbe9' : '#7fe0a8');
         }
         playFlaskShatter();   // audio.js
         floatTexts.push({x:e.x,y:e.y-16,text:'ŞİŞE KIRILDI',life:1.0,vy:-26,color:'#7fe0a8'});
@@ -736,8 +755,8 @@ function resolveEnemyDeaths(){
         playBlindBurst();
         for(let i=0;i<26;i++){
           const ang=(i/26)*Math.PI*2, sp=70+Math.random()*130;
-          particles.push({x:e.x,y:e.y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,life:0.55,
-            color: i%3===0 ? '#ffe08a' : (i%3===1 ? '#ff8a4a' : '#ffb35c')});
+          corpseParticle(e.x, e.y, Math.cos(ang)*sp, Math.sin(ang)*sp, 0.55,
+            i%3===0 ? '#ffe08a' : (i%3===1 ? '#ff8a4a' : '#ffb35c'));
         }
         if(blinded>0) floatTexts.push({x:e.x,y:e.y-16,text:'KÖRLEŞTİ',life:0.9,vy:-26,color:'#ffb35c'});
       }
@@ -747,13 +766,14 @@ function resolveEnemyDeaths(){
         showWaveToast(e.label + ' Yıkıldı!'); // ui.js
         for(let i=0;i<60;i++){
           const ang=(i/60)*Math.PI*2, sp=80+Math.random()*180;
-          particles.push({x:e.x,y:e.y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,life:0.9,color:i%2?'#bfeeff':'#ffffff'});
+          corpseParticle(e.x, e.y, Math.cos(ang)*sp, Math.sin(ang)*sp, 0.9, i%2?'#bfeeff':'#ffffff');
         }
         explosions.push({x:e.x,y:e.y,r:8,maxR:e.auraRadius||120,life:0.6});
         floatTexts.push({x:e.x,y:e.y-30,text:'+'+e.gold+'🪙',life:1.2,vy:-30,color:'#f4c04a'});
       } else {
         floatTexts.push({x:e.x,y:e.y-10,text:'+'+e.gold+'🪙',life:0.7,vy:-25,color:'#f4c04a'});
-        for(let i=0;i<12;i++) particles.push({x:e.x,y:e.y,vx:(Math.random()-0.5)*120,vy:(Math.random()-0.5)*120,life:0.45,color:e.body});
+        for(let i=0;i<12;i++)
+          corpseParticle(e.x, e.y, (Math.random()-0.5)*120, (Math.random()-0.5)*120, 0.45, e.body);
       }
     });
     enemies = enemies.filter(e=>e.hp>0);
@@ -763,7 +783,15 @@ function resolveEnemyDeaths(){
 }
 
 function updateParticlesAndTexts(dt){
-  particles.forEach(p=>{ p.x+=p.vx*dt; p.y+=p.vy*dt; p.life-=dt; });
+  particles.forEach(p=>{
+    // drag: yalnızca ceset parçalarında var (corpseParticle). Parçalar
+    // savrulup gitmek yerine hızla yavaşlayıp yere oturur.
+    if(p.drag){
+      const k = Math.max(0, 1 - p.drag*dt);
+      p.vx *= k; p.vy *= k;
+    }
+    p.x+=p.vx*dt; p.y+=p.vy*dt; p.life-=dt;
+  });
   particles = particles.filter(p=>p.life>0);
   floatTexts.forEach(f=>{ f.y+=f.vy*dt; f.life-=dt; });
   floatTexts = floatTexts.filter(f=>f.life>0);

@@ -359,9 +359,15 @@ function drawExplosions(){
     ctx.restore();
   });
 }
+/* Sönme her zaman ömrün SON 0.45 saniyesinde olur. Daha uzun yaşayan
+   parçacıklar (ceset izleri, boss ölümü) o ana kadar tam görünür durur;
+   böylece "bir süre yerde kaldı, sonra yavaşça silindi" okunur.
+   Eskiden alfa doğrudan life/0.45 idi, yani uzun ömürlüler bu süre
+   dolana dek 1'in üstünde kalıp aniden sönmeye başlıyordu. */
+const PARTICLE_FADE = 0.45;
 function drawParticles(){
   particles.forEach(p=>{
-    ctx.save(); ctx.globalAlpha=Math.max(p.life/0.45,0);
+    ctx.save(); ctx.globalAlpha=Math.max(0, Math.min(1, p.life/PARTICLE_FADE));
     ctx.beginPath(); ctx.arc(p.x,p.y,2.4,0,Math.PI*2); ctx.fillStyle=p.color; ctx.fill(); ctx.restore();
   });
 }

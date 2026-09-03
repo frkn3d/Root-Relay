@@ -96,7 +96,8 @@ const ENEMY_TYPES = {
      ARMOR_FROM_WAVE'den (5) itibaren diğerlerinin arasına karışır. */
   armor:    { hp:40, speed:0.5, radius:18, gold:17, dmgToLives:1, label:'Zırhlı', shape:'armored',
               body:'#9aa6b2', body2:'#404b57', eyes:2,
-              armorHp:55, armorSoak:0.30 },
+              // Plaka 55 -> 110 (iki katı): kalkan aşaması belirgin olsun.
+              armorHp:110, armorSoak:0.30 },
 
   /* SÜRÜ ANASI — Don Efendisi'nin tersi: kuleleri değil müttefiklerini
      güçlendirir. Kendisi zayıf; yakınındaki Spor/Sürü'ye hız ve hafif
@@ -117,7 +118,7 @@ const TOWER_TYPES = {
   /* LAZER KULESİ (eski adı "Işık Kulesi") — mermi atmaz; hedefe ANINDA
      değen ve hedefi bırakmadan takip eden mavi bir ışın gönderir.
      Hasar ışın çakar çakmaz uygulanır (bkz. engine-update.js, beams). */
-  mage:   { id:'mage',   name:'Lazer Kulesi', cost:80,  range:185, rate:0.85, dmg:15, splash:0,  kind:'mage',   color:'#4fa8ff', icon:'🔮', maxCount:4 },
+  mage:   { id:'mage',   name:'Lazer Kulesi', cost:80,  range:185, rate:0.85, dmg:15, splash:0,  kind:'mage',   color:'#4fa8ff', icon:'🔮', maxCount:3 },
   /* MANTAR HAVANI — artık hızlı bir havan değil, ağır bir TOP.
      Seyrek ama çok sert vuruyor ve isabet noktasında geniş bir alanı
      birden döven bir gülle patlaması bırakıyor.
