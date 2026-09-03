@@ -208,6 +208,82 @@ async function decodeSfx(ctx, url){
 /* Kütüphaneyi bir kez yükler. İlk kullanıcı dokunuşundan sonra
    (ensureAudioCtx bir bağlam üretebildiğinde) çağrılmalı; öncesinde
    tarayıcı zaten ses çalmaya izin vermez. */
+/* ============================================================
+   YÜKLEME KUYRUĞU.
+
+   Eskiden ilk dokunuşta 85 dosyanın tamamı aynı anda indirilip
+   çözülüyordu. İki ayrı sorun:
+
+     1) DOĞUŞ SARSINTISI — 85 eşzamanlı fetch + decodeAudioData, tam
+        oyuncunun "Başla"ya bastığı ve ilk dalganın geldiği anda.
+     2) BELLEK — asıl mesele bu. Ses kütüphanesinin 5,9 MB'ının
+        5,2 MB'ı ambiyans. Çözülmüş PCM olarak: efektlerin tamamı
+        4,2 MB, ambiyansın tamamı 112 MB. Yani RAM'de 116 MB ses
+        duruyordu ve bunun çoğu hiç çalınmıyordu — bir bölümde en
+        fazla birkaç katman duyulur, gerisi başka biyomlara ait.
+
+   Çözüm ses kalitesine hiç dokunmuyor, yalnızca NE ZAMAN yükleneceğini
+   değiştiriyor:
+     • Efektlerin tamamı hemen (624 KB / 4,2 MB PCM) — atış, vuruş,
+       adım sesi hiç gecikmesin.
+     • Menü müziği ve savaş uğultusu hemen ardından: ikisi de kesin
+       gerekli.
+     • Biyom ve hava katmanları YALNIZCA istendiğinde. startAmbience
+       zaten tampon hazır değilse false dönüp bir sonraki saniyede
+       tekrar deniyordu (updateAmbience saniyede bir çalışır), yani
+       tembel yükleme için gereken tekrar mekanizması hazırdı.
+
+   Kuyruk aynı anda en fazla SFX_PARALLEL indirme tutar; sıradakiler
+   biri bitince başlar.
+   ============================================================ */
+const SFX_PARALLEL = 6;
+let sfxQueue = [];
+let sfxActive = 0;
+const sfxQueued = {};
+
+function sfxSrcFor(k){
+  return sfxUrl(k.startsWith('amb_') ? AMBIENCE[k.slice(4)].f : SFX[k].f);
+}
+
+function sfxPump(){
+  if(sfxMode !== 'buffer' || !audioCtx) return;
+  while(sfxActive < SFX_PARALLEL && sfxQueue.length){
+    const k = sfxQueue.shift();
+    if(sfxBuffers[k]) continue;
+    sfxActive++;
+    decodeSfx(audioCtx, sfxSrcFor(k))
+      .then(b=>{ sfxBuffers[k] = b; })
+      .catch(()=>{})
+      .then(()=>{ sfxActive--; sfxPump(); });
+  }
+}
+
+function sfxEnqueue(keys){
+  for(const k of keys){
+    if(sfxBuffers[k] || sfxQueued[k]) continue;
+    sfxQueued[k] = 1;
+    sfxQueue.push(k);
+  }
+  sfxPump();
+}
+
+/* Bir ambiyans katmanı ilk kez istendiğinde çağrılır (startAmbience).
+   Zaten yüklüyse ya da kuyruktaysa hiçbir şey yapmaz. */
+function requestAmbience(key){
+  if(!AMBIENCE[key]) return;
+  if(sfxMode === 'buffer') sfxEnqueue(['amb_'+key]);
+  else if(sfxMode === 'element' && !sfxElements['amb_'+key]){
+    try{
+      const a = new Audio(sfxSrcFor('amb_'+key));
+      a.preload = 'auto';
+      sfxElements['amb_'+key] = a;
+    }catch(e){}
+  }
+}
+
+/* Kütüphaneyi bir kez yükler. İlk kullanıcı dokunuşundan sonra
+   (ensureAudioCtx bir bağlam üretebildiğinde) çağrılmalı; öncesinde
+   tarayıcı zaten ses çalmaya izin vermez. */
 function loadSfxLibrary(){
   if(sfxLoading || sfxMode === 'off') return;
   sfxLoading = true;
@@ -218,28 +294,30 @@ function loadSfxLibrary(){
   const ctx = audioCtx;           // audio.js
   if(!ctx){ sfxLoading = false; return; }
 
-  const keys = Object.keys(SFX).concat(Object.keys(AMBIENCE).map(k=>'amb_'+k));
-  const src = k => sfxUrl(k.startsWith('amb_') ? AMBIENCE[k.slice(4)].f : SFX[k].f);
-
   // Önce tek bir dosyayla fetch+decode yolunun çalışıp çalışmadığını
   // sına: file:// ile açılan sayfalarda fetch CORS'a takılır ve tüm
   // kütüphaneyi denemek boşuna 60 hata üretir.
-  decodeSfx(ctx, src('ui_tap'))
+  decodeSfx(ctx, sfxSrcFor('ui_tap'))
     .then(buf=>{
       sfxMode = 'buffer';
       sfxBuffers['ui_tap'] = buf;
-      keys.forEach(k=>{
-        if(sfxBuffers[k]) return;
-        decodeSfx(ctx, src(k)).then(b=>{ sfxBuffers[k] = b; }).catch(()=>{});
-      });
+      sfxQueued['ui_tap'] = 1;
+      // Önce efektlerin tamamı — oynanış sesleri hiç gecikmesin.
+      sfxEnqueue(Object.keys(SFX));
+      // Sonra kesin gerekli iki ambiyans katmanı. Geri kalan 24
+      // katman istendiğinde yüklenir (bkz. requestAmbience).
+      sfxEnqueue(['amb_menu_music', 'amb_battle']);
     })
     .catch(()=>{
-      // Yedek: <audio> öğeleri. file:// altında da çalışır, ama üst
-      // üste binen sesler için her seferinde klonlamak gerekir.
+      /* Yedek: <audio> öğeleri. file:// altında da çalışır, ama üst
+         üste binen sesler için her seferinde klonlamak gerekir.
+         Burada da yalnızca efektler + iki kesin katman önden kurulur;
+         gerisini requestAmbience oluşturur. */
       sfxMode = 'element';
-      keys.forEach(k=>{
+      const eager = Object.keys(SFX).concat(['amb_menu_music', 'amb_battle']);
+      eager.forEach(k=>{
         try{
-          const a = new Audio(src(k));
+          const a = new Audio(sfxSrcFor(k));
           a.preload = 'auto';
           sfxElements[k] = a;
         }catch(e){}
@@ -347,10 +425,14 @@ function startAmbience(name, key, fadeSec, outFade){
   if(cur && cur.key === key) return true;
   const def = AMBIENCE[key];
   if(!def) return false;
-  // Yeni parçanın tamponu hazır değilse eskisini SUSTURMA — sessizlik
-  // yerine çalmaya devam etsin, geçiş bir sonraki denemede olur.
-  if(sfxMode === 'buffer' && !sfxBuffers['amb_'+key]) return false;
-  if(sfxMode === 'element' && !sfxElements['amb_'+key]) return false;
+  /* Yeni parçanın tamponu hazır değilse eskisini SUSTURMA — sessizlik
+     yerine çalmaya devam etsin, geçiş bir sonraki denemede olur.
+     Katmanlar tembel yüklendiği için (bkz. requestAmbience) ilk
+     istekte tampon çoğu zaman yoktur: yüklemeyi burada başlatıyoruz,
+     updateAmbience saniyede bir tekrar deneyeceği için hazır olur
+     olmaz kendiliğinden girer. */
+  if(sfxMode === 'buffer' && !sfxBuffers['amb_'+key]){ requestAmbience(key); return false; }
+  if(sfxMode === 'element' && !sfxElements['amb_'+key]){ requestAmbience(key); return false; }
   if(cur) stopAmbience(name, outFade || 0.6);
 
   if(sfxMode === 'buffer'){

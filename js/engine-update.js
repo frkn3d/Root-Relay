@@ -441,7 +441,8 @@ function applyDamage(e, dmg){
     if(e.armor <= 0){
       e.armor = 0;
       e.armorBroke = 0.6;                // kırılma parlaması (render-enemies.js)
-      for(let i=0;i<14;i++){             // savrulan metal parçaları
+      const pbArmor = particleBudget(14);
+for(let i=0;i<pbArmor;i++){             // savrulan metal parçaları
         const a = Math.random()*Math.PI*2, sp = 60+Math.random()*130;
         particles.push({x:e.x, y:e.y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp-20,
           life:0.35+Math.random()*0.25, color: i%2 ? '#d7dee6' : '#7c8794'});
@@ -504,8 +505,9 @@ function applyDirectHit(tower, tgt, dmg, originX, originY, volMult){
       tower.overloadT = tgt.overloadSec;
       playReflectorShock();   // audio.js
       floatTexts.push({x:tower.x,y:tower.y-30,text:'AŞIRI YÜK',life:0.8,vy:-24,color:'#ffe066'});
-      for(let i=0;i<6;i++){
-        const a=(i/6)*Math.PI*2;
+      const pbOv1 = particleBudget(6);
+      for(let i=0;i<pbOv1;i++){
+        const a=(i/pbOv1)*Math.PI*2;
         particles.push({x:tower.x,y:tower.y-10,vx:Math.cos(a)*70,vy:Math.sin(a)*70,life:0.35,color:'#fff3a8'});
       }
     }
@@ -558,7 +560,8 @@ function updateProjectiles(dt){
       } else if(!p.target){
         // Hedef yolda öldü ve bu mermi alan hasarı vermiyor: yere düşüp
         // söner. Görsel olarak "ıskaladı" hissi versin diye küçük bir toz.
-        for(let i=0;i<4;i++){
+        const pbDust = particleBudget(4);
+        for(let i=0;i<pbDust;i++){
           const a = Math.random()*Math.PI*2, sp = 30+Math.random()*50;
           particles.push({x:ix,y:iy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:0.28,color:'#b8ad95'});
         }
@@ -599,8 +602,9 @@ function updateProjectiles(dt){
                 tw.overloadT = tgt.overloadSec;
                 playReflectorShock();   // audio.js
                 floatTexts.push({x:tw.x,y:tw.y-30,text:'AŞIRI YÜK',life:0.8,vy:-24,color:'#ffe066'});
-                for(let i=0;i<6;i++){
-                  const a=(i/6)*Math.PI*2;
+                const pbOv2 = particleBudget(6);
+                for(let i=0;i<pbOv2;i++){
+                  const a=(i/pbOv2)*Math.PI*2;
                   particles.push({x:tw.x,y:tw.y-10,vx:Math.cos(a)*70,vy:Math.sin(a)*70,life:0.35,color:'#fff3a8'});
                 }
               }
@@ -644,7 +648,8 @@ function updateProjectiles(dt){
             }
           }
         }
-        for(let i=0;i<5;i++) particles.push({x:ix,y:iy,vx:(Math.random()-0.5)*90,vy:(Math.random()-0.5)*90,life:0.35,
+        const pbHit = particleBudget(5);
+        for(let i=0;i<pbHit;i++) particles.push({x:ix,y:iy,vx:(Math.random()-0.5)*90,vy:(Math.random()-0.5)*90,life:0.35,
           color:p.kind==='ice'?'#bfeeff':(p.kind==='poison'?'#b9ea78':(p.kind==='bolt'?'#fff3a8':'#c9a56a'))});
       }
       p.dead=true;
@@ -670,6 +675,33 @@ function updateExplosions(dt){
    olduğu gibi son 0.45 saniyede oluyor (drawParticles). Sonuç:
    "ceset bir süre yerde kaldı, sonra yavaşça kayboldu".
    ============================================================ */
+/* ============================================================
+   PARÇACIK BÜTÇESİ.
+   Yoğun bir dalgada sahadaki parçacık sayısı 400'ü aşabiliyor ve
+   her parçacık kare başına ~5 çizim çağrısı demek. Sabit bir tavan
+   koymak yerine YÜKLE BİRLİKTE kısıyoruz:
+
+     SOFT'a kadar hiçbir şey değişmez — normal oyunda görüntü birebir
+     aynı. Üstünde yeni patlamalar kademeli olarak daha az parça
+     saçar, HARD'da en aza iner. Var olan parçacıklara dokunulmaz
+     (silmek gözle görülür bir sıçrama yaratırdı); yalnızca yeni
+     doğanlar kısılır.
+
+   Yani kısıtlama tam da ekranın zaten enkazla dolu olduğu anda
+   devreye girer, ki orada birkaç parça eksiğini kimse fark etmez.
+   ============================================================ */
+const PARTICLE_SOFT_CAP = 300;
+const PARTICLE_HARD_CAP = 700;
+
+function particleBudget(want){
+  const n = particles.length;
+  if(n <= PARTICLE_SOFT_CAP) return want;
+  const over = (n - PARTICLE_SOFT_CAP) / (PARTICLE_HARD_CAP - PARTICLE_SOFT_CAP);
+  const k = Math.max(0.25, 1 - over);
+  // En az 3: patlama tamamen kaybolmasın, sadece seyrelsin.
+  return Math.max(Math.min(want, 3), Math.round(want * k));
+}
+
 const CORPSE_LINGER = 0.5;   // ölüm efektlerine eklenen ek süre (sn)
 const CORPSE_DRAG   = 6.5;   // 1/sn — parçalar yere otursun diye
 
@@ -722,8 +754,9 @@ function resolveEnemyDeaths(){
             ...gaitTraits(),
           });
         }
-        for(let i=0;i<10;i++){
-          const ang=(i/10)*Math.PI*2;
+        const pbCube = particleBudget(10);
+        for(let i=0;i<pbCube;i++){
+          const ang=(i/pbCube)*Math.PI*2;
           corpseParticle(e.x, e.y, Math.cos(ang)*100, Math.sin(ang)*100, 0.35, e.body);
         }
 
@@ -750,8 +783,9 @@ function resolveEnemyDeaths(){
           maxLife:e.healDuration,
         });
         // Kırılma efekti: cam kırıkları + sıvı sıçraması
-        for(let i=0;i<22;i++){
-          const ang=(i/22)*Math.PI*2, sp=60+Math.random()*110;
+        const pbFlask = particleBudget(22);
+        for(let i=0;i<pbFlask;i++){
+          const ang=(i/pbFlask)*Math.PI*2, sp=60+Math.random()*110;
           corpseParticle(e.x, e.y, Math.cos(ang)*sp, Math.sin(ang)*sp, 0.5,
             i%3===0 ? '#dffbe9' : '#7fe0a8');
         }
@@ -774,8 +808,9 @@ function resolveEnemyDeaths(){
         explosions.push({x:e.x,y:e.y,r:6,maxR:e.deathBlindRadius,life:0.5});
         shake = Math.min(shake+6, 16);
         playBlindBurst();
-        for(let i=0;i<26;i++){
-          const ang=(i/26)*Math.PI*2, sp=70+Math.random()*130;
+        const pbCocoon = particleBudget(26);
+        for(let i=0;i<pbCocoon;i++){
+          const ang=(i/pbCocoon)*Math.PI*2, sp=70+Math.random()*130;
           corpseParticle(e.x, e.y, Math.cos(ang)*sp, Math.sin(ang)*sp, 0.55,
             i%3===0 ? '#ffe08a' : (i%3===1 ? '#ff8a4a' : '#ffb35c'));
         }
@@ -785,15 +820,17 @@ function resolveEnemyDeaths(){
       if(e.boss){
         shake = Math.min(shake+14, 20);
         showWaveToast(e.label + ' Yıkıldı!'); // ui.js
-        for(let i=0;i<60;i++){
-          const ang=(i/60)*Math.PI*2, sp=80+Math.random()*180;
+        const pbBoss = particleBudget(60);
+        for(let i=0;i<pbBoss;i++){
+          const ang=(i/pbBoss)*Math.PI*2, sp=80+Math.random()*180;
           corpseParticle(e.x, e.y, Math.cos(ang)*sp, Math.sin(ang)*sp, 0.9, i%2?'#bfeeff':'#ffffff');
         }
         explosions.push({x:e.x,y:e.y,r:8,maxR:e.auraRadius||120,life:0.6});
         floatTexts.push({x:e.x,y:e.y-30,text:'+'+e.gold+'🪙',life:1.2,vy:-30,color:'#f4c04a'});
       } else {
         floatTexts.push({x:e.x,y:e.y-10,text:'+'+e.gold+'🪙',life:0.7,vy:-25,color:'#f4c04a'});
-        for(let i=0;i<12;i++)
+        const pbDeath = particleBudget(12);
+        for(let i=0;i<pbDeath;i++)
           corpseParticle(e.x, e.y, (Math.random()-0.5)*120, (Math.random()-0.5)*120, 0.45, e.body);
       }
     });

@@ -17,8 +17,22 @@ const sceneCanvas = document.createElement('canvas');
 let bakedSceneKey = null;
 function invalidateScene(){ bakedSceneKey = null; }
 
+/* ÇÖZÜNÜRLÜK TAVANI.
+   Tuval, cihazın piksel yoğunluğu kadar büyütülür — ama bir tavana
+   kadar. Tavan 2.5 iken DPR 3 olan bir telefonda her kare
+   1500x2500 = 3,75 milyon piksel boyanıyordu. 2.0'da bu 2,4 milyona
+   iner: karede boyanan piksel işi %36 azalır, çizim çağrısı sayısı
+   hiç değişmeden.
+
+   Neden 2.0 hâlâ fazlasıyla keskin: oyunun sanat tarzı yuvarlak ve
+   gradyanlı, keskin ince çizgi ya da küçük punto metin yok. 2.0,
+   mantıksal 600x1000 sahayı 1200x2000 piksele açar — telefon
+   ekranının fiziksel piksel sayısının altına düşmez, yalnızca
+   üstündeki fazlalığı keser. */
+const DPR_CAP = 2.0;
+
 function setupCanvasDPR(){
-  dpr = Math.max(1, Math.min(window.devicePixelRatio||1, 2.5));
+  dpr = Math.max(1, Math.min(window.devicePixelRatio||1, DPR_CAP));
   canvas.width = LW*dpr; canvas.height = LH*dpr;
   ctx.setTransform(dpr,0,0,dpr,0,0);
   /* Pişmiş sprite'lar cihaz çözünürlüğüne bağlı; DPR değişince
