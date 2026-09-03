@@ -61,7 +61,12 @@ const ENEMY_TYPES = {
      çevredeki düşmanları iyileştirir. Öncelik sırası kurmayı
      zorunlu kılar: önce şişeyi mi yoksa etrafındakileri mi? */
   flask:    { hp:64, speed:0.55, radius:15, gold:11, dmgToLives:1, label:'Şişe',    shape:'flask',  body:'#7fe0a8', body2:'#2f7a52', eyes:2,
-              healRadius:58, healPerSec:7, healDuration:45 },
+              /* İyileştirme gücü 7 -> 21 (3 katı): geç dalgalarda düşman
+                 canları büyüdükçe saniyede 7 can fark edilmez olmuştu,
+                 şişe "öldürünce sorun çıkaran" değil sadece bir düşman
+                 gibi davranıyordu. Yarıçap ve süre aynı; artan tek şey
+                 birikintinin saniyede verdiği can. */
+              healRadius:58, healPerSec:21, healDuration:45 },
   /* BÜYÜK BOSS — çok yavaş, çok dayanıklı. Etrafında bir don fırtınası
      taşır: auraRadius içindeki kulelerin atış hızını auraSlow oranında
      düşürür (0.5 = %50 yavaş). */
