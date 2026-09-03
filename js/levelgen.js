@@ -94,21 +94,12 @@ const GEN = {
   MAX_PATH_RATIO: 5.2,             // yol uzunluğu / ekran yüksekliği tavanı
   MIN_SPOT_TO_PATH: 60,            // kule–yol asgari mesafesi (kaos önleme) — eskisinden (46) %30 fazla
   MIN_SPOT_TO_SPOT: 74,            // kule–kule asgari mesafesi
-  /* YOL UZUNLUĞU BAŞINA NOKTA — artık sabit değil, ZORLUKLA SEYRELİR.
-     Ölçüm (334 bölüm, sabit referans oyuncu, üç ayrı oyuncu gücü):
-     yapı noktası sayısı bölüm zorluğunun EN GÜÇLÜ belirleyicisiydi —
-       10-11 nokta -> %5 çok kolay / %67 zor
-       14-15 nokta -> %31 / %40
-       18-19 nokta -> %65 / %17
-     Sabit 1/175 yüzünden geç bölümler (yolları uzun) 17-18 nokta
-     alıyordu; düşman baskısı bu kadar kuleye yetişemediği için
-     zorluk eğrisi 400. bölümden sonra TERSİNE dönüyordu:
-       bölüm   1-100 -> %21 çok kolay
-       bölüm 601-700 -> %53 çok kolay
-     Aralık zorlukla açılınca uzun geç yollar aynı sayıda kule
-     almıyor. Erken bölümler (diff ~ 0) eskisiyle birebir aynı kalır. */
-  SPOT_SPACING_EASY: 175,          // diff 0 — eski sabit değer
-  SPOT_SPACING_HARD: 205,          // diff 1 — geç bölümlerde daha seyrek
+  /* YOL UZUNLUĞU BAŞINA NOKTA — sabit: 175 birime 1 kule.
+     Bir tur bu aralığı zorlukla açmayı denedik (geç bölümler daha az
+     kule alsın diye); ölçüm işe yaradığını gösterdi ama HARİTAYI
+     değiştiriyordu. Aynı sonucu haritaya dokunmadan almak için
+     denge artık dalga baskısından yapılıyor — bkz. pressureFor(). */
+  SPOTS_PER_LEN: 1/175,
   TOTAL_LEVELS: 1000,
   MIN_WAVES: 9,                    // bölüm başına asgari dalga sayısı
   MAX_WAVES: 18,                   // bölüm başına azami dalga sayısı
@@ -501,12 +492,8 @@ function routeStarvation(spots, paths){
 function placeSpots(rng, paths, diff, totalLen){
   const {MIN_SPOT_TO_PATH,MIN_SPOT_TO_SPOT,MAX_SPOTS} = GEN;
 
-  // KURAL 5: yol uzunluğuna göre asgari nokta sayısı.
-  // Aralık zorlukla açılır (bkz. GEN.SPOT_SPACING_*): uzun bir yol geç
-  // bölümde erken bölümdekiyle aynı sayıda kule taşımaz.
-  const spacing = GEN.SPOT_SPACING_EASY
-    + (GEN.SPOT_SPACING_HARD - GEN.SPOT_SPACING_EASY) * Math.max(0, Math.min(1, diff));
-  const minBySize = Math.ceil(totalLen / spacing);
+  // KURAL 5: yol uzunluğuna göre asgari nokta sayısı
+  const minBySize = Math.ceil(totalLen * GEN.SPOTS_PER_LEN);
   // KURAL 4: zorluğa göre ±1 oynama (taban biraz azaltıldı — çok uzun
   // yollu bölümlerde nokta sayısı fazla kalabalık görünüyordu)
   const wobble = rndInt(rng, -1, 1);
@@ -633,6 +620,61 @@ function pickArchetype(rng, diff){
     return true;
   });
   return pick(rng, pool);
+}
+
+/* ============================================================
+   SAVUNMA KAPASİTESİNE GÖRE DALGA BASKISI (pressureFor)
+
+   Ölçüm (334 bölüm, sabit referans oyuncu, üç ayrı oyuncu gücü):
+   bir bölümün zor olup olmadığını belirleyen EN GÜÇLÜ tek etken
+   haritanın kaç yapı noktası verdiğiydi.
+     10-11 nokta -> %5 sızıntısız geçildi / %67 kaybedildi
+     14-15 nokta -> %31 / %40
+     18-19 nokta -> %65 / %17
+   Yani zorluğu oyuncunun kararları değil, haritanın çekilişi
+   belirliyordu: geniş harita = kolay bölüm, dar harita = duvar.
+
+   Haritayı küçültmek bunu düzeltirdi ama yanlış yerden düzeltirdi —
+   kule sayısını kısmak strateji alanını da kısıyor. Onun yerine
+   DALGA BASKISI haritanın verdiği kapasiteye göre ayarlanıyor:
+   çok kule alan bölüme daha kalabalık dalgalar, az kule alan bölüme
+   daha seyrek dalgalar gelir. Böylece
+     - kolay bölümler kolay olmaktan çıkar,
+     - zor bölümler duvar olmaktan çıkar,
+     - geriye belirleyici etken olarak KULEYİ NEREYE KOYDUĞUN kalır.
+
+   ÇOK ROTALI BÖLÜMLER: kapasite TOPLAM noktayla değil ROTA BAŞINA
+   nokta ile ölçülür. İki hatlı bir bölüm daha çok nokta alır ama
+   noktalar iki kola bölünür; bir koldaki kule diğer kolu koruyamaz.
+   İlk denemede toplam noktaya düz bir %10 indirim uygulandı ve
+   yetmedi: 20-22 noktalı (yani hep çok rotalı) bölümler %61 oranında
+   kaybedilir hale geldi. Şimdi 20 noktalı 2 rotalı bir bölüm,
+   10'ar noktalı iki kol olarak değerlendiriliyor.
+
+   Kol başına eşik (11) tek rotalı eşikten (15) düşük: çok rotalı
+   bölümün kendine has bir cezası var — kule TÜRÜ kotaları (maxCount)
+   toplamda sabit olduğu için iki kolu birden donatmak imkânsız,
+   ayrıca hasarı tek bir noktada toplayamıyorsun. Ölçümde bu bölümler
+   daha çok noktaya rağmen daha sık kaybediliyordu (%43'e karşı %33).
+   ============================================================ */
+
+/* EŞİKLER NEDEN TAM SAYI DEĞİL: 1000 bölümün ORTALAMA baskı katsayısı
+   tam olarak 1.00 çıksın diye seçildiler (ölçülen değer 0.998). Yani
+   bu sistem oyunu topluca zorlaştırmıyor ya da kolaylaştırmıyor —
+   baskıyı bölümler ARASINDA yeniden dağıtıyor. Geniş harita kendi
+   kolaylığını ödüyor, dar harita rahatlıyor, toplam aynı kalıyor. */
+const PRESSURE_PIVOT_SINGLE = 14.4;  // tek rotalı bölümde nötr nokta sayısı
+const PRESSURE_PIVOT_LANE   = 10.4;  // çok rotalı bölümde ROTA BAŞINA nötr nokta
+const PRESSURE_PER_SPOT     = 0.06;// her fazladan/eksik nokta ±%6 baskı
+const PRESSURE_MIN          = 0.75;
+const PRESSURE_MAX          = 1.35;
+
+function pressureFor(spotCount, routeCount){
+  const multi    = routeCount > 1;
+  const capacity = multi ? spotCount / routeCount : spotCount;
+  const pivot    = multi ? PRESSURE_PIVOT_LANE : PRESSURE_PIVOT_SINGLE;
+  const f = 1 + (capacity - pivot) * PRESSURE_PER_SPOT;
+  return Math.max(PRESSURE_MIN, Math.min(PRESSURE_MAX, f));
 }
 
 /* ---------- Dalga üretimi ---------- */
@@ -984,6 +1026,9 @@ function generateLevel(seed, levelNo){
     props,
     waveCount: waves.waveCount,
     startGold, startLives,
+    /* Haritanın verdiği kule kapasitesine göre dalga baskısı.
+       generateWaveForGenerated bunu düşman sayısıyla çarpar. */
+    pressure: pressureFor(spots.length, routes.paths.length),
     enemyPool: waves.pool,
     archetype: waves.archetype,
     allowBoss: waves.allowBoss,
@@ -1006,14 +1051,16 @@ function generateWaveForGenerated(level, waveIndex){
   const p = level.difficulty;
   const last = waveIndex >= level.waveCount;
 
-  // Son dalga: boss izinliyse boss dalgası
+  // Son dalga: boss izinliyse boss dalgası. Boss SAYISI sabit kalır
+  // (o dalganın kimliği), yanındaki destek birimleri baskıyla ölçeklenir.
   if(last && level.allowBoss){
+    const bp = 1 + ((level.pressure || 1) - 1) * 0.5;
     return [
       // BOSS_COUNT/BOSS_INTERVAL (config.js): beş Don Efendisi, aralıklı
       {type:'frostlord', count: BOSS_COUNT, interval: BOSS_INTERVAL},
-      {type:'flask', count: Math.round(3+diff*4), interval:2.2},
-      {type:'husk', count: Math.round(6+diff*10), interval:1.2},
-      {type:'sprinter', count: Math.round(8+diff*12), interval:0.6},
+      {type:'flask', count: Math.max(1, Math.round((3+diff*4)*bp)), interval:2.2},
+      {type:'husk', count: Math.max(1, Math.round((6+diff*10)*bp)), interval:1.2},
+      {type:'sprinter', count: Math.max(1, Math.round((8+diff*12)*bp)), interval:0.6},
     ];
   }
 
@@ -1028,7 +1075,13 @@ function generateWaveForGenerated(level, waveIndex){
   const hardZoneMult = isHardZone ? 1.80 : 1;
   // EXTRA_DENSITY_BOOST (config.js): genel +%30 yoğunluk artışı — klasik
   // bölümlerdeki waveCountMultiplier ile aynı çarpanı kullanır.
-  const count = Math.round((p.countBase + waveIndex*p.countGrowth) * mult * 0.55 * hardZoneMult * EXTRA_DENSITY_BOOST);
+  /* BASKI KATSAYISI (bkz. pressureFor): geniş haritada daha kalabalık,
+     dar haritada daha seyrek dalga. SAYIYA yarım oranda yansır —
+     tam oranı can çarpanı taşıyor (bkz. statMultipliers, config.js),
+     çünkü düşman sayısı aynı zamanda oyuncunun gelirini de belirliyor. */
+  const pressure = level.pressure || 1;
+  const countPressure = 1 + (pressure - 1) * 0.5;
+  const count = Math.round((p.countBase + waveIndex*p.countGrowth) * mult * 0.55 * hardZoneMult * EXTRA_DENSITY_BOOST * countPressure);
   const groups = [];
   const pool = level.enemyPool;
 

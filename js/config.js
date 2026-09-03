@@ -552,10 +552,23 @@ function baseWaveGroups(level, waveIndex){
 /* Belirli dalgalara ek can çarpanı. Formülden gelen artışın üstüne biner. */
 const WAVE_EXTRA_HP = { 4:1.20, 5:1.30, 6:1.30, 7:1.40, 8:1.50, 9:1.55, 10:1.60, 11:1.65, 12:1.70 };
 
+/* BASKI KATSAYISI — üretilmiş bölümlerde haritanın verdiği kule
+   kapasitesine göre hesaplanır (bkz. pressureFor, levelgen.js).
+   Klasik bölümlerde alan yoktur, çarpan 1'dir.
+
+   Neden ağırlıklı olarak CANA biniyor da sayıya değil: düşman sayısını
+   artırmak aynı zamanda oyuncunun gelirini de artırır (her ölen düşman
+   altın bırakır), yani baskının bir kısmını kendi kendine geri öder.
+   Can artışı altını değiştirmez — temiz bir zorluk kolu. Ayrıca
+   dayanıklı düşman, hasarı bir noktada TOPLAMAYI ödüllendirir; yani
+   kuleyi nereye koyduğun daha çok önem kazanır. Sayıya yine de yarım
+   oranda yansıtılıyor ki kalabalık hissi de değişsin. */
 function statMultipliers(level, waveIndex){
   const p = level.difficulty;
+  const pressure = level.pressure || 1;
   return {
-    hp: (1 + waveIndex*p.hpGrowth + Math.pow(waveIndex,1.3)*0.015) * (WAVE_EXTRA_HP[waveIndex] || 1),
+    hp: (1 + waveIndex*p.hpGrowth + Math.pow(waveIndex,1.3)*0.015)
+        * (WAVE_EXTRA_HP[waveIndex] || 1) * pressure,
     speed: Math.min(1 + waveIndex*p.speedGrowth, p.speedCap),
   };
 }
