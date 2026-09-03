@@ -151,9 +151,14 @@ function startWave(){
     // denseIntervalMult (config.js): 8. dalgadan itibaren hafif
     // türler birbirine daha yakın doğsun diye ek kısaltma.
     const dense = denseIntervalMult(g.type, waveIndex);
-    // Grubun temiz adımı; jitter bunun üstüne biner ama t'yi kaydırmaz.
-    const step = g.interval * bunch * dense;
-    for(let i=0;i<g.count;i++){
+    /* crowdCountMult (config.js): 13. dalgadan itibaren %20 daha çok
+       düşman. Adım, İSTENEN değil GERÇEKLEŞEN sayı oranıyla bölünüyor
+       (yuvarlama yüzünden ikisi aynı olmayabilir); grup n adım
+       tükettiğinden count/step çarpımı sabit kalır, yani grubun
+       süresi birebir korunur. */
+    const count = crowdCount(g.type, g.count, waveIndex);
+    const step = g.interval * bunch * dense * (g.count / count);
+    for(let i=0;i<count;i++){
       /* hpTiers (bkz. ENEMY_TYPES.flask): aynı türden birimler farklı
          dayanıklılıkta gelsin diye seçilen kat. Tanımı olmayan
          türlerde 1, yani hiçbir şey değişmez. */

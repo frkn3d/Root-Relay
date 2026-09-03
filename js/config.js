@@ -37,8 +37,13 @@ const ENEMY_TYPES = {
                  tersine dönerdi.
                    1. küçülme: 1.725   x1.30 -> 2.2425
                    2. küçülme: 3.645   x1.60 -> 5.832
-                   3. küçülme: 4.55625 x1.60 -> 7.29                      */
-              splitSpeedMults:[2.2425, 5.832, 7.29] },
+                   3. küçülme: 4.55625 x1.60 -> 7.29
+                 Son ayar: TÜM nesiller ayrıca x1.10 aldı — yavrular
+                 arasındaki oran korunuyor, hepsi birden %10 hızlandı.
+                   2.2425 x1.10 -> 2.46675
+                   5.832  x1.10 -> 6.4152
+                   7.29   x1.10 -> 8.019                                  */
+              splitSpeedMults:[2.46675, 6.4152, 8.019] },
   /* KALKAN TAŞIYICI — önünde enerji kalkanı taşır. Önden gelen
      mermiler seker; yalnızca yandan/arkadan hasar alır. Kule
      konumlandırmayı anlamlı hale getirir. */
@@ -156,7 +161,7 @@ const TOWER_TYPES = {
          hasar verir (kenarda azalma yok, bkz. updateProjectiles).
      Menzili tüm seviyelerde %50 artırılmıştı (160 -> 240; son seviye
      ek menzili de 25 -> 37.5 ile aynı oranda ölçeklendi). */
-  mortar: { id:'mortar', name:'Mantar Havanı',cost:130, range:240, rate:3.0,  dmg:40, splash:78, kind:'mortar', color:'#c9793f', icon:'💥', maxCount:3,
+  mortar: { id:'mortar', name:'Mantar Havanı',cost:130, range:240, rate:3.0,  dmg:40, splash:78, kind:'mortar', color:'#c9793f', icon:'💥', maxCount:2,
             rateByLevel:[4.0, 3.07, 2.13, 1.33] },
   ice:    { id:'ice',    name:'Don Peykesi',  cost:60,  range:140, rate:0.7,  dmg:0,  splash:0,  kind:'ice',    color:'#8fd9f0', icon:'❄️', slowFactor:0.42, slowDuration:5.6, maxCount:4 },
   /* ZEHİR SARMAŞIĞI — vuruşta az hasar, ardından zamana yayılı hasar.
@@ -164,8 +169,14 @@ const TOWER_TYPES = {
   poison: { id:'poison', name:'Zehir Sarmaşığı', cost:85, range:150, rate:1.15, dmg:3, splash:0, kind:'poison', color:'#9fdc5c', icon:'🌿',
             poisonDps:14, poisonDuration:3.5, maxCount:2 },
   /* ŞİMŞEK DİREĞİ — vurduğu hedeften yakındaki düşmanlara sıçrar.
-     Her sıçramada hasar azalır. Kalabalığa karşı güçlü. */
-  bolt:   { id:'bolt',   name:'Şimşek Direği', cost:155, range:175, rate:1.35, dmg:20, splash:0, kind:'bolt', color:'#ffe066', icon:'⚡',
+     Her sıçramada hasar azalır. Kalabalığa karşı güçlü.
+     Menzili %15 kısaldı (175 -> 148.75): sıçrama sayesinde tek başına
+     çok geniş bir alanı denetleyebiliyordu. Menzil seviyeyle
+     ölçeklendiği için (getTowerStats: range * (1+lvl*0.10)) tüm
+     seviyeler aynı oranda daraldı; sıçrama yarıçapı (chainRange)
+     bilerek aynı kaldı — kule daha yakına kurulmalı ama yakaladığı
+     kalabalıkta hâlâ aynı zinciri kurar. */
+  bolt:   { id:'bolt',   name:'Şimşek Direği', cost:155, range:148.75, rate:1.35, dmg:20, splash:0, kind:'bolt', color:'#ffe066', icon:'⚡',
             chainCount:3, chainFalloff:0.6, chainRange:95, maxCount:4 },
   /* ATEŞ KULESİ — bir LAV SİLAHI. Tek tek atış yapmaz: hedef gördüğü
      sürece KESİNTİSİZ akan erimiş bir lav huzmesi püskürtür; nişan
@@ -300,6 +311,40 @@ const DENSE_INTERVAL_MULT = { swarm:0.68, sprinter:0.72, spore:0.78 };
 function denseIntervalMult(type, waveIndex){
   if(waveIndex < DENSE_FROM_WAVE) return 1;
   return DENSE_INTERVAL_MULT[type] || 1;
+}
+
+/* GEÇ DALGA KALABALIĞI — 13. dalgadan itibaren aynı süreye daha çok
+   düşman sığar.
+
+   denseIntervalMult yalnızca ARALIĞI kısaltıyor: aynı sayıda düşman
+   daha kısa sürede gelir, yani dalga kısalır. Buradaki kural onun
+   tersi: düşman SAYISI %20 artar ve dalga süresi AYNI KALIR. Grup
+   adımı gerçekleşen sayı oranıyla bölündüğü için (bkz. startWave)
+   grubun kapladığı süre birebir korunur — oyuncu dalganın uzadığını
+   değil, aynı pencerede daha kalabalık geldiğini hisseder.
+
+   Boss muaf: BOSS_COUNT elle ayarlanmış bir finaldir, %20 orada
+   "biraz daha kalabalık" değil, altıncı bir Don Efendisi demek olurdu.
+
+   Klasik bölümler en fazla 12 dalga olduğundan bu kural pratikte
+   1000 Bölüm üreticisinin uzun bölümlerinde (13-18 dalga) devreye
+   girer; kısa bölümlerde hiç tetiklenmez. */
+const CROWD_FROM_WAVE  = 13;
+const CROWD_COUNT_MULT = 1.20;
+
+function crowdCountMult(type, waveIndex){
+  if(waveIndex < CROWD_FROM_WAVE) return 1;
+  const def = ENEMY_TYPES[type];
+  if(def && def.boss) return 1;
+  return CROWD_COUNT_MULT;
+}
+
+/* Bir grubun SAHADA gerçekten doğacak sayısı. Hem çizelgeyi kuran
+   startWave hem de "Sıradaki dalga" önizlemesi (renderWavePreview,
+   ui.js) bunu kullanır — yoksa önizleme 20 yazarken 24 düşman
+   gelirdi. */
+function crowdCount(type, count, waveIndex){
+  return Math.max(1, Math.round(count * crowdCountMult(type, waveIndex)));
 }
 
 /* DOĞAL DOĞUŞ RİTMİ.

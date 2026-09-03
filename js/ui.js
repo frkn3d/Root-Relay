@@ -617,6 +617,9 @@ function renderWavePreview(){
     const def = ENEMY_TYPES[g.type];
     const isNew = !seenEnemyTypes.has(g.type);
     const cls = def.boss ? ' chip-boss' : '';
-    return `<span class="chip${cls}"><i style="background:${def.body}"></i>${g.count}× ${def.label}${isNew?'<span class="new-badge">YENİ</span>':''}</span>`;
+    // crowdCount (config.js): 13. dalgadan itibaren sahaya çıkan sayı
+    // gruptaki ham sayıdan fazla; önizleme gerçeği göstermeli.
+    const n = crowdCount(g.type, g.count, nextIdx);
+    return `<span class="chip${cls}"><i style="background:${def.body}"></i>${n}× ${def.label}${isNew?'<span class="new-badge">YENİ</span>':''}</span>`;
   }).join('');
 }
