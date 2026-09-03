@@ -133,6 +133,18 @@
               <p>Boş bir toprak alana <b>dokun</b>, çıkan onay penceresinden ✓ ile kuleni kur. Kule kurulurken kısa bir <b>inşa süresi</b> vardır ve o sırada ateş edemez — dalganın ortasında kurmak risklidir.</p>
               <p>Bir kuleye <b>tek dokunuş</b> menzilini gösterir. <b>1 saniye basılı tutmak</b> yükseltme panelini açar: buradan seviye atlatabilir, satabilir veya <b>atış önceliğini</b> değiştirebilirsin.</p>
               <p>Her yükseltme hasarı, menzili ve atış hızını artırır; kule gözle görülür şekilde <b>büyür ve rengi parlar</b>. 3. seviyede altın kenarlık kazanır. Panelde her satırın yanındaki <b>▲</b> işareti, o özelliğin bir sonraki seviyede alacağı değeri gösterir — parayı vermeden önce ne kazanacağını görürsün.</p>
+              <p>Bir kulenin yanında <b>yeşil bir düğme yanıp sönüyorsa</b> o kule şu anda yükseltilebilir demektir: parası yeter ve son seviyede değildir. Düğmeye dokunmak yükseltme panelini doğrudan açar — kuleyi basılı tutmana gerek yok.</p>
+              <p><b>Duraklatıp planla.</b> Alt bardaki <b>⏸</b> simülasyonu dondurur ama haritayı kapatmaz; duraklıyken de kule dikebilir, yükseltebilir ve satabilirsin. İnşaat süresi duraklıyken <b>ilerlemez</b> — oyunu devam ettirdiğinde başlar. (☰ menüsü ise ekranı kapatır, orada haritaya dokunulmaz.)</p>
+            </div>
+
+            <div class="howto-sec">
+              <div class="howto-title">👾 Düşman dinamikleri</div>
+              <p><b>🩸 Yaralı düşman topallar.</b> Canı <b>%20'nin altına</b> inen her düşman <b>%30 yavaşlar</b>; can çubuğu kırmızıya döner. Buzla birleşir — donmuş ve yaralı bir düşman neredeyse sürünür. Yani son vuruşu yapmak için biraz daha vaktin olur, ama kaçmak üzere olan bir düşmanı yaralamak da işe yarar.</p>
+              <p><b>🛡️ Zırhlı.</b> 5. dalgadan itibaren gelir; önünde <b>parçalanabilir bir plaka</b> taşır. Plaka ayaktayken gelen hasarın yalnızca küçük bir kısmı gövdeye işler, gerisi plakayı aşındırır. Bu yüzden zehir ve lav gibi <b>saniyede az hasar</b> veren silahlar plakaya karşı verimsizdir; havan güllesi ve lazer gibi <b>tek seferde sert vuranlar</b> plakayı hızla söker. Plaka kırılınca düşman savunmasız kalır — can çubuğunun üstündeki gri çubuk kaybolduğunda anlarsın.</p>
+              <p><b>🔷 Küp bölünür ve hızlanır.</b> Ölen küp ikiye ayrılır; her küçülmede yavrular <b>belirgin şekilde hızlanır</b>. Küpü savunmanın <b>önünde</b> öldür, arkasında değil — yoksa hızlı küçükler çıkışa koşar.</p>
+              <p><b>⏱️ Dalgalar sıkışır.</b> 8. dalgadan itibaren hafif birimler (Sürü, Koşucu, Spor) birbirine <b>daha yakın</b> doğar: aynı sayıda düşman, daha kısa sürede. Ağır birimler sıkışmaz.</p>
+              <p><b>👑 Boss dalgası.</b> Son dalgada tek Don Efendisi değil, aralıklarla <b>beş tane</b> gelir. Her biri etrafındaki kulelerin atış hızını yarıya düşürür — hepsini aynı hatta karşılamaya çalışma.</p>
+              <p><b>🌿 Hiçbiri aynı değil.</b> Düşmanlar bölük hâlinde yürümez: her birim kendi doğuş gecikmesiyle (saliseler farkla), kendi yürüyüş temposuyla ve kendi adım sesiyle gelir. Kolon değil, kalabalık görürsün.</p>
             </div>
 
             <div class="howto-sec">
@@ -313,20 +325,20 @@
      Öbek sırası: veri -> motor -> çizim -> arayüz -> giriş noktası -->
 
 <!-- Veri ve yardımcı katman -->
-<script src="js/config.js?v=82"></script>
+<script src="js/config.js?v=83"></script>
 <script src="js/levelgen.js?v=75"></script>
 <script src="js/progress.js?v=64"></script>
 <script src="js/audio.js?v=75"></script>
 <!-- sound/ klasöründeki MP3 kütüphanesinin oynatıcısı; audio.js'ten SONRA
      gelmeli (ensureAudioCtx/soundEnabled oradan). -->
-<script src="js/sfx.js?v=10"></script>
+<script src="js/sfx.js?v=11"></script>
 
 <!-- Motor: durum ve simülasyon -->
 <script src="js/engine-canvas.js?v=97"></script>
 <script src="js/engine-state.js?v=97"></script>
 <script src="js/engine-towers.js?v=101"></script>
 <script src="js/engine-flow.js?v=99"></script>
-<script src="js/engine-update.js?v=101"></script>
+<script src="js/engine-update.js?v=102"></script>
 <script src="js/engine.js?v=97"></script>
 
 <!-- Çizim: yalnızca okur, durumu değiştirmez -->
@@ -335,7 +347,7 @@
 <script src="js/render-weather.js?v=81"></script>
 <script src="js/render-tower-art.js?v=81"></script>
 <script src="js/render-towers.js?v=81"></script>
-<script src="js/render-enemies.js?v=83"></script>
+<script src="js/render-enemies.js?v=84"></script>
 <script src="js/render-fx.js?v=82"></script>
 <script src="js/render.js?v=81"></script>
 

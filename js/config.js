@@ -302,13 +302,29 @@ function denseIntervalMult(type, waveIndex){
    zorlanır. Simülasyon alt adımı en fazla 0.034 sn olduğundan
    (main.js MAX_STEP) 0.08 sn, normal hızda iki düşmanın asla aynı
    adımda doğmayacağı anlamına gelir. */
-const SPAWN_JITTER_STEPS = [0.10, 0.20, 0.30];
+const SPAWN_JITTER_STEPS = [0.10, 0.15, 0.20, 0.30];
 const SPAWN_MIN_GAP = 0.08;
 
 function spawnJitter(step){
   const pick = SPAWN_JITTER_STEPS[Math.floor(Math.random()*SPAWN_JITTER_STEPS.length)];
   const capped = Math.min(pick, step);
   return capped * (0.8 + Math.random()*0.4);
+}
+
+/* YARALI DÜŞMAN — canı bu oranın altına inen birim topallar.
+   Amaç iki yönlü: ölmek üzere olan bir düşman görsel olarak
+   "bitkin" görünsün, ve son vuruşu yapacak kule biraz daha
+   pencere kazansın. Yavaşlatma buzla ÇARPILARAK birleşir; donmuş
+   ve yaralı bir düşman gerçekten sürünür.
+   Yürüyüş animasyonu ve ayak sesi de aynı çarpanı kullandığı için
+   topallama duyulur ve görülür (bkz. updateEnemyMovement,
+   updateWalkSounds). */
+const WOUNDED_HP_FRAC   = 0.20;   // canın %20'si ve altı
+const WOUNDED_SPEED_MULT = 0.70;  // %30 yavaşlama
+
+function woundedSlowMult(e){
+  if(!(e.maxHp > 0)) return 1;
+  return e.hp <= e.maxHp * WOUNDED_HP_FRAC ? WOUNDED_SPEED_MULT : 1;
 }
 
 /* ZIRHLI bu dalgadan itibaren sahaya çıkar. Hem klasik bölümler

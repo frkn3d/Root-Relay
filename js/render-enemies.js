@@ -229,7 +229,7 @@ function drawCubeEnemy(e){
   ctx.save();
   ctx.translate(e.x, e.y);
   ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(-w/2, -R-13, w, 4);
-  ctx.fillStyle='#7fe3b4'; ctx.fillRect(-w/2, -R-13, w*(e.hp/e.maxHp), 4);
+  ctx.fillStyle=enemyHpColor(e); ctx.fillRect(-w/2, -R-13, w*(e.hp/e.maxHp), 4);
   ctx.restore();
 }
 
@@ -329,7 +329,7 @@ function drawFlaskEnemy(e){
   ctx.save();
   ctx.translate(e.x, e.y + Math.abs(bob));
   ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(-w/2,-R-14,w,4);
-  ctx.fillStyle='#7fe3b4'; ctx.fillRect(-w/2,-R-14,w*(e.hp/e.maxHp),4);
+  ctx.fillStyle=enemyHpColor(e); ctx.fillRect(-w/2,-R-14,w*(e.hp/e.maxHp),4);
   ctx.restore();
 }
 
@@ -388,7 +388,7 @@ function drawCocoonEnemy(e){
   ctx.save();
   ctx.translate(e.x, e.y + Math.abs(bob));
   ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(-w/2,-R-14,w,4);
-  ctx.fillStyle='#7fe3b4'; ctx.fillRect(-w/2,-R-14,w*(e.hp/e.maxHp),4);
+  ctx.fillStyle=enemyHpColor(e); ctx.fillRect(-w/2,-R-14,w*(e.hp/e.maxHp),4);
   ctx.restore();
 }
 
@@ -484,6 +484,13 @@ function drawArmorPlate(e){
   }
 
   ctx.restore();
+}
+
+/* Can çubuğunun rengi. Yaralı eşiğinin (WOUNDED_HP_FRAC, config.js)
+   altına inen düşman %30 yavaşlar; çubuğun kırmızıya dönmesi bunun
+   tek görsel işareti — oyuncu "bu neden ağırlaştı?" diye sormasın. */
+function enemyHpColor(e){
+  return (e.maxHp > 0 && e.hp <= e.maxHp * WOUNDED_HP_FRAC) ? '#ff6b5c' : '#7fe3b4';
 }
 
 function drawEnemy(e){
@@ -647,7 +654,7 @@ function drawEnemy(e){
 
   const w=e.radius*2.1;
   ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(-w/2,-e.radius-14,w,4);
-  ctx.fillStyle='#7fe3b4'; ctx.fillRect(-w/2,-e.radius-14,w*(e.hp/e.maxHp),4);
+  ctx.fillStyle=enemyHpColor(e); ctx.fillRect(-w/2,-e.radius-14,w*(e.hp/e.maxHp),4);
   // ZIRH ÇUBUĞU — canın hemen üstünde, çelik grisi. Plaka bitince
   // tamamen kaybolur; "artık savunmasız" mesajı çubuğun yokluğu.
   if(e.armorMax > 0 && e.armor > 0){

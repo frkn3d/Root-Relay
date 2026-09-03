@@ -535,6 +535,11 @@ function updateWalkSounds(dt){
     let interval = Math.max(0.35, Math.min(2.2, 0.9 / Math.max(0.25, def.speed))) * (e.gait || 1);
     // Donmuş birim ağır ağır yürür, adımı da seyrekleşir
     if(e.slowT > 0 && e.slowFactor > 0) interval /= e.slowFactor;
+    // Yaralı birim topallar — adımı da aynı oranda seyrekleşir
+    const wounded = (typeof woundedSlowMult === 'function') ? woundedSlowMult(e) : 1;
+    if(wounded > 0 && wounded < 1) interval /= wounded;
+    // Birime özel mikro hız farkı (paceMult) adım temposuna da yansır
+    if(e.paceMult > 0) interval /= e.paceMult;
 
     if(e.stepT === undefined) e.stepT = Math.random()*interval;   // ilk adım rastgele anda
     e.stepT -= dt;

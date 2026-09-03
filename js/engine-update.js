@@ -17,6 +17,12 @@
                  üstelik zamanla birbirlerinden gitgide ayrışırlar.
      fxPhase   — alev/kabarcık/yörünge gibi süre tabanlı efektlerin fazı
      stepPitch — ayak sesinin perdesi; her birim biraz farklı duyulur
+     paceMult  — YÜRÜME hızındaki mikro fark (±%4). gait yalnızca
+                 salınım temposunu değiştirirken bu gerçekten yolda
+                 ilerleme hızını değiştirir: aynı anda doğan iki birim
+                 yol boyunca yavaşça birbirinden ayrılır, kolon hâlinde
+                 sabit aralıkla yürümezler. Dengeyi bozmayacak kadar
+                 küçük — 60 saniyelik bir yolda ±2.4 saniyelik kayma.
    Tek yerde toplandı çünkü düşmanlar üç ayrı noktada doğuyor
    (dalga çizelgesi, Kuluçka'nın yavruları, bölünen küp). */
 function gaitTraits(){
@@ -24,7 +30,8 @@ function gaitTraits(){
     bounce:    Math.random()*10,
     gait:      0.80 + Math.random()*0.45,
     fxPhase:   Math.random()*Math.PI*2,
-    stepPitch: 0.92 + Math.random()*0.16
+    stepPitch: 0.92 + Math.random()*0.16,
+    paceMult:  0.96 + Math.random()*0.08
   };
 }
 
@@ -101,9 +108,12 @@ function updateEnemyMovement(dt){
   const newborns = [];   // Kuluçka'nın bu karede bıraktığı yavrular
   let burning = false;   // sahada yanan biri var mı (kavrulma cızırtısı için)
   enemies.forEach(e=>{
-    const slowMult = e.slowT>0 ? e.slowFactor : 1;
+    // Buz yavaşlatması ve yara topallaması ÇARPILARAK birleşir:
+    // donmuş + ölmek üzere bir düşman gerçekten sürünür.
+    const slowMult = (e.slowT>0 ? e.slowFactor : 1) * woundedSlowMult(e);   // config.js
     const queenMult = 1 + (e.queenSpeedBuff||0);
-    e.dist += e.speed*slowMult*queenMult*dt*60;
+    const pace = e.paceMult || 1;   // birime özel mikro hız farkı
+    e.dist += e.speed*slowMult*queenMult*pace*dt*60;
     const myPath = levelPaths[e.pathIdx || 0] || levelPaths[0];
     const myLen  = pathLens[e.pathIdx || 0] || pathTotalLen;
     const p = pointAtDistance(myPath, myLen, e.dist);
@@ -132,7 +142,9 @@ function updateEnemyMovement(dt){
 
     // gait: bireysel tempo çarpanı — aynı türden iki birim bile
     // birbirinden farklı hızda sallanır ve zamanla ayrışır.
-    e.bounce += dt*e.speed*slowMult*9*(e.gait || 1);
+    // Salınım da aynı çarpanları taşır: yaralı düşman görünür şekilde
+    // ağırlaşır, hızlı olan biraz daha telaşlı adımlar.
+    e.bounce += dt*e.speed*slowMult*pace*9*(e.gait || 1);
     if(e.flashT>0) e.flashT -= dt*3;
     if(e.blockFlash>0) e.blockFlash -= dt*3;
     if(e.armorFlash>0) e.armorFlash -= dt*3.5;
