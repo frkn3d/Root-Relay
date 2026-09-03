@@ -12,6 +12,70 @@ function startGeneratedLevel(seed, levelNo){
   closeStartScreen();                               // ui.js
 }
 
+/* ============================================================
+   KURULAMAZ ŞERİTLER (NO_BUILD_TOP / NO_BUILD_BOTTOM, config.js).
+   Sahanın en üstünde ve en altında kule kurulamaz: üstte kulenin
+   çizimi çerçeve tarafından kırpılıyor, altta kule çekmecesi
+   sahayı örtüyor. İki durumda da oyuncu kurduğu kuleyi göremiyor.
+
+   Şeride düşen yapı noktaları SİLİNMİYOR, içeri çekiliyor: nokta
+   şeridin sınırına taşınıyor, orada yol veya başka bir noktayla
+   çakışırsa sırayla biraz daha içeri ve yanlara deneniyor. Sadece
+   hiçbir yere sığmayan nokta düşüyor. Böylece kural görünürlüğü
+   düzeltirken savunma kapasitesini tırpanlamıyor.
+
+   Taşınan nokta, üreticinin (placeSpots, levelgen.js) kendi
+   kurallarına uymak zorunda: yola ne çok yakın ne de kopuk olacak,
+   komşu noktaya binmeyecek.
+   ============================================================ */
+const SPOT_NUDGE_DY = [0, 18, 36, 54];        // şeritten ne kadar içeri
+const SPOT_NUDGE_DX = [0, 26, -26, 52, -52, 78, -78];
+const SPOT_MAX_TO_PATH = 190;                 // yoldan bu kadar uzak nokta işe yaramaz
+
+function reseatBuildSpots(raw, paths){
+  const minY = NO_BUILD_TOP, maxY = LH - NO_BUILD_BOTTOM;
+  const minPath = (typeof GEN !== 'undefined') ? GEN.MIN_SPOT_TO_PATH : 60;
+  const minGap  = (typeof GEN !== 'undefined') ? GEN.MIN_SPOT_TO_SPOT : 74;
+
+  const out = [], stray = [];
+  raw.forEach(s=>{
+    if(s.y >= minY && s.y <= maxY) out.push({ x:s.x, y:s.y, occ:null });
+    else stray.push(s);
+  });
+
+  function fits(x, y){
+    let dp = Infinity;
+    for(const p of paths) dp = Math.min(dp, distToPath(x, y, p));   // levelgen.js
+    if(dp < minPath || dp > SPOT_MAX_TO_PATH) return false;
+    for(const o of out) if(Math.hypot(o.x-x, o.y-y) < minGap) return false;
+    return true;
+  }
+
+  stray.forEach(s=>{
+    const top  = s.y < minY;
+    const edge = top ? minY : maxY;
+    const dir  = top ? 1 : -1;
+    for(const dy of SPOT_NUDGE_DY){
+      const y = edge + dir*dy;
+      for(const dx of SPOT_NUDGE_DX){
+        const x = s.x + dx;
+        if(x < 40 || x > LW-40) continue;
+        if(fits(x, y)){ out.push({ x:Math.round(x), y:Math.round(y), occ:null }); return; }
+      }
+    }
+    // Hiçbir yere sığmadı — bu nokta bu bölümde yok sayılır.
+  });
+  return out;
+}
+
+/* Bölüm listesinde "kaç kule noktası var" yazarken de gerçek sayı
+   görünsün diye (bkz. ui.js). Sonuç bölüm nesnesinde önbelleklenir. */
+function buildableSpotCount(lv){
+  if(lv.__spotCount === undefined)
+    lv.__spotCount = reseatBuildSpots(lv.spots, levelRoutes(lv)).length;
+  return lv.__spotCount;
+}
+
 function loadLevel(idx){
   currentLevelIdx = idx;
   // idx === -1 ise prosedürel üretilmiş bölüm oynanıyor demektir
@@ -22,7 +86,8 @@ function loadLevel(idx){
   pathLens = levelPaths.map(p=>computePathLength(p));
   pathTotalLen = pathLens.length ? Math.max(...pathLens) : 0;
   pathDecor = levelPaths.map((p,i)=>buildPathDecor(p, pathLens[i]));
-  spots = level.spots.map(s=>({x:s.x,y:s.y,occ:null}));
+  // Kurulamaz şeritler uygulanır (bkz. reseatBuildSpots)
+  spots = reseatBuildSpots(level.spots, levelPaths);
   gold = level.startGold;
   lives = level.startLives;
   startLivesEffective = lives;   // yıldız hesabı için taban

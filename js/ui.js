@@ -291,7 +291,9 @@ function renderSeedPreview(){
   const need = starLivesNeeded(lv.startLives);
   el.innerHTML =
     `<b>Bölüm ${n}</b> — ${s} · ${b} · ${r} yol<br>` +
-    `${lv.entries} giriş / ${lv.exits} çıkış · ${lv.waveCount} dalga · ${lv.spots.length} kule noktası<br>` +
+    // buildableSpotCount (engine-flow.js): kurulamaz şeritler düşüldükten
+    // sonra gerçekten kullanılabilen nokta sayısı
+    `${lv.entries} giriş / ${lv.exits} çıkış · ${lv.waveCount} dalga · ${buildableSpotCount(lv)} kule noktası<br>` +
     `Zorluk: ${'●'.repeat(dots)}${'○'.repeat(5-dots)} · Tarz: ${lv.archetype.name}<br>` +
     `Can: ${lv.startLives} · ⭐⭐⭐ ≥${need.three} can · ⭐⭐ ≥${need.two} can` +
     (lv.mods.notes.length ? `<br><span style="color:#8fe3a0">☀ ${lv.mods.notes.join(' ')}</span>` : '') +
@@ -572,6 +574,22 @@ function renderTowerPanel(){
     b.addEventListener('pointerup', (ev)=>{ ev.stopPropagation(); setTargetMode(m.id); });
     tgEl.appendChild(b);
   });
+
+  /* Kapat/aç düğmesi — yalnızca kapatılabilen kulelerde (Don Peykesi).
+     Diğer kulelerde satır tamamen gizlenir. */
+  const powerRow  = document.getElementById('tpPowerRow');
+  const powerBtn  = document.getElementById('tpPowerBtn');
+  const powerNote = document.getElementById('tpPowerNote');
+  if(canToggleTower(t)){   // engine-towers.js
+    powerRow.classList.add('show');
+    powerBtn.classList.toggle('off', !!t.off);
+    powerBtn.textContent = t.off ? '⏻ Kapalı — Aç' : '⏻ Çalışıyor — Kapat';
+    powerNote.textContent = t.off
+      ? 'Bu peyke yavaşlatma yapmıyor.'
+      : 'Don, Ateş Kulesi’nin yanmasını söndürür.';
+  } else {
+    powerRow.classList.remove('show');
+  }
 
   const cost = upgradeCost(t);
   const upBtn = document.getElementById('tpUpgradeBtn');

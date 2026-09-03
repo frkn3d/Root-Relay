@@ -308,6 +308,7 @@ document.getElementById('tpSellBtn').addEventListener('pointerup', requestSellTo
 document.getElementById('tpSellCancel').addEventListener('pointerup', cancelSellTower);
 document.getElementById('tpSellYes').addEventListener('pointerup', confirmSellTower);
 document.getElementById('tpCloseBtn').addEventListener('pointerup', ()=>{ playMenuTap(); closeTowerPanel(); });
+document.getElementById('tpPowerBtn').addEventListener('pointerup', (ev)=>{ ev.stopPropagation(); toggleTowerActive(); });
 document.getElementById('mainMenuBtnPause').addEventListener('pointerup', goToMainMenu);
 document.getElementById('mainMenuBtnOverlay').addEventListener('pointerup', goToMainMenu);
 document.getElementById('soundBtn').addEventListener('pointerup', toggleSound);

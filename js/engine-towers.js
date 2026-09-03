@@ -38,8 +38,22 @@ function buildCost(def){
    kulelerden orantısız güçlü kalıyorlar) yükseltmelerine ekstra düz zam.
    Taban zam ikisinde de +100 / +200 / +300 idi; Ateş Kulesi son ayarla
    bunun üstüne +50 / +100 / +240 daha aldı, yani [150, 300, 540]. */
+/* SON SEVİYE ZAMMI (son tur): Lazer ve Ateş dışındaki her kule son
+   yükseltmesine +100 aldı; Don Peykesi bunun üstüne +150 daha, yani
+   toplam +250. Tablodaki sayılar bu NET zammı verecek şekilde
+   yazıldı — FINAL_UPGRADE_BUMP eşiği (500) yüzünden zam ile tablo
+   değeri her zaman aynı sayı değildir:
+     Okçu  160 + 100 = 260 (<500, +100 bump) -> 360
+     Havan 520 + 100                          -> 620
+     Buz   240 + 250 = 490 (<500, +100 bump) -> 590
+     Zehir 340 + 400                          -> 740
+     Şimşek 620 + 100                         -> 720            */
 const EXTRA_UPGRADE_SURCHARGE = {
-  poison: [100, 200, 300],
+  archer: [0, 0, 100],
+  mortar: [0, 0, 100],
+  ice:    [0, 0, 250],
+  bolt:   [0, 0, 100],
+  poison: [100, 200, 400],
   fire:   [150, 300, 540],
   /* LAZER KULESİ — yalnızca son yükseltmeye zam. İki turda geldi:
      önce 420 -> 720, sonra +180 ile 720 -> 900.
@@ -75,6 +89,23 @@ function levelMods(){
   return (level && level.mods) ? level.mods : NEUTRAL_MODS;
 }
 
+/* İLK KURULUM MENZİL CEZASI — yeni dikilen bir kule (seviye 0)
+   menzilinin yalnızca %75'iyle çalışır; ilk yükseltmeyle tam
+   menzile kavuşur. Amaç: kurulum kararını "nereye koysam hepsini
+   görür" olmaktan çıkarıp konum seçimini önemli kılmak, ve ilk
+   yükseltmeye somut bir sebep vermek (menzil +%47 sıçrar).
+
+   Yosun Okçusu muaf: en ucuz ve en erken kule o; açılıştaki tek
+   savunmanın menzilini kırpmak oyunun ilk dalgalarını sağlam bir
+   duvara çeviriyordu. Ceza YALNIZCA seviye 0'dadır — 1. seviyeden
+   itibaren tablo değerleri değişmemiştir. */
+const BUILD_RANGE_PENALTY = 0.75;
+const BUILD_RANGE_EXEMPT  = { archer:true };
+
+function buildRangePenalty(def, lvl){
+  return (lvl === 0 && !BUILD_RANGE_EXEMPT[def.id]) ? BUILD_RANGE_PENALTY : 1;
+}
+
 /* levelOverride verilirse kulenin ŞU ANKİ seviyesi yerine o seviyedeki
    değerler hesaplanır — yükseltme panelinde "bir sonraki seviyede ne
    olacak" önizlemesi bununla üretilir (bkz. renderTowerPanel, ui.js). */
@@ -84,7 +115,7 @@ function getTowerStats(t, levelOverride){
   const kind = t.def.kind;
   const dmgMul = m.dmgMul[kind] || 1;
 
-  let range = t.def.range * (1+lvl*0.10) * m.rangeMul;
+  let range = t.def.range * (1+lvl*0.10) * buildRangePenalty(t.def, lvl) * m.rangeMul;
   // Mantar Havanı son seviyede ek menzil kazanır (uzun menzilli topçu rolü).
   // Taban menzille birlikte %50 büyütüldü (25 -> 37.5), böylece havanın
   // menzil artışı HER seviyede tam olarak %50 oluyor.
@@ -216,6 +247,28 @@ function refreshTowerPanelAffordability(){
   lastAffordState = shouldDisable;
   const btn = document.getElementById('tpUpgradeBtn');
   if(btn) btn.disabled = shouldDisable;
+}
+
+/* ============================================================
+   KULEYİ GEÇİCİ OLARAK KAPATMA.
+   Şu an yalnızca Don Peykesi için açık: don, Ateş Kulesi'nin
+   yanmasını söndürdüğü (ve tersi) için oyuncu bazen o bölgede
+   yavaşlatmanın DURMASINI ister. Kuleyi satıp yeniden kurmak
+   yerine kapatıp açabilsin.
+   Kapalı kule nişan almaz, ateş etmez, menzili yine görünür
+   (bkz. updateTowers, engine-update.js; drawTower, render-towers.js).
+   ============================================================ */
+function canToggleTower(t){
+  return !!t && t.def.kind === 'ice';
+}
+
+function toggleTowerActive(){
+  const t = selectedTower;
+  if(!canToggleTower(t)) return;
+  t.off = !t.off;
+  if(t.off) t.cooldown = 0;   // açılınca beklemeden çalışsın
+  playTargetMode();   // audio.js
+  renderTowerPanel();
 }
 
 function setTargetMode(id){

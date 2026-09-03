@@ -322,9 +322,13 @@ function drawSpots(){
     ctx.fillStyle='rgba(0,0,0,0.18)'; ctx.fill();
 
     if(pendingSpot === s){
-      // Onay bekleyen nokta: kurulacak kulenin menzilini önizle
+      /* Onay bekleyen nokta: kurulacak kulenin menzilini önizle.
+         def.range DEĞİL getTowerStats kullanılır — ilk kurulum menzil
+         cezası (buildRangePenalty, engine-towers.js) yüzünden ikisi
+         aynı değil; önizleme gerçekte kurulacak çemberi göstermeli. */
       const def = TOWER_TYPES[selectedType];
-      ctx.beginPath(); ctx.arc(s.x,s.y,def.range,0,Math.PI*2);
+      const previewRange = getTowerStats({def, level:0}).range;
+      ctx.beginPath(); ctx.arc(s.x,s.y,previewRange,0,Math.PI*2);
       ctx.fillStyle = def.color+'22'; ctx.fill();
       ctx.strokeStyle = def.color; ctx.lineWidth=2;
       ctx.setLineDash([7,6]); ctx.stroke(); ctx.setLineDash([]);

@@ -299,6 +299,15 @@ function updateTowers(dt){
       return; // inşa bitene kadar ateş etme
     }
 
+    /* KAPALI KULE — oyuncu paneldeki düğmeyle kapatmış (şu an
+       yalnızca Don Peykesi; bkz. toggleTowerActive, engine-towers.js).
+       Nişan almaz, ateş etmez, huzmesi kesilir. */
+    if(t.off){
+      t.flameOn = false;
+      t.cooldown = 0;
+      return;
+    }
+
     const st = getTowerStats(t);
     const rateMult = towerRateMultiplier(t);
     t.cooldown = Math.max(0, t.cooldown-dt);

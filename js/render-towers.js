@@ -172,6 +172,24 @@ function drawTowerRange(t){
   ctx.restore();
 }
 
+/* KAPALI KULE İŞARETİ — oyuncu kuleyi paneldeki düğmeyle kapatmışsa
+   (bkz. toggleTowerActive, engine-towers.js) üstünde kırmızı bir
+   "kapalı" rozeti durur. Soluk çizim tek başına inşaat haliyle
+   karıştırılabilirdi; rozet ayrımı net yapar. */
+function drawTowerOffMark(t){
+  ctx.save();
+  const x = t.x, y = t.y - 26, r = 8;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(20,8,8,0.85)';
+  ctx.fill();
+  ctx.strokeStyle = '#e2504a'; ctx.lineWidth = 2; ctx.stroke();
+  // Güç simgesi: üstü açık halka + dikey çizgi
+  ctx.beginPath(); ctx.arc(x, y+0.5, 3.6, -Math.PI*0.35, Math.PI*1.35);
+  ctx.strokeStyle = '#ff9f9f'; ctx.lineWidth = 1.6; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x, y-4.6); ctx.lineTo(x, y-0.4); ctx.stroke();
+  ctx.restore();
+}
+
 /* Kule gövdesi — düşmanlardan SONRA çizilir, böylece kuleler
    her zaman düşmanların önünde görünür. */
 function drawTower(t){
@@ -179,6 +197,8 @@ function drawTower(t){
   // İnşa halindeyken kule yarı saydam çizilir (henüz aktif değil)
   const building = t.buildLeft > 0;
   if(building) ctx.globalAlpha = 0.45;
+  // Oyuncu tarafından kapatılmış kule soluk çizilir (bkz. t.off)
+  else if(t.off) ctx.globalAlpha = 0.4;
   ctx.translate(t.x, t.y);
   ctx.scale(TOWER_VISUAL_SCALE * towerLevelScale(t), TOWER_VISUAL_SCALE * towerLevelScale(t));
   ctx.translate(-t.x, -t.y);
@@ -192,6 +212,7 @@ function drawTower(t){
   ctx.restore();
 
   if(building) drawBuildProgress(t);
+  else if(t.off) drawTowerOffMark(t);
   else drawLevelAura(t);
 
   const lvl = t.level||0;

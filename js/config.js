@@ -119,11 +119,27 @@ const ENEMY_TYPES = {
      kırılmaz; bunun plakası yöne bakmaz ama tükenir. İkisi farklı
      soru soruyor — "nereden vuruyorsun" ve "ne kadar sert vuruyorsun".
 
-     ARMOR_FROM_WAVE'den (5) itibaren diğerlerinin arasına karışır. */
+     ARMOR_FROM_WAVE'den (8) itibaren diğerlerinin arasına karışır. */
   armor:    { hp:40, speed:0.5, radius:18, gold:17, dmgToLives:1, label:'Zırhlı', shape:'armored',
               body:'#9aa6b2', body2:'#404b57', eyes:2,
-              // Plaka 55 -> 110 (iki katı): kalkan aşaması belirgin olsun.
-              armorHp:110, armorSoak:0.30 },
+              /* Plaka iki turda dört katına çıktı: 55 -> 110 -> 220.
+                 Gövde canı (40) bilerek küçük: mesele "canını bitirmek"
+                 değil "plakayı sökmek".
+
+                 SIZDIRMA 0.30 -> 0.15 — bu, plaka zammının zorunlu
+                 eşlikçisi, ayrı bir denge tercihi değil. applyDamage
+                 plaka ayaktayken gelen hasarın armorSoak kadarını
+                 gövdeye de işler. Plaka 220'ye çıkınca sızan toplam
+                 (0.30 x 220 = 66) gövde canını (40) AŞIYORDU: düşman
+                 plaka kırılmadan ölüyor, "plaka parçalandı" aşaması —
+                 metal şarapneller, kırık kayışlar, hit_armor_body
+                 sesi — hiç yaşanmıyordu. Üstelik toplam dayanıklılık
+                 %14 artıyordu, istenen %100 değil.
+                 0.15'te sızan toplam 33 < 40: plaka yine kırılıyor,
+                 gövde aşamasına ömrünün ~%18'i kalıyor (zam öncesiyle
+                 aynı oran) ve toplam dayanıklılık gerçekten iki katına
+                 çıkıyor. Kural: armorSoak * armorHp < hp olmalı. */
+              armorHp:220, armorSoak:0.15 },
 
   /* SÜRÜ ANASI — Don Efendisi'nin tersi: kuleleri değil müttefiklerini
      güçlendirir. Kendisi zayıf; yakınındaki Spor/Sürü'ye hız ve hafif
@@ -163,7 +179,15 @@ const TOWER_TYPES = {
      ek menzili de 25 -> 37.5 ile aynı oranda ölçeklendi). */
   mortar: { id:'mortar', name:'Mantar Havanı',cost:130, range:240, rate:3.0,  dmg:40, splash:78, kind:'mortar', color:'#c9793f', icon:'💥', maxCount:2,
             rateByLevel:[4.0, 3.07, 2.13, 1.33] },
-  ice:    { id:'ice',    name:'Don Peykesi',  cost:60,  range:140, rate:0.7,  dmg:0,  splash:0,  kind:'ice',    color:'#8fd9f0', icon:'❄️', slowFactor:0.42, slowDuration:5.6, maxCount:4 },
+  /* DON PEYKESİ — hasar vermez, yalnızca yavaşlatır. Atış aralığı
+     0.7 -> 1.4 sn (atış hızı TÜM seviyelerde %50 düşük): yavaşlatma
+     etkisi tek başına çok güçlüydü, saha neredeyse kalıcı donuk
+     kalıyordu. Seviye eğrisi aynı (%15/seviye), yani oran her
+     seviyede korunuyor.
+     Oyuncu bu kuleyi paneldeki düğmeyle geçici olarak KAPATABİLİR
+     (bkz. toggleTowerActive, engine-towers.js) — don, Ateş
+     Kulesi'nin yanmasını söndürdüğü için bazen istenmez. */
+  ice:    { id:'ice',    name:'Don Peykesi',  cost:60,  range:140, rate:1.4,  dmg:0,  splash:0,  kind:'ice',    color:'#8fd9f0', icon:'❄️', slowFactor:0.42, slowDuration:5.6, maxCount:4 },
   /* ZEHİR SARMAŞIĞI — vuruşta az hasar, ardından zamana yayılı hasar.
      Zırhlı/kalabalık dalgalarda birikerek etkili olur. */
   poison: { id:'poison', name:'Zehir Sarmaşığı', cost:85, range:150, rate:1.15, dmg:3, splash:0, kind:'poison', color:'#9fdc5c', icon:'🌿',
@@ -193,6 +217,24 @@ const TOWER_TYPES = {
 
 // Yapı alanları: her segmentin orta noktası etrafında, birbirinden en az
 // ~80-140px uzaklıkta yerleştirildi ki kuleler görsel olarak üst üste binmesin.
+/* ============================================================
+   KURULAMAZ ŞERİTLER — sahanın en üst ve en alt bandı.
+   Değerler oyun sahasının mantıksal ölçüsüne göredir (LH = 1000).
+
+   ÜST: kule çizimi merkezinin ~45 piksel yukarısına kadar uzanır
+   (namlu, seviye rozeti, yükseltmeye-hazır ışığı). Çerçeve orayı
+   kırptığı için en üst sıradaki kuleler yarım görünüyordu.
+
+   ALT: kule çekmecesi açıkken sahanın alt şeridini ÖRTER. Tam da
+   kule kurarken görünmeyen bir bölge olduğu için oraya kurulan
+   kule kör noktaya düşüyordu. Şerit çekmecenin tipik bir telefon
+   ekranında kapladığı yüksekliğe göre seçildi.
+
+   Uygulaması: bkz. reseatBuildSpots (engine-flow.js). Şeride düşen
+   yapı noktaları SİLİNMEZ, içeri çekilir. */
+const NO_BUILD_TOP    = 70;
+const NO_BUILD_BOTTOM = 130;
+
 /* Kule hedefleme öncelikleri. 'first' varsayılan (çıkışa en yakın). */
 const TARGET_MODES = [
   { id:'first',    label:'Öncü',   icon:'🎯', desc:'Çıkışa en yakın' },
@@ -395,8 +437,11 @@ function woundedSlowMult(e){
 
 /* ZIRHLI bu dalgadan itibaren sahaya çıkar. Hem klasik bölümler
    (generateWave) hem 1000 Bölüm üreticisi (generateWaveForGenerated,
-   levelgen.js) aynı eşiği kullanır. */
-const ARMOR_FROM_WAVE = 5;
+   levelgen.js) aynı eşiği kullanır.
+   5 -> 8: plaka dört katına çıktığı için zırhlı artık erken dalgaların
+   kaldırabileceği bir engel değil; oyuncunun en az bir yükseltme
+   yapabilmiş olması gereken bir noktaya alındı. */
+const ARMOR_FROM_WAVE = 8;
 
 function waveCountMultiplier(waveIndex){
   let m;
