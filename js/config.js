@@ -120,7 +120,13 @@ const ENEMY_TYPES = {
      soru soruyor — "nereden vuruyorsun" ve "ne kadar sert vuruyorsun".
 
      ARMOR_FROM_WAVE'den (8) itibaren diğerlerinin arasına karışır. */
-  armor:    { hp:40, speed:0.5, radius:18, gold:17, dmgToLives:1, label:'Zırhlı', shape:'armored',
+  /* HIZ 0.5 -> 0.35 (-%30): plaka iki katına çıkınca Zırhlı hem sert
+     hem normal hızlı bir birime dönüşmüştü. Yavaşlatmak onu asıl
+     rolüne oturtuyor: kuleleri uzun süre üzerine kilitleyip ARKASINDAN
+     gelenlere yol açan bir DUVAR. Kendisi daha uzun süre menzilde
+     kaldığı için tek başına daha kolay ölür; tehlike, o ölene kadar
+     yanından geçenlerdir. */
+  armor:    { hp:40, speed:0.35, radius:18, gold:17, dmgToLives:1, label:'Zırhlı', shape:'armored',
               body:'#9aa6b2', body2:'#404b57', eyes:2,
               /* Plaka iki turda dört katına çıktı: 55 -> 110 -> 220.
                  Gövde canı (40) bilerek küçük: mesele "canını bitirmek"
@@ -160,7 +166,7 @@ const TOWER_TYPES = {
   /* LAZER KULESİ (eski adı "Işık Kulesi") — mermi atmaz; hedefe ANINDA
      değen ve hedefi bırakmadan takip eden mavi bir ışın gönderir.
      Hasar ışın çakar çakmaz uygulanır (bkz. engine-update.js, beams). */
-  mage:   { id:'mage',   name:'Lazer Kulesi', cost:80,  range:185, rate:0.85, dmg:15, splash:0,  kind:'mage',   color:'#4fa8ff', icon:'🔮', maxCount:3 },
+  mage:   { id:'mage',   name:'Lazer Kulesi', cost:75,  range:185, rate:0.85, dmg:15, splash:0,  kind:'mage',   color:'#4fa8ff', icon:'🔮', maxCount:3 },
   /* MANTAR HAVANI — artık hızlı bir havan değil, ağır bir TOP.
      Seyrek ama çok sert vuruyor ve isabet noktasında geniş bir alanı
      birden döven bir gülle patlaması bırakıyor.
@@ -200,7 +206,7 @@ const TOWER_TYPES = {
      seviyeler aynı oranda daraldı; sıçrama yarıçapı (chainRange)
      bilerek aynı kaldı — kule daha yakına kurulmalı ama yakaladığı
      kalabalıkta hâlâ aynı zinciri kurar. */
-  bolt:   { id:'bolt',   name:'Şimşek Direği', cost:155, range:148.75, rate:1.35, dmg:20, splash:0, kind:'bolt', color:'#ffe066', icon:'⚡',
+  bolt:   { id:'bolt',   name:'Şimşek Direği', cost:100, range:148.75, rate:1.35, dmg:20, splash:0, kind:'bolt', color:'#ffe066', icon:'⚡',
             chainCount:3, chainFalloff:0.6, chainRange:95, maxCount:4 },
   /* ATEŞ KULESİ — bir LAV SİLAHI. Tek tek atış yapmaz: hedef gördüğü
      sürece KESİNTİSİZ akan erimiş bir lav huzmesi püskürtür; nişan
@@ -211,7 +217,7 @@ const TOWER_TYPES = {
      Değdiği herkesi 7 saniye boyunca yakar.
      Don Peykesi ile AYNI ANDA çalışmaz: alev üzerindeki donu/yavaşlamayı
      söndürür, don da üzerindeki yanmayı söndürür (bkz. engine.js). */
-  fire:   { id:'fire',   name:'Ateş Kulesi', cost:115, range:115, rate:0.9, dmg:4, splash:0, kind:'fire', color:'#ff5a2e', icon:'🔥',
+  fire:   { id:'fire',   name:'Ateş Kulesi', cost:95, range:115, rate:0.9, dmg:4, splash:0, kind:'fire', color:'#ff5a2e', icon:'🔥',
             coneAngle: Math.PI/5, burnDps:9, burnDuration:7, maxCount:2 },
 };
 

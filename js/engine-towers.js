@@ -48,13 +48,25 @@ function buildCost(def){
      Buz   240 + 250 = 490 (<500, +100 bump) -> 590
      Zehir 340 + 400                          -> 740
      Şimşek 620 + 100                         -> 720            */
+/* KURULUM UCUZLADI, YÜKSELTMELER AYNI KALDI (son tur)
+   Şimşek 155 -> 100, Lazer 80 -> 75, Ateş 115 -> 95 altına düştü.
+   Ama yükseltme tabanı kurulum fiyatından türediği için (base =
+   cost * UPGRADE_COST_MULT) bu indirim yükseltmeleri de kendiliğinden
+   ucuzlatıyordu — Şimşek'in son yükseltmesi 720'den 500'e inecekti.
+   Yükseltme fiyatları önceki turlarda ayrı ayrı dengelendiği için
+   onlar KORUNDU: aşağıdaki zamlar, düşen tabanı tam olarak telafi
+   edecek şekilde yeniden yazıldı. Net sonuç: kule kurmak ucuz,
+   büyütmek aynı pahalılıkta.
+     Şimşek 100 -> taban 140/200/400, hedef 215/310/720
+     Lazer   75 -> taban 105/150/300, hedef 110/160/900
+     Ateş    95 -> taban 135/190/380, hedef 310/530/1000            */
 const EXTRA_UPGRADE_SURCHARGE = {
   archer: [0, 0, 100],
   mortar: [0, 0, 100],
   ice:    [0, 0, 250],
-  bolt:   [0, 0, 100],
+  bolt:   [75, 110, 320],
   poison: [100, 200, 400],
-  fire:   [150, 300, 540],
+  fire:   [175, 340, 620],
   /* LAZER KULESİ — yalnızca son yükseltmeye zam. İki turda geldi:
      önce 420 -> 720, sonra +180 ile 720 -> 900.
      Tablodaki sayı neden 300+180 değil 400+180: ilk 420'nin içindeki
@@ -62,7 +74,7 @@ const EXTRA_UPGRADE_SURCHARGE = {
      eşiğinin altında). Zam fiyatı eşiğin üstüne çıkarınca o 100
      düştü, ilk zammın net +300 kalması için tabloya 400 yazıldı.
      320 + 580 = 900. */
-  mage:   [0, 0, 580],
+  mage:   [5, 10, 600],
 };
 /* SON YÜKSELTME TABANI — 3. yükseltme (seviye 2 -> 3) ucuza gelen
    kulelerde fazla erişilebilir kalıyordu. Bu eşiğin ALTINDA kalan son
@@ -106,6 +118,29 @@ function buildRangePenalty(def, lvl){
   return (lvl === 0 && !BUILD_RANGE_EXEMPT[def.id]) ? BUILD_RANGE_PENALTY : 1;
 }
 
+/* KULEYE VE SEVİYEYE ÖZEL MENZİL ÇARPANI
+   Dizinin indisi kule seviyesidir (0..3). Taban menzili (TOWER_TYPES.range)
+   değiştirmek yerine buradan çarpmanın sebebi: bir kulenin YALNIZCA
+   kurulum menzilini büyütmek istediğimizde taban değeri değiştirmek tüm
+   seviyeleri birden kaydırıyor. Bu tablo ikisini ayırıyor.
+
+   Lazer: kurulum +%15. Menzili zaten en uzun ikinci kule ama seviye 0
+   cezasıyla (0.75) 138.75'e düşüyordu; pahalı bir kule için ilk kurulumda
+   fazla dardı. Yükseltmeleri bilerek dokunulmadı.
+
+   Ateş: kurulum +%20, yükseltmeler +%10. Menzili oyunun EN kısası (115)
+   ve koni şeklinde dar — lav huzmesi yolun sadece bir dilimini tarıyordu.
+   Kurulumun yükseltmelerden daha çok artması kasıtlı: seviye 0'daki 86.25
+   pratikte kullanılamaz bir mesafeydi.                                   */
+const RANGE_TWEAK = {
+  mage: [1.15, 1, 1, 1],
+  fire: [1.20, 1.10, 1.10, 1.10],
+};
+function rangeTweak(def, lvl){
+  const arr = RANGE_TWEAK[def.id];
+  return arr ? (arr[Math.min(lvl, arr.length-1)] || 1) : 1;
+}
+
 /* levelOverride verilirse kulenin ŞU ANKİ seviyesi yerine o seviyedeki
    değerler hesaplanır — yükseltme panelinde "bir sonraki seviyede ne
    olacak" önizlemesi bununla üretilir (bkz. renderTowerPanel, ui.js). */
@@ -115,7 +150,8 @@ function getTowerStats(t, levelOverride){
   const kind = t.def.kind;
   const dmgMul = m.dmgMul[kind] || 1;
 
-  let range = t.def.range * (1+lvl*0.10) * buildRangePenalty(t.def, lvl) * m.rangeMul;
+  let range = t.def.range * (1+lvl*0.10) * buildRangePenalty(t.def, lvl)
+            * rangeTweak(t.def, lvl) * m.rangeMul;
   // Mantar Havanı son seviyede ek menzil kazanır (uzun menzilli topçu rolü).
   // Taban menzille birlikte %50 büyütüldü (25 -> 37.5), böylece havanın
   // menzil artışı HER seviyede tam olarak %50 oluyor.
