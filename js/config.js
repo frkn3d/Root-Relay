@@ -25,10 +25,20 @@ const ENEMY_TYPES = {
      olarak yarıya indiriyor. */
   cube:     { hp:130, speed:0.07975, radius:20, gold:4,  dmgToLives:1, label:'Küp',     shape:'cube',   body:'#ff9f43', body2:'#b5541a', eyes:2,
               splits:3, splitHpFactor:0.40, splitSizeFactor:0.40, minRadius:6, wobble:26,
-              /* Nesil başına hız çarpanı (taban hıza göre):
-                 1. küçülme (orta boy) +%15 ek — değişmedi.
-                 2. ve 3. küçülme (küçükler) +%35 ek, sonra +%35 daha ek. */
-              splitSpeedMults:[1.725, 3.645, 4.55625] },
+              /* Nesil başına hız çarpanı (taban hıza göre, birikmeli DEĞİL).
+                 Son ayar: bölünen yavrular belirgin şekilde hızlansın diye
+                 1. küçülmedekiler (orta boy) +%30, 2. ve 3. küçülmedekiler
+                 (küçükler) +%60 aldı.
+
+                 2. ve 3. küçülme ikisi de minRadius'a kenetlendiği için
+                 ekranda AYNI boyda görünür — oyuncu için ikisi de "küçük"
+                 olduğundan aynı zammı alıyorlar; aksi halde en küçük yavru
+                 bir öncekinden yavaş kalır, "küçüldükçe hızlanır" kuralı
+                 tersine dönerdi.
+                   1. küçülme: 1.725   x1.30 -> 2.2425
+                   2. küçülme: 3.645   x1.60 -> 5.832
+                   3. küçülme: 4.55625 x1.60 -> 7.29                      */
+              splitSpeedMults:[2.2425, 5.832, 7.29] },
   /* KALKAN TAŞIYICI — önünde enerji kalkanı taşır. Önden gelen
      mermiler seker; yalnızca yandan/arkadan hasar alır. Kule
      konumlandırmayı anlamlı hale getirir. */
