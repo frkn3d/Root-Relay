@@ -195,7 +195,7 @@ function playShoot(kind, volMult){
   // Zehir: diğer atışlardan bilinçli olarak kısık — sürekli tekrarlayan
   // bir efekt olduğundan yüksek sesli olursa rahatsız edici olurdu.
   else if(kind==='poison') blip(300,0.13,'sawtooth',0.05*V,150);
-  else if(kind==='bolt') zapSound(1400,0.09,0.13*V);
+  else if(kind==='bolt') zapSound(1400,0.09,0.0975*V);   // örnekle aynı %25 kısma
   // Ateş Kulesi: alçak, dokulu bir "fışş" — bir alev püskürtmesinin
   // gürleyişine yakın dursun diye testere dalga + kısa süre.
   else if(kind==='fire') blip(190,0.22,'sawtooth',0.09*V,120);

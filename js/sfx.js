@@ -34,7 +34,7 @@ const SFX = {
   shoot_mortar:  { f:'shoot_mortar.mp3',  v:0.34 },
   shoot_ice:     { f:'shoot_ice.mp3',     v:0.22 },
   shoot_poison:  { f:'shoot_poison.mp3',  v:0.20 },
-  shoot_bolt:    { f:'shoot_bolt.mp3',    v:0.30 },
+  shoot_bolt:    { f:'shoot_bolt.mp3',    v:0.225 },   // %25 kısıldı (0.30 -> 0.225)
   // Lav huzmesi kesintisiz aktığı için döngüsel çalıyor — en kısığı bu.
   shoot_fire:    { f:'shoot_fire.mp3',    v:0.18 },
 
