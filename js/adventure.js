@@ -156,8 +156,11 @@ function advTotals(){
 let advInSession = false;
 function advClearSession(){ advInSession = false; }
 
-function advPlay(n){
-  if(!advIsUnlocked(n)) return false;
+/* force=true yalnızca TEST kilidi içindir (bkz. adventure-ui.js,
+   "GEÇİCİ TEST KİLİDİ"). Normal akışta hiçbir yerden true gelmez. */
+function advPlay(n, force){
+  if(!force && !advIsUnlocked(n)) return false;
+  if(n < 1 || n > GEN.TOTAL_LEVELS) return false;
   advInSession = true;
   advSetLastRegion(regionOf(n).id);
   startGeneratedLevel(WORLD_SEED, n);   // engine-flow.js

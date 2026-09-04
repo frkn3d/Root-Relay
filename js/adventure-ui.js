@@ -109,6 +109,19 @@ function advRenderWorld(){
 
 /* ---- bölge yolu ------------------------------------------------ */
 
+/* ============================================================
+   GEÇİCİ — TEST KİLİDİ
+   Kilitli bir bölüme ÜST ÜSTE İKİ KEZ basmak onu yine de açar.
+   Amaç geliştirme sırasında istediğimiz bölümü sırayı beklemeden
+   deneyebilmek. İlk dokunuş düğümü "bir kez daha bas" durumuna alır
+   ve bunu düğümün üstünde yazıyla söyler; ikinci dokunuş oynatır.
+   Süre dolarsa kendiliğinden iptal olur, yani yanlışlıkla açılmaz.
+   YAYINA ÇIKARKEN: ADV_TEST_UNLOCK = false yeterli.
+   ============================================================ */
+const ADV_TEST_UNLOCK = true;
+const ADV_FORCE_MS = 1800;
+let advForceLevel = 0, advForceAt = 0;
+
 const RG_GAP    = 96;    // düğümler arası dikey mesafe
 const RG_AMPL   = 0.30;  // yatay salınımın genişliğe oranı
 const RG_PAD_TOP = 90, RG_PAD_BOTTOM = 110;
@@ -206,7 +219,21 @@ function advRenderRegion(){
       (boss ? '<span class="rn-tag">PATRON</span>' : '');
 
     if(state === 'locked'){
-      el.addEventListener('pointerup', ()=>{ playError(); });
+      el.addEventListener('pointerup', ()=>{
+        if(!ADV_TEST_UNLOCK){ playError(); return; }
+        const now = Date.now();
+        if(advForceLevel === n && (now - advForceAt) < ADV_FORCE_MS){
+          // ikinci dokunuş — kilidi yok say ve oynat
+          advForceLevel = 0;
+          playMenuTap();
+          if(advPlay(n, true)) closeStartScreen();
+          return;
+        }
+        // ilk dokunuş — düğümü hazırla ve bunu ekranda söyle
+        advForceLevel = n; advForceAt = now;
+        playError();
+        advArmNode(el, n);
+      });
     } else {
       el.addEventListener('pointerup', ()=>{
         playMenuTap();
@@ -222,6 +249,27 @@ function advRenderRegion(){
   const nextIdx = st.next - r.from;
   const np = rgNodePos(Math.max(0, nextIdx), count, w);
   scroll.scrollTop = Math.max(0, np.y - scroll.clientHeight * 0.55);
+}
+
+/* Kilitli düğümü "bir kez daha bas" durumuna alır ve süre dolunca
+   kendiliğinden geri döndürür. (GEÇİCİ — bkz. ADV_TEST_UNLOCK) */
+function advArmNode(el, n){
+  document.querySelectorAll('.rg-node.armed').forEach(o=>{
+    o.classList.remove('armed');
+    const t = o.querySelector('.rn-arm');
+    if(t) t.remove();
+  });
+  el.classList.add('armed');
+  const tag = document.createElement('span');
+  tag.className = 'rn-arm';
+  tag.textContent = 'bir kez daha bas';
+  el.appendChild(tag);
+  setTimeout(()=>{
+    if(advForceLevel !== n) return;
+    advForceLevel = 0;
+    el.classList.remove('armed');
+    if(tag.parentNode) tag.remove();
+  }, ADV_FORCE_MS);
 }
 
 /* ---- dışarıdan çağrılan giriş noktaları ------------------------ */
