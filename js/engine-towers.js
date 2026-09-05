@@ -12,10 +12,24 @@ let pressProgressStart = 0;     // basılı tutmanın başladığı zaman damgas
 const LONG_PRESS_MS = 500;      // yükseltme panelini açmak için gereken basılı tutma süresi
 let sellConfirmPending = false;
 
-// Yükseltme maliyetleri anaparanın (TOWER_TYPES.cost) katları:
-// level0->1 = x1.4, level1->2 = x2, level2->3 (son seviye) = x4.
-// Şu an son seviye 3 olduğu için 4. bir yükseltme yok; olsaydı x5 olurdu.
-const UPGRADE_COST_MULT = [1.4, 2.0, 4.0];
+/* YÜKSELTME MALİYETİ — tek kural, kule başına istisnasız uygulanır.
+   Her yükseltme, o kulenin KURULUM fiyatının (TOWER_TYPES.cost) sabit
+   bir katıdır; kule kaç altına kuruluyorsa yükseltme merdiveni de o
+   oranda yükselir. Böylece "şu kulenin 3. seviyesi neden bu kadar?"
+   sorusunun cevabı tek satırda okunuyor.
+
+     varsayılan   x2  ->  x4.5  ->  x10
+     okçu         x2  ->  x3    ->  x4
+
+   Okçu ayrı: sahada 7 tanesini birden dikebildiğin, en ucuz ve en
+   çok kullanılan kule. Ona da x10'luk son basamağı verseydik hem
+   tek tek yükseltmek anlamsız pahalı olur hem de 7 kulelik toplam
+   fatura diğer her şeyi gölgede bırakırdı. Okçu ucuz ve düz kalsın,
+   uzmanlaşma pahalı kulelerde olsun. */
+const UPGRADE_RATIO = {
+  archer:  [2, 3,   4],
+  default: [2, 4.5, 10],
+};
 
 /* İnşa/yükseltme süreleri (saniye).
    BUILD_TIMES[0] = ilk kurulum, [1] = 2. seviye, [2] = 3. seviye.
@@ -34,65 +48,12 @@ function buildCost(def){
   return def.cost;
 }
 
-/* Zehir Sarmaşığı ve Ateş Kulesi (alan/süre etkili, aynı seviyede diğer
-   kulelerden orantısız güçlü kalıyorlar) yükseltmelerine ekstra düz zam.
-   Taban zam ikisinde de +100 / +200 / +300 idi; Ateş Kulesi son ayarla
-   bunun üstüne +50 / +100 / +240 daha aldı, yani [150, 300, 540]. */
-/* SON SEVİYE ZAMMI (son tur): Lazer ve Ateş dışındaki her kule son
-   yükseltmesine +100 aldı; Don Peykesi bunun üstüne +150 daha, yani
-   toplam +250. Tablodaki sayılar bu NET zammı verecek şekilde
-   yazıldı — FINAL_UPGRADE_BUMP eşiği (500) yüzünden zam ile tablo
-   değeri her zaman aynı sayı değildir:
-     Okçu  160 + 100 = 260 (<500, +100 bump) -> 360
-     Havan 520 + 100                          -> 620
-     Buz   240 + 250 = 490 (<500, +100 bump) -> 590
-     Zehir 340 + 400                          -> 740
-     Şimşek 620 + 100                         -> 720            */
-/* KURULUM UCUZLADI, YÜKSELTMELER AYNI KALDI (son tur)
-   Şimşek 155 -> 100, Lazer 80 -> 75, Ateş 115 -> 95 altına düştü.
-   Ama yükseltme tabanı kurulum fiyatından türediği için (base =
-   cost * UPGRADE_COST_MULT) bu indirim yükseltmeleri de kendiliğinden
-   ucuzlatıyordu — Şimşek'in son yükseltmesi 720'den 500'e inecekti.
-   Yükseltme fiyatları önceki turlarda ayrı ayrı dengelendiği için
-   onlar KORUNDU: aşağıdaki zamlar, düşen tabanı tam olarak telafi
-   edecek şekilde yeniden yazıldı. Net sonuç: kule kurmak ucuz,
-   büyütmek aynı pahalılıkta.
-     Şimşek 100 -> taban 140/200/400, hedef 215/310/720
-     Lazer   75 -> taban 105/150/300, hedef 110/160/900
-     Ateş    95 -> taban 135/190/380, hedef 310/530/1000            */
-const EXTRA_UPGRADE_SURCHARGE = {
-  archer: [0, 0, 100],
-  mortar: [0, 0, 100],
-  ice:    [0, 0, 250],
-  bolt:   [75, 110, 320],
-  poison: [100, 200, 400],
-  fire:   [175, 340, 620],
-  /* LAZER KULESİ — yalnızca son yükseltmeye zam. İki turda geldi:
-     önce 420 -> 720, sonra +180 ile 720 -> 900.
-     Tablodaki sayı neden 300+180 değil 400+180: ilk 420'nin içindeki
-     100 altın FINAL_UPGRADE_BUMP'tan geliyordu (taban 320, 500
-     eşiğinin altında). Zam fiyatı eşiğin üstüne çıkarınca o 100
-     düştü, ilk zammın net +300 kalması için tabloya 400 yazıldı.
-     320 + 580 = 900. */
-  mage:   [5, 10, 600],
-};
-/* SON YÜKSELTME TABANI — 3. yükseltme (seviye 2 -> 3) ucuza gelen
-   kulelerde fazla erişilebilir kalıyordu. Bu eşiğin ALTINDA kalan son
-   yükseltmelere düz bir zam biniyor; eşiği aşanlar (Havan, Zehir,
-   Şimşek, Ateş) zaten pahalı olduğu için dokunulmuyor. */
-const FINAL_UPGRADE_FLOOR = 500;
-const FINAL_UPGRADE_BUMP  = 100;
-
 function upgradeCost(t){
   const lvl = t.level||0;
   if(lvl>=3) return null;
-  // Fiyatlar her zaman 5'in katı olsun — okunması kolay, tutarlı sayılar
-  const base = Math.round(t.def.cost * UPGRADE_COST_MULT[lvl] / 5) * 5;
-  const surcharge = (EXTRA_UPGRADE_SURCHARGE[t.def.id] || [0,0,0])[lvl];
-  let price = base + surcharge;
-  // lvl 2 = 3. (son) yükseltme
-  if(lvl === 2 && price < FINAL_UPGRADE_FLOOR) price += FINAL_UPGRADE_BUMP;
-  return price;
+  const ratio = (UPGRADE_RATIO[t.def.id] || UPGRADE_RATIO.default)[lvl];
+  // Fiyatlar her zaman 5'in katı olsun — kuruşlu alışveriş olmasın
+  return Math.round(t.def.cost * ratio / 5) * 5;
 }
 /* Aktif bölümün mevsim/biyom etkileri. Klasik bölümlerde tema
    olmadığı için nötr değerler döner. */
