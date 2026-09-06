@@ -319,6 +319,7 @@ function renderSeedPreview(){
     `Zorluk: ${'●'.repeat(dots)}${'○'.repeat(5-dots)} · Tarz: ${lv.archetype.name}<br>` +
     `Can: ${lv.startLives} · ⭐⭐⭐ ≥${need.three} can · ⭐⭐ ≥${need.two} can` +
     (lv.mods.notes.length ? `<br><span style="color:#8fe3a0">☀ ${lv.mods.notes.join(' ')}</span>` : '') +
+    quotaLine(lv) +
     (prog.bestStars>0 ? `<br>En iyi: ${'⭐'.repeat(prog.bestStars)}` : '');
 }
 
@@ -326,6 +327,41 @@ function renderStars(n){
   let s='';
   for(let i=0;i<3;i++) s += i<n ? '⭐' : '☆';
   return s;
+}
+
+/* BÖLÜME ÖZEL KOTA — oyuncuya söylenmezse yok sayılır
+
+   Kota bölümden bölüme değişiyor (bkz. towerQuotaFor, levelgen.js) ama
+   oyuncu bunu ancak çekmecedeki sayıya dikkatle bakarsa fark eder —
+   üstelik "3" gördüğünde bunun normalden fazla mı olduğunu bilemez.
+   Bu yüzden değişen iki tür hem bölüm bilgisinde yazıyla hem de kule
+   kartında küçük bir ▲/▼ rozetiyle işaretleniyor. */
+function quotaShiftOf(lv){
+  if(!lv || !lv.towerQuota) return null;
+  let up = null, down = null;
+  Object.keys(lv.towerQuota).forEach(id=>{
+    const base = TOWER_TYPES[id] ? TOWER_TYPES[id].maxCount : null;
+    if(base === null) return;
+    if(lv.towerQuota[id] > base) up = id;
+    if(lv.towerQuota[id] < base) down = id;
+  });
+  return (up || down) ? { up, down } : null;
+}
+function quotaLine(lv){
+  const q = quotaShiftOf(lv);
+  if(!q) return '';
+  const parts = [];
+  if(q.up)   parts.push(`${TOWER_TYPES[q.up].icon} ${TOWER_TYPES[q.up].name} +1`);
+  if(q.down) parts.push(`${TOWER_TYPES[q.down].icon} ${TOWER_TYPES[q.down].name} −1`);
+  return `<br><span style="color:#cdefff">⚖ Bu bölümün kadrosu: ${parts.join(' · ')}</span>`;
+}
+/* Kartın köşesine ▲ / ▼ */
+function quotaBadge(defId){
+  const q = quotaShiftOf(level);
+  if(!q) return '';
+  if(q.up === defId)   return '<span class="tower-quota-mark up" title="Bu bölümde 1 fazla">▲</span>';
+  if(q.down === defId) return '<span class="tower-quota-mark down" title="Bu bölümde 1 eksik">▼</span>';
+  return '';
 }
 
 function renderTowerSelectBtn(){
@@ -386,6 +422,7 @@ function renderTowerDrawer(){
     const card=document.createElement('div');
     card.className='tower-card'+(def.id===selectedType?' active':'')+(left<=0?' depleted':'');
     card.innerHTML = `<span class="tower-count-badge${left<=0?' depleted':''}">${left}</span>`
+      + quotaBadge(def.id)
       + `<div class="icon">${def.icon}</div><div class="name">${def.name}</div><div class="cost">🪙${buildCost(def)}</div>`;
     card.addEventListener('pointerdown', (e)=>{
       cardPressStart = {x:e.clientX, y:e.clientY};

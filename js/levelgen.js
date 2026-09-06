@@ -887,6 +887,69 @@ function previewTypes(levelNo){
   return out;
 }
 
+/* ============================================================
+   BÖLÜME ÖZEL KULE KOTASI
+
+   TOWER_TYPES[id].maxCount her bölümde aynıydı: 7 okçu, 3 lazer,
+   2 havan, 4 don, 2 zehir, 4 şimşek, 2 ateş. Yani "hangi kuleleri
+   alacağım" sorusunun cevabı her bölümde aynıydı; ezberlenen bir
+   kadro her yere gidiyordu.
+
+   Artık her bölümde bir türün kotası BİR ARTIYOR, başka bir türünki
+   BİR AZALIYOR. Toplam 24'te sabit kalıyor — bölümün savunma
+   kapasitesi değişmiyor, yalnızca ŞEKLİ değişiyor. Zehir'in 3'e
+   çıktığı bölümde belki Lazer 2'ye düşer; o bölümü zehir ağırlıklı
+   kurmak gerekir.
+
+   BÖLÜME ÖZEL, OTURUMA DEĞİL. Kota bölüm numarasından türüyor:
+   44. bölüm her açılışta aynı kotayı verir, iki oyuncuda da aynıdır.
+   Rastgele sayı üreteci HİÇ kullanılmıyor — bir çekiliş eklemek
+   dalga/tema/dekor dizisini kaydırırdı (bkz. pickTheme'deki uyarı).
+
+   SIRA: artan tür bölüm numarasıyla bire bir ilerliyor; azalan tür,
+   artan türden kaç adım ötede olduğu her 7 bölümde bir değişerek
+   seçiliyor. Adım 1..6 arasında olduğu için ikisi asla aynı türe
+   denk gelmiyor, ve 42 bölümde (7x6) mümkün olan bütün artan-azalan
+   çiftleri tam bir kez görülüyor. 43. bölümde döngü baştan başlıyor.
+   ============================================================ */
+const QUOTA_ORDER = ['archer','mage','mortar','ice','poison','bolt','fire'];
+const QUOTA_MIN   = 1;   // hiçbir tür sıfıra düşmesin
+
+function towerQuotaFor(levelNo){
+  const base = {};
+  QUOTA_ORDER.forEach(id=>{ base[id] = TOWER_TYPES[id].maxCount; });
+  if(!levelNo || levelNo < 1) return base;
+
+  const n = QUOTA_ORDER.length;                       // 7
+  const upIdx = levelNo % n;
+  const step  = 1 + (Math.floor(levelNo / n) % (n - 1));   // 1..6
+  let downIdx = (upIdx + step) % n;
+
+  /* Azalan tür zaten tabanda kalmışsa bir sonrakine geç. Bugünkü
+     tabanların hepsi 2 ve üstü, yani bu döngü pratikte hiç dönmüyor;
+     ileride 1 kotalı bir kule eklenirse kota sıfırlanmasın diye var. */
+  for(let k = 0; k < n; k++){
+    if(base[QUOTA_ORDER[downIdx]] - 1 >= QUOTA_MIN) break;
+    downIdx = (downIdx + 1) % n;
+    if(downIdx === upIdx) downIdx = (downIdx + 1) % n;
+  }
+
+  base[QUOTA_ORDER[upIdx]]   += 1;
+  base[QUOTA_ORDER[downIdx]] -= 1;
+  return base;
+}
+
+/* Arayüzün "bu bölümde ne değişti" diye sorabilmesi için */
+function towerQuotaShift(levelNo){
+  const base = towerQuotaFor(levelNo);
+  let up = null, down = null;
+  QUOTA_ORDER.forEach(id=>{
+    if(base[id] > TOWER_TYPES[id].maxCount) up = id;
+    if(base[id] < TOWER_TYPES[id].maxCount) down = id;
+  });
+  return { up, down };
+}
+
 /* ---------- Manzara dekoru ----------
    Boş araziye biyoma uygun nesneler serpilir. Yola ve kule
    noktalarına değmezler; sadece görsel zenginlik katarlar. */
@@ -1194,6 +1257,9 @@ function generateLevel(seed, levelNo){
     /* Haritanın verdiği kule kapasitesine göre dalga baskısı.
        generateWaveForGenerated bunu düşman sayısıyla çarpar. */
     pressure: pressureFor(spots.length, routes.paths.length),
+    /* Bu bölüme özel kule kotası (bkz. towerQuotaFor). Toplam yine 24;
+       yalnızca bir tür bir fazla, bir tür bir eksik. */
+    towerQuota: towerQuotaFor(levelNo),
     enemyPool: waves.pool,
     archetype: waves.archetype,
     allowBoss: waves.allowBoss,

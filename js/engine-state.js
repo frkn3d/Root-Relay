@@ -69,8 +69,16 @@ let selectedType = 'archer';
    bu sayacı bir azaltıp satın alma hakkını geri verir (bkz.
    TOWER_TYPES[id].maxCount, confirmSellTower()). */
 let towerPurchaseCounts = {};
+/* Bu bölümde bu kuleden en fazla kaç tane alınabilir.
+   Üretilmiş bölümlerde kota bölüme özeldir — bir tür bir fazla, bir
+   tür bir eksik (bkz. towerQuotaFor, levelgen.js). Elle yazılmış
+   bölümlerde ve bölüm yüklenmeden önce TOWER_TYPES'taki taban geçerli. */
+function towerMaxFor(def){
+  const q = level && level.towerQuota;
+  return (q && q[def.id] !== undefined) ? q[def.id] : def.maxCount;
+}
 function towersRemaining(def){
-  return def.maxCount - (towerPurchaseCounts[def.id]||0);
+  return towerMaxFor(def) - (towerPurchaseCounts[def.id]||0);
 }
 let seenEnemyTypes = new Set();
 let paused = false;

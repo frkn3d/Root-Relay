@@ -9,9 +9,25 @@
    Yeni sürüm eklerken diziye BAŞA ekle — ekran sırayı olduğu gibi
    çiziyor, en yeni sürüm üstte görünsün.
    ============================================================ */
-const GAME_VERSION = '0.4';
+const GAME_VERSION = '0.4.1';
 
 const CHANGELOG = [
+  {
+    version: '0.4.1',
+    title: 'Değişken kadro',
+    note: 'Her bölümün kendi kule kadrosu var; dünya haritasının tepesi düzeltildi.',
+    groups: [
+      { head: '⚖️ Bölüme özel kule kadrosu', items: [
+        'Bir kuleden bölüm başına en fazla kaç tane alabileceğin artık <b>bölümden bölüme değişiyor</b>: her bölümde bir türün kotası 1 artıyor, başka bir türünki 1 azalıyor.',
+        "Toplam kota hep 24 kalıyor — bölümün savunma kapasitesi değişmiyor, yalnızca <b>şekli</b> değişiyor. Zehir Sarmaşığı 3'e çıktığı bölümde Lazer 2'ye düşebilir; o bölümü zehir ağırlıklı kurmak gerekir.",
+        'Değişen iki kule, kule kartının köşesinde <b>▲</b> / <b>▼</b> rozetiyle işaretleniyor; duraklatma ekranındaki bölüm bilgisinde de yazıyor.',
+        'Kadro <b>bölüm numarasına</b> bağlı, oturuma değil: aynı bölüm her açılışta aynı kadroyu verir ve her oyuncuda aynıdır. 42 bölümde bütün artan-azalan çiftleri bir kez görülüp döngü başa dönüyor.',
+      ]},
+      { head: '🗺️ Düzeltmeler', items: [
+        'Dünya haritasının en üstündeki bölgenin (Kül Dağları) tabelası ekranın dışında kalıyordu — haritanın tepesine boşluk eklendi, artık adı görünüyor.',
+      ]},
+    ],
+  },
   {
     version: '0.4',
     title: 'Macera, ekonomi ve cila',

@@ -20,7 +20,16 @@
    ============================================================ */
 
 const WORLD_W = 1000;
-const WORLD_H = 2760;
+/* EN ÜSTTE BOŞLUK BIRAK. Bölge tabelaları adanın ÜSTÜNE, adanın
+   tepe noktasından yukarı doğru çiziliyor (translate(-50%,-100%)).
+   En üstteki ada (Kül Dağları) haritanın tepesine çok yakındı;
+   tabelası kabın dışına taşıp adın görünmez oluyordu — üstelik
+   kilitli tabelalar elmas fiyatı satırıyla birlikte daha da uzadı.
+   Haritanın tepesine deniz eklemek en ucuz çözüm: adaların
+   birbirine göre konumu ve haritanın sanatı hiç değişmiyor,
+   yalnızca yukarıda kaydırılacak yer açılıyor. */
+const WORLD_TOP_PAD = 190;
+const WORLD_H = 2760 + WORLD_TOP_PAD;
 
 /* İzometrik karo ölçüsü. Genişlik/yükseklik oranı 2:1 — klasik
    izometrik görünüm. Karolar bilerek KÜÇÜK: ada ızgarası ne kadar
@@ -38,6 +47,8 @@ const ISO_TIERS = 4;
 /* Adaların haritadaki yerleşimi. Yılan gibi hafifçe sağa-sola
    kayıyorlar ki göz aşağıdan yukarı bir yol takip etsin; ama
    adalar büyük olduğu için sapma küçük tutuldu. */
+/* y değerleri WORLD_TOP_PAD eklenmeden yazılıyor — okunurluk için.
+   Aşağıdaki döngü hepsine tepedeki boşluğu ekliyor. */
 const ISLANDS = {
   vadi:   { x:430, y:2520, rw:18, rh:14, scale:1.00 },
   kiyi:   { x:575, y:2140, rw:18, rh:14, scale:0.98 },
@@ -47,6 +58,7 @@ const ISLANDS = {
   tundra: { x:580, y:640,  rw:19, rh:15, scale:1.00 },
   kul:    { x:480, y:265,  rw:20, rh:16, scale:1.04 },
 };
+Object.keys(ISLANDS).forEach(k=>{ ISLANDS[k].y += WORLD_TOP_PAD; });
 
 /* ---- yardımcılar ---------------------------------------------- */
 

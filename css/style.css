@@ -595,6 +595,20 @@ canvas{
 
 /* Bölüm başına satın alma sınırı — kalan sayıyı gösteren rozet.
    Hem tekli seçim butonunda hem çekmece kartlarında aynı görünür. */
+/* Bölüme özel kota işareti — sayı rozetinin karşı köşesinde.
+   ▲ bu bölümde bir fazla, ▼ bir eksik (bkz. quotaBadge, ui.js). */
+.tower-quota-mark{
+  position:absolute; top:-5px; right:-5px; z-index:1;
+  width:15px; height:15px;
+  border:1.5px solid #1a1006; border-radius:8px;
+  font-size:8px; font-weight:700; line-height:1;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 1px 2px rgba(0,0,0,0.4);
+  pointer-events:none;
+}
+.tower-quota-mark.up{   background:#7fe3a0; color:#0e2a17; }
+.tower-quota-mark.down{ background:#e2504a; color:#2a0d0b; }
+
 .tower-count-badge{
   position:absolute; top:-5px; left:-5px; z-index:1;
   min-width:14px; height:14px; padding:0 3px;
