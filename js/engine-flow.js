@@ -368,5 +368,11 @@ function endGame(win){
     }
     nextBtn.style.display = hasNext ? '' : 'none';
     if(hasNext) nextBtn.textContent = label;
+    /* Vurgu (.hero) her zaman SIRADAKİ ADIMIN üstünde durur: bölüm
+       geçildiyse "Bölüm 42 →", kaybedildiyse "Tekrar Dene". Böylece
+       oyuncu üç düğmeye bakıp hangisine basacağını aramıyor. */
+    nextBtn.classList.toggle('hero', hasNext);
+    const retryBtn = document.getElementById('overlayBtn');
+    if(retryBtn) retryBtn.classList.toggle('hero', !hasNext);
   }
 }

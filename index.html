@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#12261b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
 <title>Root & Relay — Tower Defense</title>
-<link rel="stylesheet" href="css/style.css?v=83">
+<link rel="stylesheet" href="css/style.css?v=84">
 </head>
 <body class="in-menu">
 <div class="wrap">
@@ -270,9 +270,12 @@
         <div class="overlay-stars" id="overlayStars"></div>
         <p id="overlayText">Dalga 0'da yenildin</p>
         <div class="overlay-actions">
-          <button class="btn ghost" id="nextLevelBtn" style="display:none;">Sonraki Bölüm →</button>
-          <button class="btn ghost" id="overlayBtn">Tekrar Dene</button>
-          <button class="btn ghost" id="mainMenuBtnOverlay">🏠 Ana Menü</button>
+          <!-- Sıradaki adım (kazanınca "Bölüm 42 →", kaybedince "Tekrar Dene")
+               .hero sınıfını alır ve tüm satırı kaplar; bkz. endGame,
+               engine-flow.js. Sınıfı JS dağıtır, burada sabit değil. -->
+          <button class="over-btn" id="nextLevelBtn" style="display:none;">Sonraki Bölüm →</button>
+          <button class="over-btn" id="overlayBtn">Tekrar Dene</button>
+          <button class="over-btn" id="mainMenuBtnOverlay">🏠 Ana Menü</button>
         </div>
       </div>
 
@@ -382,7 +385,7 @@
 <script src="js/engine-canvas.js?v=106"></script>
 <script src="js/engine-state.js?v=104"></script>
 <script src="js/engine-towers.js?v=110"></script>
-<script src="js/engine-flow.js?v=111"></script>
+<script src="js/engine-flow.js?v=112"></script>
 <script src="js/engine-update.js?v=111"></script>
 <script src="js/engine.js?v=104"></script>
 

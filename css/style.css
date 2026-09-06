@@ -440,10 +440,56 @@ canvas{
 .overlay h2.win{ color:#7fe3b4; }
 .overlay h2.lose{ color:var(--red); }
 .overlay p{ margin:0; line-height:1.4; color:var(--cream-dim); font-family:'JetBrains Mono', monospace; font-size:12.5px;}
+/* BÖLÜM SONU DÜĞMELERİ
+
+   Üçü de ince çerçeveli "ghost" düğmeydi: bölümü bitiren oyuncunun
+   gözü, aynı görünen üç seçenek arasında sıradaki adımı arıyordu.
+   Artık gerçek düğme gövdeleri var ve sıradaki adım — kazanınca
+   "Bölüm 42 →", kaybedince "Tekrar Dene" — .hero sınıfıyla altın
+   rengine bürünüp satırın tamamını kaplıyor. Diğer ikisi altta
+   yan yana, sakin kalıyor.
+
+   .hero'yu hangi düğmenin alacağına endGame karar veriyor
+   (engine-flow.js); burada iki düğme de aynı sınıfı kullanabilsin
+   diye hero ayrı yazıldı. */
 .overlay-actions{
-  display:flex; gap:8px; margin-top:6px; width:100%; max-width:260px;
+  display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;
+  width:100%; max-width:300px;
 }
-.overlay-actions .btn{ flex:1; }
+.over-btn{
+  flex:1 1 0; min-width:0;
+  padding:11px 10px; border-radius:11px;
+  font-family:'Baloo 2', sans-serif; font-weight:700; font-size:13px;
+  background:linear-gradient(180deg, rgba(43,63,38,0.95), rgba(24,38,24,0.95));
+  border:2px solid rgba(255,255,255,0.14); color:var(--cream);
+  box-shadow:0 3px 0 rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07);
+  cursor:pointer; touch-action:manipulation;
+  transition:transform .1s ease, box-shadow .1s ease, border-color .15s ease;
+}
+.over-btn:hover{ border-color:rgba(244,192,74,0.4); }
+.over-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,0.5); }
+
+/* Sıradaki adım: tek başına bir satır, altın gövde, nefes alan halka */
+.over-btn.hero{
+  flex:1 0 100%;
+  padding:14px 14px; font-size:16px; letter-spacing:0.2px;
+  background:linear-gradient(180deg,#ffd873,#f4c04a 45%,#b9832a);
+  color:#2a1c08; border:2px solid #0a0704;
+  text-shadow:0 1px 0 rgba(255,255,255,0.35);
+  box-shadow:0 4px 0 #7a5518;
+  animation:overlay-hero-pulse 2s ease-in-out infinite;
+}
+.over-btn.hero:hover{ border-color:#0a0704; }
+.over-btn.hero:active{
+  transform:translateY(3px); box-shadow:0 1px 0 #7a5518; animation:none;
+}
+@keyframes overlay-hero-pulse{
+  0%,100%{ box-shadow:0 4px 0 #7a5518, 0 0 0 0 rgba(244,192,74,0.40); }
+  55%    { box-shadow:0 4px 0 #7a5518, 0 0 18px 5px rgba(244,192,74,0.22); }
+}
+@media (prefers-reduced-motion: reduce){
+  .over-btn.hero{ animation:none; }
+}
 
 .pause-menu-list{
   display:flex; flex-direction:column; gap:8px;
