@@ -103,13 +103,19 @@ function advRenderMarkers(){
         '</span>';
       advTap(el, ()=>{ playMenuTap(); advOpenRegion(r.id); });
     } else {
+      /* Kilitli bölge iki şey söylüyor: zincirle nerede açılacağı ve
+         elmasla şimdi kaça açılabileceği. İkincisi olmadan oyuncu
+         satın alınabildiğini hiç öğrenemezdi. */
+      const price = advRegionPrice(r);
+      if(getGems() >= price) el.className += ' buyable';
       el.innerHTML =
         '<span class="am-ic">🔒</span>' +
         '<span class="am-body">' +
           '<span class="am-name">' + r.name + '</span>' +
-          '<span class="am-count">Bölüm ' + r.from + '\'de açılır</span>' +
+          '<span class="am-count">Bölüm ' + r.from + "'de açılır</span>" +
+          '<span class="am-price">💎 ' + price + ' ile şimdi aç</span>' +
         '</span>';
-      advTap(el, ()=>{ playError(); });
+      advTap(el, ()=>{ playMenuTap(); advAskBuy(r.id); });
     }
     host.appendChild(el);
   });
@@ -159,6 +165,59 @@ function rgNodePos(i, count, w){
   const x = w/2 + Math.sin(i*0.64) * (w*RG_AMPL) + Math.sin(i*0.21) * (w*0.07);
   const y = RG_PAD_TOP + (count-1-i) * RG_GAP;
   return { x, y };
+}
+
+/* ---- Bölge satın alma onayı -------------------------------------
+   Elmas geri alınamaz, o yüzden tek dokunuşla harcanmıyor. Kart
+   bölgenin ne olduğunu, fiyatı ve cüzdanı gösteriyor; parası
+   yetmiyorsa "Aç" düğmesi kapalı ve kaç elmas eksik olduğu yazıyor. */
+let advBuyTarget = null;
+
+function advAskBuy(id){
+  const r = regionById(id);
+  if(!r || advIsRegionUnlocked(r)) return;
+  const box = document.getElementById('advBuy');
+  if(!box) return;
+  advBuyTarget = id;
+  const price = advRegionPrice(r);   // adventure.js
+  const have  = getGems();           // progress.js
+  document.getElementById('abIcon').textContent  = r.icon;
+  document.getElementById('abName').textContent  = r.name;
+  document.getElementById('abBlurb').textContent = r.blurb;
+  document.getElementById('abPrice').textContent = '💎 ' + price;
+  const wallet = document.getElementById('abWallet');
+  const ok     = document.getElementById('abOk');
+  if(have >= price){
+    wallet.textContent = 'Cüzdanında 💎 ' + have + ' var — açtıktan sonra 💎 ' + (have-price) + ' kalır';
+    wallet.className = 'ab-wallet';
+    ok.disabled = false;
+    ok.textContent = 'Aç';
+  } else {
+    wallet.textContent = 'Cüzdanında 💎 ' + have + ' var — 💎 ' + (price-have) + ' daha gerek';
+    wallet.className = 'ab-wallet short';
+    ok.disabled = true;
+    ok.textContent = 'Elmas yetmiyor';
+  }
+  box.hidden = false;
+}
+
+function advCloseBuy(){
+  const box = document.getElementById('advBuy');
+  if(box) box.hidden = true;
+  advBuyTarget = null;
+}
+
+function advConfirmBuy(){
+  const id = advBuyTarget;
+  if(!id) return;
+  if(!advBuyRegion(id)){ playError(); return; }   // adventure.js
+  playGem();                                      // audio.js
+  advCloseBuy();
+  /* Harita yeniden pişip tabelalar tazelensin, sonra doğrudan yeni
+     bölgeye gir — oyuncu bunun için ödedi, bir dokunuş daha
+     beklememeli. */
+  advRenderWorld();
+  advOpenRegion(id);
 }
 
 function advOpenRegion(id){

@@ -349,6 +349,13 @@ document.getElementById('mmAdventure').addEventListener('pointerup', ()=>{
 document.getElementById('rgBackBtn').addEventListener('pointerup', ()=>{
   playMenuTap(); showMenuPage('menuAdventure');
 });
+/* Bölge satın alma onayı (adventure-ui.js) */
+document.getElementById('abCancel').addEventListener('pointerup', ()=>{
+  playMenuTap(); advCloseBuy();
+});
+document.getElementById('abOk').addEventListener('pointerup', ()=>{
+  advConfirmBuy();
+});
 document.getElementById('mmEndless').addEventListener('pointerup', ()=>{
   playMenuTap();
   showMenuPage('menuSeed');

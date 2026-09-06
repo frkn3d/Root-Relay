@@ -26,6 +26,7 @@ function render(){
   enemies.forEach(drawBossAura);
   drawDebris();             // zeminde: küp enkazı düşmanların altında
   drawHealZones();          // zeminde: birikintiler düşmanların altında
+  drawCoins();              // zeminde: ganimet düşmanların ALTINDA kalmalı
   towers.forEach(drawTowerRange);
   enemies.forEach(drawEnemy);
   towers.forEach(drawTower);
@@ -38,7 +39,6 @@ function render(){
   drawBeams();
   drawExplosions();
   drawParticles();
-  drawCoins();
   drawFloatTexts();
   drawBirds();      // ortam kuşu sürüsü — kardan önce, gökyüzü katmanında
   drawSnowfall();   // en üstte: kar her şeyin önünden geçer

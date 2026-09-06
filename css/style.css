@@ -1372,6 +1372,71 @@ body.in-menu .leaf-particles .leaf{ animation-play-state:running, running; }
 .adv-world canvas{ display:block; width:100%; touch-action:pan-y; }
 .adv-markers{ position:absolute; inset:0; pointer-events:none; }
 
+/* Elmasla açılabilecek bölgenin tabelası — kilitli ama davetkâr */
+.adv-marker .am-price{
+  font-family:'JetBrains Mono', monospace; font-size:8.5px;
+  color:#9dc4d6; letter-spacing:0.02em; margin-top:1px;
+}
+.adv-marker.buyable{
+  border-color:rgba(120,210,245,0.6);
+  background:rgba(18,34,44,0.86);
+  color:#cfe6ee;
+}
+.adv-marker.buyable::after{ border-top-color:rgba(120,210,245,0.6); }
+.adv-marker.buyable .am-price{ color:#a9e6ff; }
+
+/* Bölge satın alma onayı — haritanın üstünde tam ekran karartma */
+.adv-buy{
+  position:absolute; inset:0; z-index:12;
+  display:flex; align-items:center; justify-content:center;
+  /* DİKKAT: bu display:flex, tarayıcının [hidden] için verdiği
+     display:none'ı ezer (yazar kuralı UA kuralını yener). Aşağıdaki
+     satır olmadan kart hep açık kalır. */
+  padding:20px;
+  background:rgba(8,16,14,0.82);
+  backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+}
+.adv-buy .ab-card{
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+  width:100%; max-width:300px;
+  padding:16px 16px 14px;
+  border-radius:16px;
+  border:2px solid rgba(120,210,245,0.45);
+  background:linear-gradient(180deg, #1c3340, #12222b);
+  box-shadow:0 14px 34px rgba(0,0,0,0.5);
+  text-align:center;
+}
+.adv-buy .ab-ic{ font-size:34px; line-height:1; }
+.adv-buy .ab-name{
+  font-family:'Baloo 2', sans-serif; font-weight:800; font-size:19px;
+  color:var(--cream);
+}
+.adv-buy .ab-blurb{
+  font-family:'JetBrains Mono', monospace; font-size:9.5px; line-height:1.45;
+  color:var(--cream-dim); text-wrap:balance;
+}
+.adv-buy .ab-price{
+  margin-top:4px;
+  font-family:'Baloo 2', sans-serif; font-weight:800; font-size:26px;
+  color:#cdefff; text-shadow:0 2px 0 rgba(0,0,0,0.4);
+}
+.adv-buy .ab-wallet{
+  font-family:'JetBrains Mono', monospace; font-size:9px; line-height:1.4;
+  color:rgba(205,239,255,0.6); text-wrap:balance;
+}
+.adv-buy .ab-wallet.short{ color:#ffb3ae; }
+.adv-buy .ab-actions{
+  display:flex; gap:8px; width:100%; margin-top:8px;
+}
+.adv-buy[hidden]{ display:none; }
+/* Onay kartında iki düğme yan yana — .hero'nun tam satır kaplaması
+   bölüm sonu ekranı içindir, burada geçerli değil. */
+.adv-buy .over-btn.hero{ flex:1 1 0; font-size:14px; padding:11px 10px; }
+.adv-buy .over-btn:disabled{
+  opacity:0.45; cursor:not-allowed; animation:none;
+  filter:grayscale(0.6);
+}
+
 /* Bölge tabelası — canvas'ın üstünde gerçek bir buton. */
 .adv-marker{
   position:absolute; transform:translate(-50%, -100%);

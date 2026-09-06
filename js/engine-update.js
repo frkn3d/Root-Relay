@@ -722,39 +722,63 @@ function particleBudget(want){
    Yol bir karesel Bézier: doğduğu nokta -> kontrol noktası -> hedef.
    Kare başına iş, sikke başına birkaç çarpma; fizik entegrasyonu ya
    da çarpışma testi yok. ============================================================ */
-const COIN_MAX      = 3;      // aynı anda yaşayan sikke sayısı — sert tavan
-const COIN_LIFE     = 0.55;   // saniye
-const COIN_REACH    = 120;    // px — sikkenin katettiği mesafe
-const COIN_HOP      = 22;     // px — yola binen küçük yay
-const COIN_SOLID    = 0.30;   // ömrün bu kadarı tam görünür, sonrası sönme
-const COIN_TARGET_X = LW*0.22;// HUD'daki altın çipinin yatay hizası
-const COIN_TARGET_Y = -26;    // canvas'ın biraz ÜSTÜ (sayaç orada)
+/* ============================================================
+   SAÇILAN SİKKELER
 
-/* SABİT MESAFE, DEĞİŞKEN YÖN
+   İlk iki deneme sikkeyi altın sayacına doğru uçuruyordu. İkisi de
+   yanlış hissettiriyordu: sikke ekranı terk eden bir bildirim gibiydi,
+   oysa ganimet YERE düşer. Şimdi ölen düşmandan etrafa saçılıyor,
+   zıplayıp duruluyor ve birkaç saniye yerde durduktan sonra soluyor.
 
-   İlk denemede sikke sayaca kadar tam bir Bézier çiziyordu. Sahanın
-   altında ölen bir düşmanın sikkesi 700 pikseli 0.45 saniyede
-   katediyordu: ekranı boydan boya kesen parlak bir çizgi, üstelik
-   sahnenin neresinde öldüğüne göre bambaşka bir hareket. Süs olması
-   gereken şey, olan biteni örtüyordu.
+   ÜÇÜNCÜ BOYUT SAHTE. Oyun tepeden bakıyor, yerçekimi yok. Sikkenin
+   iki ayrı konumu var: zeminde durduğu yer (gx, gy) ve o noktanın
+   KAÇ PİKSEL ÜSTÜNDE göründüğü (h). Gövde (gx, gy-h) noktasına,
+   gölgesi ise (gx, gy) noktasına çiziliyor. Zıplarken gölge yerde
+   kalıp küçüldüğü için sıçrama gerçekten havaya kalkmış gibi okunuyor
+   — tek bir y koordinatıyla bu olmuyor.
 
-   Şimdi her sikke, ölüm noktasından sayaç yönüne doğru SABİT 120
-   piksel gidiyor. Nerede ölürse ölsün hareket aynı ağırlıkta ve aynı
-   kısalıkta; yön ise hep sayacı gösteriyor. Sikke yolun sonunu zaten
-   görmüyor, ortasında sönüp kayboluyor. */
+   ÖMÜR: 2-4 saniye arası rastgele. Aynı anda ölen düşmanların
+   sikkeleri aynı anda kaybolup toplu bir "sönme" yaratmasın diye
+   rastgele; ayrıca yerde biraz oyalanmaları ganimeti görünür kılıyor.
+
+   TAVAN: sikkeler artık uçup gitmediği için yerde birikiyorlar; eski
+   0.55 saniyelik ömürle 3'lük tavan yeterliyken şimdi aynı sayı
+   ekranı neredeyse boş bırakırdı. Tavan 10'a çıkarıldı. Maliyet hâlâ
+   önemsiz: sikke başına kare başına birkaç çarpma ve 3 elips (gövde,
+   parlama, gölge). Sınır doluyken en ESKİ sikke düşürülüyor — böylece
+   yoğun anda ekrandaki ganimet tazeleniyor, taşlaşmıyor.
+   ============================================================ */
+const COIN_MAX       = 10;     // aynı anda yerde duran sikke — sert tavan
+/* Ömür SIÇRAMA DAHİL ölçülüyor. İstenen "yerde 2-4 saniye dursun";
+   sikkenin havada geçirdiği ~1 saniye de bu sürenin içinde olduğu
+   için taban 1 saniye yukarı çekildi. Sonuç: yerde 2-4 saniye. */
+const COIN_LIFE_MIN  = 3.0;    // saniye
+const COIN_LIFE_MAX  = 5.0;    // saniye
+const COIN_FADE      = 0.7;    // ömrün son bu kadarında solar
+const COIN_GRAVITY   = 900;    // px/sn² — sahte yerçekimi
+const COIN_POP_MIN   = 240;    // px/sn — ilk sıçramanın dikey hızı (~32 px tepe)
+const COIN_POP_MAX   = 330;    //          (~60 px tepe)
+const COIN_SCATTER   = 190;    // px/sn — yanlara saçılma hızı (~50 px açılma)
+const COIN_BOUNCE    = 0.42;   // zıplamada korunan hız oranı
+const COIN_FRICTION  = 2.6;    // 1/sn — yerdeki sürtünme
+const COIN_EDGE      = 10;     // sahanın kenarına bu kadar yaklaşabilir
+
 function spawnCoin(x, y){
-  if(coins.length >= COIN_MAX) return;   // dolu — sessizce vazgeç
-  let dx = COIN_TARGET_X - x, dy = COIN_TARGET_Y - y;
-  const len = Math.hypot(dx, dy) || 1;
+  /* Tavan doluyken EN ESKİSİ gider. "Sessizce vazgeç" davranışı kısa
+     ömürlü sikkelerde doğruydu; 2-4 saniyelik ömürle aynı davranış,
+     ilk üç sikke yerde dururken sonraki bütün ölümlerin sikkesiz
+     kalması demek olurdu. */
+  if(coins.length >= COIN_MAX) coins.shift();
+  const ang = Math.random()*Math.PI*2;
+  const sp  = COIN_SCATTER * (0.35 + Math.random()*0.65);
   coins.push({
-    x, y, sx:x, sy:y,
-    dx: dx/len, dy: dy/len,
-    t: 0,
-    /* Yatay kayma: aynı anda ölen düşmanların sikkeleri üst üste
-       binip tek bir parlak leke gibi görünmesin. */
-    jitter: (Math.random()-0.5)*26,
+    gx: x, gy: y,                                  // zemindeki konum
+    vx: Math.cos(ang)*sp, vy: Math.sin(ang)*sp*0.55, // yandan bakışta dikey daha dar
+    h: 2, vh: COIN_POP_MIN + Math.random()*(COIN_POP_MAX-COIN_POP_MIN),
+    life: COIN_LIFE_MIN + Math.random()*(COIN_LIFE_MAX-COIN_LIFE_MIN),
     spin: Math.random()*Math.PI*2,
-    spinRate: 7 + Math.random()*4,
+    spinRate: 9 + Math.random()*7,
+    resting: false,
   });
 }
 
@@ -762,13 +786,35 @@ function updateCoins(dt){
   if(!coins.length) return;
   for(let i=coins.length-1; i>=0; i--){
     const c = coins[i];
-    c.t += dt / COIN_LIFE;
-    if(c.t >= 1){ coins.splice(i,1); continue; }
-    // t*t: önce ağır kalkar, sonra sayaca çekiliyormuş gibi hızlanır
-    const d = c.t * c.t * COIN_REACH;
-    c.x = c.sx + c.dx*d + c.jitter*c.t;
-    c.y = c.sy + c.dy*d - Math.sin(Math.PI*c.t)*COIN_HOP;
-    c.spin += c.spinRate*dt;
+    c.life -= dt;
+    if(c.life <= 0){ coins.splice(i,1); continue; }
+
+    if(!c.resting){
+      // yükseklik: sahte yerçekimi
+      c.vh -= COIN_GRAVITY*dt;
+      c.h  += c.vh*dt;
+      if(c.h <= 0){
+        c.h = 0;
+        if(Math.abs(c.vh) > 55){
+          c.vh = -c.vh * COIN_BOUNCE;   // zıpla
+          c.vx *= 0.7; c.vy *= 0.7;
+        } else {
+          /* Duruldu: dönüşü yatay bir sikkede sabitle ve fizik
+             hesabını tamamen bırak — yerdeki sikke bedava. */
+          c.vh = 0; c.resting = true; c.spin = Math.PI/2;
+        }
+      }
+      // zemindeki kayma
+      const k = Math.max(0, 1 - COIN_FRICTION*dt);
+      c.vx *= k; c.vy *= k;
+      c.gx += c.vx*dt; c.gy += c.vy*dt;
+      // sahanın dışına saçılmasın
+      if(c.gx < COIN_EDGE){ c.gx = COIN_EDGE; c.vx = -c.vx*0.4; }
+      if(c.gx > LW-COIN_EDGE){ c.gx = LW-COIN_EDGE; c.vx = -c.vx*0.4; }
+      if(c.gy < COIN_EDGE){ c.gy = COIN_EDGE; c.vy = -c.vy*0.4; }
+      if(c.gy > LH-COIN_EDGE){ c.gy = LH-COIN_EDGE; c.vy = -c.vy*0.4; }
+      c.spin += c.spinRate*dt;
+    }
   }
 }
 

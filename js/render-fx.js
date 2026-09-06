@@ -371,29 +371,48 @@ function drawParticles(){
     ctx.beginPath(); ctx.arc(p.x,p.y,2.4,0,Math.PI*2); ctx.fillStyle=p.color; ctx.fill(); ctx.restore();
   });
 }
-/* Uçan sikkeler (bkz. spawnCoin, engine-update.js).
+/* Saçılan sikkeler (bkz. spawnCoin, engine-update.js).
+
    Emoji yerine elle çizim: 🪙 metni her karede yazı tipi biçimlendirme
    maliyeti taşır, üstelik cihazdan cihaza farklı görünür. Buradaki
-   sikke iki dolu elips ve bir yay — gradyan yok, gölge yok, kare
-   başına en fazla üç tanesi çiziliyor.
-   Dönüş, yatay ölçeği |cos| ile daraltarak taklit ediliyor; sikke
-   yanına döndükçe incelir. */
+   sikke üç elips — gölge, gövde, parlama. Gradyan yok, gölge filtresi
+   yok, ctx.save/restore kare başına bir kez.
+
+   Gölge zeminde (gx, gy), gövde onun h piksel üstünde duruyor.
+   Havadayken gölge küçülüp soluyor: sıçramanın yüksekliği yalnızca
+   buradan okunuyor, çünkü tepeden bakışta yukarı hareketle ileri
+   hareket aynı görünür. */
 function drawCoins(){
   if(!coins.length) return;
   ctx.save();
   for(let i=0;i<coins.length;i++){
     const c = coins[i];
-    // İlk üçte biri tam görünür, kalanında sönerek yolda kaybolur
-    const fade = c.t <= COIN_SOLID ? 1 : 1 - (c.t - COIN_SOLID)/(1 - COIN_SOLID);
-    ctx.globalAlpha = Math.max(0, fade);
-    const w = Math.abs(Math.cos(c.spin)) * 5 + 1.4;   // dönüş: yatayda daralma
+    // Ömrünün son parçasında sol
+    const fade = c.life < COIN_FADE ? c.life/COIN_FADE : 1;
+    const lift = c.h;
+
+    // gölge — yükseldikçe küçülür ve siliniir
+    const sh = Math.max(0.25, 1 - lift/70);
+    ctx.globalAlpha = 0.30 * sh * fade;
     ctx.beginPath();
-    ctx.ellipse(c.x, c.y, w, 6, 0, 0, Math.PI*2);
-    ctx.fillStyle = '#f4c04a';
+    ctx.ellipse(c.gx, c.gy + 1.5, 5.2*sh, 2.4*sh, 0, 0, Math.PI*2);
+    ctx.fillStyle = '#000000';
     ctx.fill();
+
+    // gövde — dönüş yatay ölçeği daraltarak taklit ediliyor
+    const y = c.gy - lift;
+    const w = Math.abs(Math.cos(c.spin)) * 4.6 + 1.3;
+    ctx.globalAlpha = fade;
     ctx.beginPath();
-    ctx.ellipse(c.x, c.y, w*0.55, 3.4, 0, 0, Math.PI*2);
-    ctx.fillStyle = '#ffe9a8';
+    ctx.ellipse(c.gx, y, w, 5.4, 0, 0, Math.PI*2);
+    ctx.fillStyle = '#e0a52f';
+    ctx.fill();
+    /* Parlama hafifçe nabız atıyor — yerde duran sikke ölü bir leke
+       gibi görünmesin. Faz ömürden türetiliyor, ayrı bir saat yok. */
+    ctx.globalAlpha = fade * (0.78 + 0.22*Math.sin(c.life*5 + c.spinRate));
+    ctx.beginPath();
+    ctx.ellipse(c.gx, y - 0.6, w*0.6, 3.4, 0, 0, Math.PI*2);
+    ctx.fillStyle = '#ffdf85';
     ctx.fill();
   }
   ctx.restore();

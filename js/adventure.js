@@ -44,6 +44,54 @@ function advSetLastRegion(id){
   const o = advLoad(); o.region = id; advSave(o);
 }
 
+/* ---- Elmasla bölge satın alma -----------------------------------
+
+   Zincir tek yönlü bir yolculuk: 121. bölüm için 120'yi geçmen
+   gerekiyor. Bu, oyuncuyu bir temaya hapsedebiliyor — ormandan
+   sıkıldıysa çöle geçmek için 120 orman bölümü oynaman gerekiyordu.
+
+   Elmas o kapıyı açıyor. Bir bölgeyi satın almak zinciri BOZMAZ,
+   yalnızca o bölgenin ilk bölümünü açar; bölge içi ilerleme aynen
+   sırayla işler. Yani satın alma "oyunu atlamak" değil, "nereden
+   devam edeceğini seçmek".
+
+   Fiyat her bölgede ikiye katlanıyor: 200 / 400 / 800 / 1600 /
+   3200 / 6400. Yıldız başına 5 elmas kazanıldığı için 200 elmas
+   ~14 bölümlük üç yıldızlı oyun demek; ilk birkaç bölge gerçekten
+   satın alınabilir, sonrakiler zaten oynayarak açılıyor olacak. */
+const REGION_PRICE_BASE = 200;
+
+/* Bölgenin sırası (0 = ilk bölge, bedava) */
+function advRegionPrice(r){
+  const i = regionIndexOf(r.from);
+  if(i <= 0) return 0;
+  return REGION_PRICE_BASE * Math.pow(2, i-1);
+}
+
+function advBoughtRegions(){
+  const o = advLoad();
+  return Array.isArray(o.bought) ? o.bought : [];
+}
+function advIsRegionBought(r){ return advBoughtRegions().indexOf(r.id) >= 0; }
+
+/* Satın alma. Elmas yetmiyorsa ya da bölge zaten açıksa false döner —
+   çağıran taraf sebebi ayrıca sorabilsin diye elmas DÜŞÜLMEDEN önce
+   her koşul kontrol ediliyor. */
+function advBuyRegion(id){
+  const r = regionById(id);
+  if(!r) return false;
+  if(advIsRegionUnlocked(r)) return false;      // zaten açık
+  const price = advRegionPrice(r);
+  if(price <= 0) return false;
+  if(getGems() < price) return false;           // parası yetmiyor
+  addGems(-price);                              // progress.js
+  const o = advLoad();
+  o.bought = advBoughtRegions().concat([id]);
+  advSave(o);
+  if(typeof invalidateWorldBake === 'function') invalidateWorldBake();
+  return true;
+}
+
 /* ---- Bölüm durumu ---------------------------------------------- */
 
 /* Üretilmiş bölümün progress.js'teki anahtarı (bkz. generateLevel) */
@@ -70,8 +118,13 @@ const ADV_UNLOCK_MODE = 'chain';
 function advIsUnlocked(n){
   if(n < 1 || n > GEN.TOTAL_LEVELS) return false;
   if(n === 1) return true;
+  const r = regionOf(n);
   // 'open' modunda her bölgenin ilk bölümü baştan açık
-  if(ADV_UNLOCK_MODE === 'open' && n === regionOf(n).from) return true;
+  if(ADV_UNLOCK_MODE === 'open' && n === r.from) return true;
+  /* Elmasla satın alınan bölgenin ilk bölümü açıktır; gerisi yine
+     sırayla. Burada advIsRegionBought çağrılıyor, advIsRegionUnlocked
+     DEĞİL — o ikisi birbirini çağırıp sonsuz döngüye girerdi. */
+  if(n === r.from && advIsRegionBought(r)) return true;
   if(advIsDone(n-1)) return true;
   /* Patron bölümleri ilerlemeyi TIKAMAZ. Patron dövüşü henüz
      tasarlanmadı ve tasarlandığında da yolculuğu durduran bir duvar
@@ -90,10 +143,11 @@ function advLevelState(n){
 
 /* ---- Bölge durumu ---------------------------------------------- */
 
-/* Bölge, ilk bölümü açıldığında açılır. Bölümler tek bir zincir
-   olduğu için ayrı bir bölge kilidi kuralına gerek yok: 121. bölüm
-   açıldıysa Kavak Kıyısı da açılmıştır. */
-function advIsRegionUnlocked(r){ return advIsUnlocked(r.from); }
+/* Bölge iki yoldan açılır: zincirle (önceki bölümü geçerek) ya da
+   elmasla satın alınarak. İkisi de aynı kapıyı açar. */
+function advIsRegionUnlocked(r){
+  return advIsUnlocked(r.from) || advIsRegionBought(r);
+}
 
 /* Bir bölgenin özeti: kaç bölüm geçildi, kaç yıldız toplandı,
    sıradaki oynanacak bölüm hangisi. */

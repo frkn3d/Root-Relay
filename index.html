@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#12261b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
 <title>Root & Relay — Tower Defense</title>
-<link rel="stylesheet" href="css/style.css?v=86">
+<link rel="stylesheet" href="css/style.css?v=87">
 </head>
 <body class="in-menu">
 <div class="wrap">
@@ -108,6 +108,21 @@
             <canvas id="advCanvas"></canvas>
             <div class="adv-markers" id="advMarkers"></div>
           </div>
+          <!-- Bölge satın alma onayı. Elmas geri alınamadığı için
+               tek dokunuşla harcanmıyor (bkz. advAskBuy, adventure-ui.js). -->
+          <div class="adv-buy" id="advBuy" hidden>
+            <div class="ab-card">
+              <div class="ab-ic" id="abIcon">🏝️</div>
+              <div class="ab-name" id="abName"></div>
+              <div class="ab-blurb" id="abBlurb"></div>
+              <div class="ab-price" id="abPrice"></div>
+              <div class="ab-wallet" id="abWallet"></div>
+              <div class="ab-actions">
+                <button class="over-btn" id="abCancel">Vazgeç</button>
+                <button class="over-btn hero" id="abOk">Aç</button>
+              </div>
+            </div>
+          </div>
           <button class="menu-btn back" data-back>← Geri</button>
         </div>
 
@@ -162,7 +177,7 @@
               <p>Bir kuleye <b>tek dokunuş</b> menzilini gösterir. <b>1 saniye basılı tutmak</b> yükseltme panelini açar: buradan seviye atlatabilir, satabilir veya <b>atış önceliğini</b> değiştirebilirsin.</p>
               <p>Her yükseltme hasarı, menzili ve atış hızını artırır; kule gözle görülür şekilde <b>büyür ve rengi parlar</b>. 3. seviyede altın kenarlık kazanır. Panelde her satırın yanındaki <b>▲</b> işareti, o özelliğin bir sonraki seviyede alacağı değeri gösterir — parayı vermeden önce ne kazanacağını görürsün.</p>
               <p>Bir kulenin yanında <b>yeşil bir düğme yanıp sönüyorsa</b> o kule şu anda yükseltilebilir demektir: parası yeter ve son seviyede değildir. Düğmeye dokunmak yükseltme panelini doğrudan açar — kuleyi basılı tutmana gerek yok.</p>
-              <p><b>Yeni kule kısa görür.</b> Yosun Okçusu dışındaki her kule <b>ilk kurulduğunda menzilinin %75'iyle</b> çalışır; ilk yükseltmeyle tam menziline kavuşur (yaklaşık <b>%47</b> sıçrama). Yani yeni bir kuleyi nereye koyduğun önemli — "zaten her yeri görür" diye rastgele bir noktaya dikersen boşa para verirsin.</p>
+              <p><b>Yeni kule kısa görür.</b> Yosun Okçusu dışındaki her kule ilk kurulduğunda tam menziliyle çalışmaz; ilk yükseltmeyle menzili sıçrar. <b>Ceza kuleye göre değişir:</b> Mantar Havanı, Don Peykesi, Zehir Sarmaşığı ve Şimşek Direği tabanının <b>%75</b>'iyle başlar (ilk yükseltmede %47 sıçrama), Ateş Kulesi <b>%90</b> ile, Lazer Kulesi <b>%86</b> ile başlar. Okçu'ya ceza yoktur. Yani yeni bir kuleyi nereye koyduğun önemli — "zaten her yeri görür" diye rastgele bir noktaya dikersen boşa para verirsin.</p>
               <p><b>Kenarlara kule kurulamaz.</b> Sahanın dört kenarında da yapı noktası bulunmaz: üstte kulenin tepesi çerçeveden taşıp kesilir, altta kule çekmecesi açıkken orayı örter, yanlarda ise gövde çerçevenin yuvarlak köşesine girer. Hepsinde kurduğun kuleyi tam göremezdin.</p>
               <p><b>Her yol savunulabilir.</b> İki çıkışlı haritalarda her kola kendi kule kotası ayrılır; kısa bir kol, kısa olduğu için bedava geçilen bir kestirme olmasın diye birim uzunluk başına <b>daha yoğun</b> kule alır. Bir kola yeterince kule sığmıyorsa harita o yolu yeniden şekillendirir.</p>
               <p><b>Duraklatıp planla.</b> Alt bardaki <b>⏸</b> simülasyonu dondurur ama haritayı kapatmaz; duraklıyken de kule dikebilir, yükseltebilir ve satabilirsin. İnşaat süresi duraklıyken <b>ilerlemez</b> — oyunu devam ettirdiğinde başlar. (☰ menüsü ise ekranı kapatır, orada haritaya dokunulmaz.)</p>
@@ -174,7 +189,7 @@
               <p><b>🛡️ Zırhlı.</b> 8. dalgadan itibaren gelir; önünde <b>parçalanabilir bir plaka</b> taşır. Plaka ayaktayken gelen hasarın yalnızca küçük bir kısmı gövdeye işler, gerisi plakayı aşındırır. Bu yüzden zehir ve lav gibi <b>saniyede az hasar</b> veren silahlar plakaya karşı verimsizdir; havan güllesi ve lazer gibi <b>tek seferde sert vuranlar</b> plakayı hızla söker. Plaka kırılınca düşman savunmasız kalır — can çubuğunun üstündeki gri çubuk kaybolduğunda anlarsın. <b>Çok yavaş yürür:</b> asıl tehlike kendisi değil, kuleleri uzun süre üzerine kilitlerken <b>yanından geçenlerdir</b>.</p>
               <p><b>🔷 Küp bölünür ve hızlanır.</b> Ölen küp ikiye ayrılır; her küçülmede yavrular <b>belirgin şekilde hızlanır</b>. Küpü savunmanın <b>önünde</b> öldür, arkasında değil — yoksa hızlı küçükler çıkışa koşar.</p>
               <p><b>⏱️ Dalgalar sıkışır.</b> 8. dalgadan itibaren hafif birimler (Sürü, Koşucu, Spor) birbirine <b>daha yakın</b> doğar: aynı sayıda düşman, daha kısa sürede. Ağır birimler sıkışmaz.</p>
-              <p><b>🧭 Macera.</b> 1000 bölü<b>m</b> yedi <b>bölge</b>ye ayrılır: Yosun Vadisi, Kavak Kıyısı, Kuru Savan, Kızıl Çöl, Sisli Bataklık, Buz Tundrası ve Kül Dağları. Her bölgenin kendi biyomu ve mevsimi var; bir bölümü geçince sıradaki açılır. Bir bölümü <b>en az bir yıldızla</b> bitirmek onu geçmiş sayılır. <b>1000 Bölüm</b> menüsü de duruyor — oradan oynadığın bölümler macerada da geçilmiş görünür, ikisi aynı ilerlemeyi paylaşır.</p>
+              <p><b>🧭 Macera.</b> 1000 bölü<b>m</b> yedi <b>bölge</b>ye ayrılır: Yosun Vadisi, Kavak Kıyısı, Kuru Savan, Kızıl Çöl, Sisli Bataklık, Buz Tundrası ve Kül Dağları. Her bölgenin kendi biyomu ve mevsimi var; bir bölümü geçince sıradaki açılır. Bir bölümü <b>en az bir yıldızla</b> bitirmek onu geçmiş sayılır. Sıradaki bölgeyi beklemek istemezsen <b>elmasla açabilirsin</b> (bkz. 💎 Elmas ve market). <b>1000 Bölüm</b> menüsü de duruyor — oradan oynadığın bölümler macerada da geçilmiş görünür, ikisi aynı ilerlemeyi paylaşır.</p>
               <p><b>💀 Patron bölümleri.</b> Her bölgenin <b>20 bölümde bir</b> patron bölümü vardır. Patron dövüşü henüz tasarlanmadı; şimdilik yolu <b>tıkamaz</b> — atlarsan bir sonraki bölüm yine açılır.</p>
               <p><b>⚖️ Geniş harita bedava değil.</b> Bir bölümün kaç yapı noktası verdiği artık <b>dalga baskısını</b> da belirler: bol kule alanı olan haritalarda düşmanlar <b>daha dayanıklı ve daha kalabalık</b> gelir, dar haritalarda ise <b>daha seyrek</b>. Amaç, bölümün zorluğunun haritanın çekilişine değil <b>kuleyi nereye koyduğuna</b> bağlı olması. Çok yollu bölümlerde ölçü <b>rota başına</b> düşen nokta sayısıdır — iki kolu birden tutmak zorunda olduğun için toplam nokta sayısı yanıltıcıdır.</p>
               <p><b>🌊 13. dalgadan sonra kalabalık.</b> Uzun bölümlerde 13. dalgadan itibaren her dalgaya <b>%20 daha fazla düşman</b> girer — ama dalga <b>uzamaz</b>. Aynı pencerede daha yoğun bir akış gelir; nefes alacak boşluk aramak yerine sürekli ateş edebilecek bir savunma kurman gerekir. (Boss sayısı artmaz.)</p>
@@ -215,12 +230,14 @@
               <p><b>Her şişe aynı değil.</b> Şişeler <b>1x, 2x veya 3x</b> canla gelir; büyük olan gözle görülür şekilde <b>daha iri</b>dir ve öldürünce o kadar da fazla altın bırakır. İri bir şişe gördüğünde onu kırmaya değer mi, yoksa birikintiden uzakta mı dövüşmek gerekir — her seferinde yeniden karar verirsin.</p>
               <p><b>Kıvılcım Kozası'na dikkat.</b> Öldüğünde geniş bir alana patlayıp yakındaki kuleleri 2.5 saniyeliğine kör eder. Kulelerini tek noktaya yığmak yerine dağıtırsan, bir kozanın patlaması savunmanın tamamını susturmaz.</p>
               <p><b>Sürü Anası'nı önce vur.</b> Kendisi zayıftır ama yakınındaki Spor/Sürü'ye hız ve hasar direnci verir. Onu öncelikli hedef alırsan etraftaki sürü aniden yavaşlar ve kırılganlaşır — dalga gözle görülür şekilde kolaylaşır.</p>
-              <p><b>2× hız.</b> Dalgalar arası ve kolay dalgalarda hızlandır; zor anlarda 1×'e dön, böylece tepki verecek zamanın olur.</p>
+              <p><b>Hız düğmesi 1× → 2× → 4× arasında döner.</b> Dalgalar arası ve kolay dalgalarda hızlandır; zor anlarda 1×'e dön, böylece tepki verecek zamanın olur. Hızlandırmak inşa sürelerini de kısaltır — ama karar verme süren de aynı oranda kısalır.</p>
             </div>
 
             <div class="howto-sec">
               <div class="howto-title">💎 Elmas ve market</div>
-              <p>Bölümleri yıldızla bitirdikçe <b>elmas</b> kazanırsın. Oyun içindeki 🛒 butonundan altın, can ve inşa hızı takviyesi alabilirsin. <b>Bu alımlar yalnızca o bölüm için geçerlidir</b> — bölümü yeniden başlatırsan sıfırlanır.</p>
+              <p>Bölümleri yıldızla bitirdikçe <b>elmas</b> kazanırsın: <b>yıldız başına 5 💎</b>, ama yalnızca <b>ilk kez</b> kazandığın yıldızlar için. Bölüm sonu ekranı her seferinde kaç elmas aldığını ve o bölümden kaç elmas daha alınabileceğini yazar.</p>
+              <p><b>Bölüm içi market.</b> Oyun içindeki 🛒 butonundan altın, can ve inşa hızı takviyesi alabilirsin. <b>Bu alımlar yalnızca o bölüm için geçerlidir</b> — bölümü yeniden başlatırsan sıfırlanır.</p>
+              <p><b>💎 ile yeni bölge aç.</b> Macera'da bölgeler normalde sırayla açılır: Kavak Kıyısı'na girmek için Yosun Vadisi'nin 120 bölümünü bitirmen gerekir. Aynı manzarada takılıp kalmamak için kilitli bir bölgeyi elmasla <b>şimdi</b> açabilirsin. Fiyat her bölgede ikiye katlanır: <b>200 → 400 → 800 → 1600 → 3200 → 6400 💎</b>. Satın almak oyunu atlamaz — yalnızca o bölgenin <b>ilk</b> bölümünü açar, bölge içindeki ilerleme yine sırayla işler. Dünya haritasında kilitli bir tabelaya dokunursan fiyatı ve cüzdanını gösteren onay kartı çıkar.</p>
             </div>
 
             <div class="howto-sec">
@@ -380,7 +397,7 @@
 <script src="js/levelgen.js?v=83"></script>
 <script src="js/progress.js?v=71"></script>
 <!-- Macera: 1000 bolumun ustundeki ilerleme ve gezinme katmani -->
-<script src="js/adventure.js?v=4"></script>
+<script src="js/adventure.js?v=5"></script>
 <script src="js/adventure-map.js?v=4"></script>
 <script src="js/audio.js?v=82"></script>
 <!-- sound/ klasöründeki MP3 kütüphanesinin oynatıcısı; audio.js'ten SONRA
@@ -392,7 +409,7 @@
 <script src="js/engine-state.js?v=105"></script>
 <script src="js/engine-towers.js?v=112"></script>
 <script src="js/engine-flow.js?v=114"></script>
-<script src="js/engine-update.js?v=112"></script>
+<script src="js/engine-update.js?v=113"></script>
 <script src="js/engine.js?v=104"></script>
 
 <!-- Çizim: yalnızca okur, durumu değiştirmez -->
@@ -402,12 +419,12 @@
 <script src="js/render-tower-art.js?v=90"></script>
 <script src="js/render-towers.js?v=90"></script>
 <script src="js/render-enemies.js?v=94"></script>
-<script src="js/render-fx.js?v=90"></script>
-<script src="js/render.js?v=90"></script>
+<script src="js/render-fx.js?v=91"></script>
+<script src="js/render.js?v=91"></script>
 
 <!-- Arayüz ve giriş noktası -->
-<script src="js/adventure-ui.js?v=5"></script>
+<script src="js/adventure-ui.js?v=6"></script>
 <script src="js/ui.js?v=86"></script>
-<script src="js/main.js?v=84"></script>
+<script src="js/main.js?v=85"></script>
 </body>
 </html>
