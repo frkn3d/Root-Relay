@@ -427,7 +427,13 @@ document.getElementById('levelNextBtn').addEventListener('pointerup', ()=>{
 document.getElementById('mmStats').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuStats'); });
 document.getElementById('mmHowTo').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuHowTo'); });
 document.getElementById('mmSettings').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuSettings'); });
-document.getElementById('settingsAboutBtn').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuAbout'); });
+document.getElementById('settingsChangelogBtn').addEventListener('pointerup', ()=>{ playMenuTap(); showMenuPage('menuChangelog'); });
+document.getElementById('settingsAboutBtn').addEventListener('pointerup', ()=>{
+  playMenuTap();
+  const v = document.getElementById('aboutVersion');
+  if(v) v.textContent = 'Sürüm ' + GAME_VERSION;   // changelog.js
+  showMenuPage('menuAbout');
+});
 document.getElementById('bcOk').addEventListener('pointerup', (e)=>{ e.stopPropagation(); confirmBuild(); });
 document.getElementById('bcCancel').addEventListener('pointerup', (e)=>{ e.stopPropagation(); playMenuTap(); closeBuildConfirm(); });
 document.getElementById('shopBtn').addEventListener('pointerup', openShopOverlay);

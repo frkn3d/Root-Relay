@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#12261b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
 <title>Root & Relay — Tower Defense</title>
-<link rel="stylesheet" href="css/style.css?v=87">
+<link rel="stylesheet" href="css/style.css?v=88">
 </head>
 <body class="in-menu">
 <div class="wrap">
@@ -190,6 +190,7 @@
               <p><b>🔷 Küp bölünür ve hızlanır.</b> Ölen küp ikiye ayrılır; her küçülmede yavrular <b>belirgin şekilde hızlanır</b>. Küpü savunmanın <b>önünde</b> öldür, arkasında değil — yoksa hızlı küçükler çıkışa koşar.</p>
               <p><b>⏱️ Dalgalar sıkışır.</b> 8. dalgadan itibaren hafif birimler (Sürü, Koşucu, Spor) birbirine <b>daha yakın</b> doğar: aynı sayıda düşman, daha kısa sürede. Ağır birimler sıkışmaz.</p>
               <p><b>🧭 Macera.</b> 1000 bölü<b>m</b> yedi <b>bölge</b>ye ayrılır: Yosun Vadisi, Kavak Kıyısı, Kuru Savan, Kızıl Çöl, Sisli Bataklık, Buz Tundrası ve Kül Dağları. Her bölgenin kendi biyomu ve mevsimi var; bir bölümü geçince sıradaki açılır. Bir bölümü <b>en az bir yıldızla</b> bitirmek onu geçmiş sayılır. Sıradaki bölgeyi beklemek istemezsen <b>elmasla açabilirsin</b> (bkz. 💎 Elmas ve market). <b>1000 Bölüm</b> menüsü de duruyor — oradan oynadığın bölümler macerada da geçilmiş görünür, ikisi aynı ilerlemeyi paylaşır.</p>
+              <p><b>🔭 Keşif kolu.</b> 11. bölümden itibaren her bölümün <b>son iki dalgasına</b>, o bölümün normal havuzunda olmayan düşman türlerinden birkaç tane karışır. Amaç bölümü zorlaştırmak değil, ileride nelerle karşılaşacağını önceden göstermek — sayılar bilerek küçük: 11-15. bölümde tür başına <b>1</b>, 16-20'de <b>2</b>, 21'den sonra <b>3</b>. Aynı anda en fazla üç tür gelir ve tanıtım sırası kolaydan zora ilerler: Koşucu → Kabuklu → Küp → Şişe → Koza → Ur → Zırhlı. Bir tür bölümün kendi havuzuna girdiğinde keşif kolundan düşer.</p>
               <p><b>💀 Patron bölümleri.</b> Her bölgenin <b>20 bölümde bir</b> patron bölümü vardır. Patron dövüşü henüz tasarlanmadı; şimdilik yolu <b>tıkamaz</b> — atlarsan bir sonraki bölüm yine açılır.</p>
               <p><b>⚖️ Geniş harita bedava değil.</b> Bir bölümün kaç yapı noktası verdiği artık <b>dalga baskısını</b> da belirler: bol kule alanı olan haritalarda düşmanlar <b>daha dayanıklı ve daha kalabalık</b> gelir, dar haritalarda ise <b>daha seyrek</b>. Amaç, bölümün zorluğunun haritanın çekilişine değil <b>kuleyi nereye koyduğuna</b> bağlı olması. Çok yollu bölümlerde ölçü <b>rota başına</b> düşen nokta sayısıdır — iki kolu birden tutmak zorunda olduğun için toplam nokta sayısı yanıltıcıdır.</p>
               <p><b>🌊 13. dalgadan sonra kalabalık.</b> Uzun bölümlerde 13. dalgadan itibaren her dalgaya <b>%20 daha fazla düşman</b> girer — ama dalga <b>uzamaz</b>. Aynı pencerede daha yoğun bir akış gelir; nefes alacak boşluk aramak yerine sürekli ateş edebilecek bir savunma kurman gerekir. (Boss sayısı artmaz.)</p>
@@ -253,10 +254,19 @@
           <div class="menu-head">Ayarlar</div>
           <div class="menu-list">
             <button class="menu-btn sound-toggle-btn" id="soundBtn">🔊 Ses</button>
+            <button class="menu-btn" id="settingsChangelogBtn">📜 Sürüm Notları</button>
             <button class="menu-btn" id="settingsAboutBtn">ℹ️ Hakkında</button>
             <button class="menu-btn danger" id="resetProgressBtn">🗑️ Fabrika Ayarlarına Dön</button>
           </div>
           <button class="menu-btn back" data-back>← Geri</button>
+        </div>
+
+        <!-- SÜRÜM NOTLARI — içerik js/changelog.js'te veri olarak duruyor,
+             bu sayfa onu çiziyor (bkz. renderChangelog, ui.js). -->
+        <div class="menu-page cl-page" id="menuChangelog">
+          <div class="menu-head">Sürüm Notları</div>
+          <div class="cl-scroll" id="clScroll"></div>
+          <button class="menu-btn back" data-back="menuSettings">← Geri</button>
         </div>
 
         <div class="menu-page" id="menuAbout">
@@ -265,6 +275,7 @@
             <div class="about-logo">🌿</div>
             <div class="about-title">Root &amp; Relay</div>
             <div class="about-line">Bu bir LOGSPACE oyunudur.</div>
+            <div class="about-ver" id="aboutVersion"></div>
           </div>
           <button class="menu-btn back" data-back="menuSettings">← Geri</button>
         </div>
@@ -394,9 +405,10 @@
 
 <!-- Veri ve yardımcı katman -->
 <script src="js/config.js?v=95"></script>
-<script src="js/levelgen.js?v=83"></script>
+<script src="js/levelgen.js?v=84"></script>
 <script src="js/progress.js?v=71"></script>
 <!-- Macera: 1000 bolumun ustundeki ilerleme ve gezinme katmani -->
+<script src="js/changelog.js?v=1"></script>
 <script src="js/adventure.js?v=5"></script>
 <script src="js/adventure-map.js?v=4"></script>
 <script src="js/audio.js?v=82"></script>
@@ -424,7 +436,7 @@
 
 <!-- Arayüz ve giriş noktası -->
 <script src="js/adventure-ui.js?v=6"></script>
-<script src="js/ui.js?v=86"></script>
-<script src="js/main.js?v=85"></script>
+<script src="js/ui.js?v=87"></script>
+<script src="js/main.js?v=86"></script>
 </body>
 </html>

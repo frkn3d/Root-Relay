@@ -158,6 +158,30 @@ function showMenuPage(id){
   if(id==='menuAdventure') advRenderWorld();      // adventure-ui.js
   if(id==='menuRegion')    advRenderRegion();     // adventure-ui.js
   if(id==='menuStats') renderStatsScreen();
+  if(id==='menuChangelog') renderChangelog();
+}
+
+/* ---- Sürüm notları ekranı ----
+   İçerik js/changelog.js'te veri; burası yalnızca çiziyor. Her açılışta
+   yeniden kuruluyor — liste kısa, önbelleğe almaya değmez. */
+function renderChangelog(){
+  const host = document.getElementById('clScroll');
+  if(!host) return;
+  let html = '';
+  CHANGELOG.forEach(rel=>{
+    html += '<div class="cl-rel">';
+    html += '<div class="cl-head"><span class="cl-ver">v' + rel.version + '</span>'
+          + '<span class="cl-title">' + rel.title + '</span></div>';
+    if(rel.note) html += '<div class="cl-note">' + rel.note + '</div>';
+    rel.groups.forEach(gr=>{
+      html += '<div class="cl-group">' + gr.head + '</div><ul class="cl-list">';
+      gr.items.forEach(it=>{ html += '<li>' + it + '</li>'; });
+      html += '</ul>';
+    });
+    html += '</div>';
+  });
+  host.innerHTML = html;
+  host.scrollTop = 0;
 }
 
 /* ---- İstatistikler ekranı ----

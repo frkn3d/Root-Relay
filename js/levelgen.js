@@ -819,6 +819,74 @@ function buildWaves(rng, diff, levelNo){
   return { waveCount, pool, allowBoss, archetype };
 }
 
+/* ============================================================
+   KEŞİF KOLU — erken bölümlerin son dalgalarına tanıtım düşmanları
+
+   ÖLÇÜM: düşman havuzu zorlukla açılıyor (bkz. buildWaves) ama zorluk
+   erken bölümlerde bilerek düşük tutulduğu için eşikler çok geç
+   geliyor. Ölçtüğümüzde ortaya çıkan tablo:
+
+     Koşucu (diff>0.14) ilk kez  45. bölümde
+     Zırhlı (diff>0.18) ilk kez  75. bölümde
+     Kabuklu/Koza (0.30)        156. bölümde
+     Küp (0.34)                 198. bölümde
+     Şişe (0.38)                241. bölümde
+     Ur  (0.46)                 250+.
+
+   Yani ilk 44 bölüm — pratikte ilk 150 bölüm — yalnızca Spor ve
+   Sürü'den ibaretti. Dalgalar kalabalıklaşıyordu ama hep aynı iki
+   türle; oyuncunun öğreneceği yeni bir şey yoktu.
+
+   KEŞİF KOLU bunu havuzu ya da zorluk eğrisini değiştirmeden çözüyor:
+   11. bölümden itibaren her bölümün SON İKİ DALGASINA, o bölümün
+   havuzunda olmayan türlerden birkaç tane ekleniyor. Amaç bölümü
+   zorlaştırmak değil, "ileride bunlar var" demek — sayılar bilerek
+   küçük:
+
+     11-15. bölüm  tür başına 1
+     16-20. bölüm  tür başına 2
+     21+   bölüm   tür başına 3
+
+   AYNI ANDA EN FAZLA ÜÇ TÜR. Tanıtım sırası kolaydan zora
+   (PREVIEW_ORDER) ve iki bölümde bir yeni tür açılıyor; hepsi
+   tanıtıldıktan sonra pencere liste üzerinde KAYIYOR, yoksa 23.
+   bölümden sonra hep aynı üçlü gelir ve tanıtım tekrara düşerdi.
+
+   Bir tür bölümün kendi havuzuna girdiği anda keşif kolundan
+   düşüyor — çift eklenmesin. Böylece mekanizma zorluk yükseldikçe
+   kendiliğinden sönüyor.
+
+   RASTGELELİK YOK: hepsi bölüm numarasından türüyor. Dalga üreticisi
+   rng'yi paylaştığı için buraya bir çekiliş koymak sonraki her şeyi
+   kaydırırdı (bkz. pickTheme'deki aynı uyarı).
+   ============================================================ */
+const PREVIEW_FROM   = 11;   // bundan önceki bölümlerde hiç yok
+const PREVIEW_WINDOW = 3;    // aynı anda en fazla kaç tür
+const PREVIEW_ORDER  = ['sprinter','husk','cube','flask','cocoon','brute','armor'];
+const PREVIEW_INTRO  = [11, 13, 15, 17, 19, 21, 23];   // her türün tanıtım bölümü
+
+/* Tür başına kaç tane */
+function previewCount(levelNo){
+  if(levelNo < PREVIEW_FROM) return 0;
+  if(levelNo < 16) return 1;
+  if(levelNo < 21) return 2;
+  return 3;
+}
+
+/* O bölümde hangi türler tanıtılıyor */
+function previewTypes(levelNo){
+  if(levelNo < PREVIEW_FROM) return [];
+  let intro = 0;
+  while(intro < PREVIEW_INTRO.length && levelNo >= PREVIEW_INTRO[intro]) intro++;
+  const avail = PREVIEW_ORDER.slice(0, intro);
+  if(avail.length <= PREVIEW_WINDOW) return avail;
+  // Pencere iki bölümde bir bir adım kayar
+  const start = Math.floor(levelNo / 2) % avail.length;
+  const out = [];
+  for(let i = 0; i < PREVIEW_WINDOW; i++) out.push(avail[(start + i) % avail.length]);
+  return out;
+}
+
 /* ---------- Manzara dekoru ----------
    Boş araziye biyoma uygun nesneler serpilir. Yola ve kule
    noktalarına değmezler; sadece görsel zenginlik katarlar. */
@@ -1209,5 +1277,20 @@ function generateWaveForGenerated(level, waveIndex){
     const interval = (baseIntervals[type] || 0.8) * arch.pace;
     groups.push({type, count:c, interval:Math.round(interval*100)/100});
   });
+
+  /* KEŞİF KOLU (bkz. previewTypes): erken bölümlerin son iki dalgasına
+     havuzda olmayan türlerden birkaç tane. Boss dalgası yukarıda erken
+     dönüyor, oraya hiç uğramaz. */
+  const isFinalStretch = waveIndex > level.waveCount - 2;
+  if(isFinalStretch){
+    const pc = previewCount(level.levelNo);
+    if(pc > 0){
+      previewTypes(level.levelNo).forEach(type=>{
+        if(pool.indexOf(type) >= 0) return;              // zaten havuzda
+        const interval = (baseIntervals[type] || 0.8) * arch.pace;
+        groups.push({type, count:pc, interval:Math.round(interval*100)/100});
+      });
+    }
+  }
   return groups;
 }
