@@ -702,6 +702,76 @@ function particleBudget(want){
   return Math.max(Math.min(want, 3), Math.round(want * k));
 }
 
+/* ============================================================
+   UÇAN SİKKELER
+
+   Düşman ölünce yerinden bir sikke kopar, HUD'daki altın sayacına
+   doğru bir yay çizerek uçar ve yolun sonuna varmadan söner.
+   Sayaca gerçekten DEĞMEZ: altın zaten ölüm anında hesaba eklendi,
+   bu yalnızca "kazandın" duygusunu gösteren bir süs. Sönerek
+   kaybolması, HUD ile canvas arasındaki sınırı gizler.
+
+   NEDEN ÜÇ TANE: geç dalgalarda saniyede 40-50 düşman ölebiliyor.
+   Her ölüme bir sikke, ekranı sarı bir tipiye çevirir ve mobilde
+   ölçülebilir bir yük olur. Aynı anda en fazla COIN_MAX sikke
+   yaşıyor; sınır doluyken yeni ölüm SESSİZCE atlanıyor — kuyruk
+   yok, birikme yok, dolayısıyla yoğun anda bile maliyet sabit.
+   Kalabalıkta sikkeler seyrekleşir ama kaybolmaz; zaten oradaki
+   asıl bilgi, yanında yükselen "+7🪙" yazısı.
+
+   Yol bir karesel Bézier: doğduğu nokta -> kontrol noktası -> hedef.
+   Kare başına iş, sikke başına birkaç çarpma; fizik entegrasyonu ya
+   da çarpışma testi yok. ============================================================ */
+const COIN_MAX      = 3;      // aynı anda yaşayan sikke sayısı — sert tavan
+const COIN_LIFE     = 0.55;   // saniye
+const COIN_REACH    = 120;    // px — sikkenin katettiği mesafe
+const COIN_HOP      = 22;     // px — yola binen küçük yay
+const COIN_SOLID    = 0.30;   // ömrün bu kadarı tam görünür, sonrası sönme
+const COIN_TARGET_X = LW*0.22;// HUD'daki altın çipinin yatay hizası
+const COIN_TARGET_Y = -26;    // canvas'ın biraz ÜSTÜ (sayaç orada)
+
+/* SABİT MESAFE, DEĞİŞKEN YÖN
+
+   İlk denemede sikke sayaca kadar tam bir Bézier çiziyordu. Sahanın
+   altında ölen bir düşmanın sikkesi 700 pikseli 0.45 saniyede
+   katediyordu: ekranı boydan boya kesen parlak bir çizgi, üstelik
+   sahnenin neresinde öldüğüne göre bambaşka bir hareket. Süs olması
+   gereken şey, olan biteni örtüyordu.
+
+   Şimdi her sikke, ölüm noktasından sayaç yönüne doğru SABİT 120
+   piksel gidiyor. Nerede ölürse ölsün hareket aynı ağırlıkta ve aynı
+   kısalıkta; yön ise hep sayacı gösteriyor. Sikke yolun sonunu zaten
+   görmüyor, ortasında sönüp kayboluyor. */
+function spawnCoin(x, y){
+  if(coins.length >= COIN_MAX) return;   // dolu — sessizce vazgeç
+  let dx = COIN_TARGET_X - x, dy = COIN_TARGET_Y - y;
+  const len = Math.hypot(dx, dy) || 1;
+  coins.push({
+    x, y, sx:x, sy:y,
+    dx: dx/len, dy: dy/len,
+    t: 0,
+    /* Yatay kayma: aynı anda ölen düşmanların sikkeleri üst üste
+       binip tek bir parlak leke gibi görünmesin. */
+    jitter: (Math.random()-0.5)*26,
+    spin: Math.random()*Math.PI*2,
+    spinRate: 7 + Math.random()*4,
+  });
+}
+
+function updateCoins(dt){
+  if(!coins.length) return;
+  for(let i=coins.length-1; i>=0; i--){
+    const c = coins[i];
+    c.t += dt / COIN_LIFE;
+    if(c.t >= 1){ coins.splice(i,1); continue; }
+    // t*t: önce ağır kalkar, sonra sayaca çekiliyormuş gibi hızlanır
+    const d = c.t * c.t * COIN_REACH;
+    c.x = c.sx + c.dx*d + c.jitter*c.t;
+    c.y = c.sy + c.dy*d - Math.sin(Math.PI*c.t)*COIN_HOP;
+    c.spin += c.spinRate*dt;
+  }
+}
+
 const CORPSE_LINGER = 0.5;   // ölüm efektlerine eklenen ek süre (sn)
 const CORPSE_DRAG   = 6.5;   // 1/sn — parçalar yere otursun diye
 
@@ -827,8 +897,10 @@ function resolveEnemyDeaths(){
         }
         explosions.push({x:e.x,y:e.y,r:8,maxR:e.auraRadius||120,life:0.6});
         floatTexts.push({x:e.x,y:e.y-30,text:'+'+e.gold+'🪙',life:1.2,vy:-30,color:'#f4c04a'});
+        spawnCoin(e.x, e.y-30);
       } else {
         floatTexts.push({x:e.x,y:e.y-10,text:'+'+e.gold+'🪙',life:0.7,vy:-25,color:'#f4c04a'});
+        spawnCoin(e.x, e.y-10);
         const pbDeath = particleBudget(12);
         for(let i=0;i<pbDeath;i++)
           corpseParticle(e.x, e.y, (Math.random()-0.5)*120, (Math.random()-0.5)*120, 0.45, e.body);
@@ -853,4 +925,5 @@ function updateParticlesAndTexts(dt){
   particles = particles.filter(p=>p.life>0);
   floatTexts.forEach(f=>{ f.y+=f.vy*dt; f.life-=dt; });
   floatTexts = floatTexts.filter(f=>f.life>0);
+  updateCoins(dt);
 }

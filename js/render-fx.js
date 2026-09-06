@@ -371,6 +371,34 @@ function drawParticles(){
     ctx.beginPath(); ctx.arc(p.x,p.y,2.4,0,Math.PI*2); ctx.fillStyle=p.color; ctx.fill(); ctx.restore();
   });
 }
+/* Uçan sikkeler (bkz. spawnCoin, engine-update.js).
+   Emoji yerine elle çizim: 🪙 metni her karede yazı tipi biçimlendirme
+   maliyeti taşır, üstelik cihazdan cihaza farklı görünür. Buradaki
+   sikke iki dolu elips ve bir yay — gradyan yok, gölge yok, kare
+   başına en fazla üç tanesi çiziliyor.
+   Dönüş, yatay ölçeği |cos| ile daraltarak taklit ediliyor; sikke
+   yanına döndükçe incelir. */
+function drawCoins(){
+  if(!coins.length) return;
+  ctx.save();
+  for(let i=0;i<coins.length;i++){
+    const c = coins[i];
+    // İlk üçte biri tam görünür, kalanında sönerek yolda kaybolur
+    const fade = c.t <= COIN_SOLID ? 1 : 1 - (c.t - COIN_SOLID)/(1 - COIN_SOLID);
+    ctx.globalAlpha = Math.max(0, fade);
+    const w = Math.abs(Math.cos(c.spin)) * 5 + 1.4;   // dönüş: yatayda daralma
+    ctx.beginPath();
+    ctx.ellipse(c.x, c.y, w, 6, 0, 0, Math.PI*2);
+    ctx.fillStyle = '#f4c04a';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(c.x, c.y, w*0.55, 3.4, 0, 0, Math.PI*2);
+    ctx.fillStyle = '#ffe9a8';
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
 function drawFloatTexts(){
   ctx.save(); ctx.font='700 13px "Baloo 2", sans-serif'; ctx.textAlign='center';
   floatTexts.forEach(f=>{

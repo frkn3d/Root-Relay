@@ -169,9 +169,13 @@ function muzzlePoint(t){
   return { x: t.x + Math.cos(aim)*dist, y: t.y + pivotY + Math.sin(aim)*dist };
 }
 /* Menzil içindeki düşmanlardan, kulenin hedefleme moduna göre birini seçer.
-   'first'     : yola en çok ilerlemiş (çıkışa en yakın) — varsayılan
+   'first'     : yola en çok mesafe katetmiş — varsayılan
+   'exit'      : çıkışa KALAN mesafesi en kısa olan
    'weakest'   : en az canı kalan
-   'strongest' : en çok canı kalan */
+   'strongest' : en çok canı kalan
+
+   'first' ile 'exit' farkı yalnızca çok rotalı bölümlerde ortaya çıkar;
+   gerekçesi TARGET_MODES'un başında (config.js). */
 function pickTargetWhere(t, range, filterFn){
   let best=null, bestScore=-Infinity;
   const mode = t.targetMode || 'first';
@@ -182,6 +186,7 @@ function pickTargetWhere(t, range, filterFn){
     let score;
     if(mode==='weakest')        score = -e.hp;
     else if(mode==='strongest') score = e.hp;
+    else if(mode==='exit')      score = e.dist - (pathLens[e.pathIdx||0] || pathTotalLen);
     else                        score = e.dist; // yolda en ileri olan
     if(score > bestScore){ bestScore = score; best = e; }
   }

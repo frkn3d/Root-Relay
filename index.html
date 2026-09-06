@@ -183,7 +183,8 @@
 
             <div class="howto-sec">
               <div class="howto-title">🎯 Atış önceliği</div>
-              <p><b>Öncü:</b> çıkışa en yakın düşmanı vurur — sızmayı önlemek için varsayılan seçim.</p>
+              <p><b>Öncü:</b> yolda en çok mesafe katetmiş düşmanı vurur — varsayılan seçim.</p>
+              <p><b>Kaçak:</b> çıkışa <b>kalan mesafesi</b> en kısa olanı vurur. Tek yollu bölümlerde Öncü ile aynı düşmanı seçer; <b>yolun ikiye ayrıldığı bölümlerde</b> ayrışır. Kısa yoldan gelen biri, uzun yolda daha çok mesafe katetmiş birinden önce çıkışa varabilir — Öncü uzun yoldakini vururken Kaçak asıl tehlikeli olanı vurur. Sızıntı yiyorsan bunu dene.</p>
               <p><b>Zayıf:</b> en az canı kalanı vurur — kalabalığı hızlı eritir, altını çabuk toplar.</p>
               <p><b>Güçlü:</b> en çok canı kalanı vurur — Ur ve boss gibi ağır birimlere odaklanır.</p>
             </div>
@@ -370,7 +371,7 @@
      Öbek sırası: veri -> motor -> çizim -> arayüz -> giriş noktası -->
 
 <!-- Veri ve yardımcı katman -->
-<script src="js/config.js?v=94"></script>
+<script src="js/config.js?v=95"></script>
 <script src="js/levelgen.js?v=83"></script>
 <script src="js/progress.js?v=71"></script>
 <!-- Macera: 1000 bolumun ustundeki ilerleme ve gezinme katmani -->
@@ -383,10 +384,10 @@
 
 <!-- Motor: durum ve simülasyon -->
 <script src="js/engine-canvas.js?v=106"></script>
-<script src="js/engine-state.js?v=104"></script>
-<script src="js/engine-towers.js?v=110"></script>
-<script src="js/engine-flow.js?v=112"></script>
-<script src="js/engine-update.js?v=111"></script>
+<script src="js/engine-state.js?v=105"></script>
+<script src="js/engine-towers.js?v=111"></script>
+<script src="js/engine-flow.js?v=113"></script>
+<script src="js/engine-update.js?v=112"></script>
 <script src="js/engine.js?v=104"></script>
 
 <!-- Çizim: yalnızca okur, durumu değiştirmez -->
@@ -396,8 +397,8 @@
 <script src="js/render-tower-art.js?v=90"></script>
 <script src="js/render-towers.js?v=90"></script>
 <script src="js/render-enemies.js?v=94"></script>
-<script src="js/render-fx.js?v=89"></script>
-<script src="js/render.js?v=89"></script>
+<script src="js/render-fx.js?v=90"></script>
+<script src="js/render.js?v=90"></script>
 
 <!-- Arayüz ve giriş noktası -->
 <script src="js/adventure-ui.js?v=5"></script>

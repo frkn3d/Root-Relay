@@ -38,6 +38,7 @@ function render(){
   drawBeams();
   drawExplosions();
   drawParticles();
+  drawCoins();
   drawFloatTexts();
   drawBirds();      // ortam kuşu sürüsü — kardan önce, gökyüzü katmanında
   drawSnowfall();   // en üstte: kar her şeyin önünden geçer

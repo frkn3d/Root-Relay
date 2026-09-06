@@ -56,7 +56,11 @@ let startLivesEffective = 10;
    doğduğu anda uygulanır; kayıt yalnızca ışının kısa ömürlü görselini
    taşır ve hedefi referansla tuttuğu için düşman kaçsa bile ışın onu
    birebir takip eder (bkz. drawBeams, render-fx.js). */
-let towers, enemies, projectiles, particles, floatTexts, explosions, arcs, healZones, debris, beams;
+/* coins: ölen düşmandan kopup altın sayacına doğru uçan sikkeler.
+   Süsleme — oyun durumu taşımaz, altın ölüm anında zaten hesaba
+   ekleniyor. Aynı anda en fazla COIN_MAX tanesi yaşar
+   (bkz. spawnCoin, engine-update.js). */
+let towers, enemies, projectiles, particles, floatTexts, explosions, arcs, healZones, debris, beams, coins;
 let spawnTimeline, waveElapsed;
 let shake = 0;
 let spots = [];

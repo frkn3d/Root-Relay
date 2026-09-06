@@ -267,9 +267,18 @@ function insideBuildArea(x, y){
       && y >= BUILD_AREA.y0 && y <= BUILD_AREA.y1;
 }
 
-/* Kule hedefleme öncelikleri. 'first' varsayılan (çıkışa en yakın). */
+/* Kule hedefleme öncelikleri. 'first' varsayılan.
+
+   'first' ile 'exit' TEK ROTALI bölümlerde aynı düşmanı seçer; ayrıştıkları
+   yer çok rotalı bölümler. 'first' yolda EN ÇOK MESAFE KAT ETMİŞ olanı
+   vurur; rotalar farklı uzunluktaysa bu, çıkışa en yakın olan demek
+   değildir. 900 piksellik kısa rotada 850'ye gelmiş biri çıkışa 50 piksel
+   uzaktayken, 1400 piksellik uzun rotada 900'e gelmiş biri hâlâ 500 piksel
+   uzaktadır — 'first' ikincisini seçer. 'exit' KALAN mesafeye bakar,
+   dolayısıyla "az kalsın kaçıyordu" durumunu gerçekten önleyen mod odur. */
 const TARGET_MODES = [
-  { id:'first',    label:'Öncü',   icon:'🎯', desc:'Çıkışa en yakın' },
+  { id:'first',    label:'Öncü',   icon:'🎯', desc:'Yolda en ileri' },
+  { id:'exit',     label:'Kaçak',  icon:'🏁', desc:'Çıkışa en yakın' },
   { id:'weakest',  label:'Zayıf',  icon:'🩸', desc:'En az canlı' },
   { id:'strongest',label:'Güçlü',  icon:'💪', desc:'En çok canlı' },
 ];

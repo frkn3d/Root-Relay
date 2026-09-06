@@ -103,7 +103,7 @@ function loadLevel(idx){
   resetSessionShop();            // progress.js — bölüm içi alımlar sıfırlanır
   waveIndex = 0;
   waveActive=false; gameOver=false; gameWon=false;
-  towers=[]; enemies=[]; projectiles=[]; particles=[]; floatTexts=[]; explosions=[]; arcs=[]; healZones=[]; debris=[]; beams=[];
+  towers=[]; enemies=[]; projectiles=[]; particles=[]; floatTexts=[]; explosions=[]; arcs=[]; healZones=[]; debris=[]; beams=[]; coins=[];
   towerPurchaseCounts = {};
   spawnTimeline=[]; waveElapsed=0; shake=0;
   seenEnemyTypes = new Set();
