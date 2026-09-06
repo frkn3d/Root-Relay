@@ -303,6 +303,54 @@ function startWave(){
   renderWavePreview();   // ui.js
 }
 
+/* BÖLÜM SONUNDA ELMAS
+
+   Elmas yalnızca YENİ kazanılan yıldız başına verilir (5 💎), yoksa
+   aynı bölüm tekrar tekrar oynanıp sonsuz elmas kasılırdı. Bu kural
+   ekranda görünmüyordu: kazanılan elmas alttaki cümlenin içinde
+   küçük punto ile geçiyor, hiç kazanılmadığında ise ortada hiçbir
+   şey olmuyordu — oyuncu "elmas verilmiyor mu?" diye kalıyordu.
+
+   Artık üç durum da açıkça yazılıyor:
+     yeni yıldız var   -> +10 💎  (kaç yıldızdan geldiği yazılı)
+     yeni yıldız yok   -> neden yok + kaç 💎 daha alınabileceği
+     bölüm 3 yıldızlı  -> bu bölümden alınacak elmas kalmadı
+
+   İkinci satır önemli: oyuncuya bu bölümü tekrar oynamanın hâlâ bir
+   getirisi olup olmadığını söylüyor. */
+const GEMS_PER_STAR = 5;
+
+function hideGemReward(){
+  const el = document.getElementById('overlayReward');
+  if(el) el.style.display = 'none';
+}
+
+function showGemReward(newStars, stars){
+  const el = document.getElementById('overlayReward');
+  if(!el) return;
+  el.style.display = '';
+  const left = (3 - stars) * GEMS_PER_STAR;   // bu bölümde alınmayı bekleyen
+  let cls, main, note;
+  if(newStars > 0){
+    cls  = 'gain';
+    main = '+' + (newStars*GEMS_PER_STAR) + ' 💎';
+    note = newStars + ' yeni yıldız'
+         + (left > 0 ? '  ·  3 yıldızla +' + left + ' 💎 daha' : '  ·  bu bölüm tamamlandı');
+  } else if(left > 0){
+    cls  = 'none';
+    main = '💎 yok';
+    note = stars + ' yıldızı zaten almıştın  ·  3 yıldızla +' + left + ' 💎 daha';
+  } else {
+    cls  = 'done';
+    main = '💎 tamamlandı';
+    note = 'Bu bölümün tüm elmasları alındı';
+  }
+  el.className = 'overlay-reward ' + cls;
+  el.innerHTML = '<span class="or-main">' + main + '</span>'
+               + '<span class="or-note">' + note + '</span>'
+               + '<span class="or-total">cüzdan: 💎 ' + getGems() + '</span>';
+}
+
 function endGame(win){
   gameOver=!win; gameWon=win;
   hideWaveToast(); // ui.js
@@ -340,16 +388,16 @@ function endGame(win){
     }
     clearResume();
     h.textContent='Bölüm Tamamlandı'; h.className='win';
-    p.textContent = newStars>0
-      ? `${level.name} temizlendi — +${newStars*5} 💎`
-      : `${level.name} temizlendi — ${gold} altınla`;
+    p.textContent = `${level.name} temizlendi — ${gold} altın kaldı`;
     starsEl.textContent = renderStars(stars);
+    showGemReward(newStars, stars);
     playVictory();
   } else {
     updateLevelProgress(level.id, 0, waveIndex);
     h.textContent='Röle Düştü'; h.className='lose';
     p.textContent=`Dalga ${waveIndex}/${level.waveCount}'de yenildin`;
     starsEl.textContent = '';
+    hideGemReward();
     playDefeat();
   }
   overlay.classList.add('show');

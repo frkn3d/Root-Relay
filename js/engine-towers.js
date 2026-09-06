@@ -31,10 +31,22 @@ const UPGRADE_RATIO = {
   default: [2, 4.5, 10],
 };
 
-/* İnşa/yükseltme süreleri (saniye).
-   BUILD_TIMES[0] = ilk kurulum, [1] = 2. seviye, [2] = 3. seviye.
+/* İNŞA/YÜKSELTME SÜRELERİ (saniye) — dizi, İŞLEM BİTİNCE ULAŞILAN
+   seviyeyle indekslenir:
+     [0] ilk kurulum   [1] 1. yükseltme   [2] 2. yükseltme   [3] 3. yükseltme
+
+   Süreler son ayarda uzatıldı: 1. yükseltme +2 sn, 2. yükseltme +5 sn,
+   3. yükseltme +10 sn. Yükseltme artık dalganın ortasında "bas geç"
+   yapılabilen bir şey değil — kule o süre boyunca ateş etmiyor, yani
+   büyütme kararının bir bedeli var ve ne zaman verildiği önemli.
+   Bedel seviyeyle sertleşiyor: son yükseltme 18 saniye, tipik bir
+   dalganın hatırı sayılır bir bölümü.
+     6 -> 8   |   8 -> 13   |   8 (kırpılmış) -> 18
+   Not: eskiden dizide üç eleman vardı, 3. yükseltme kırpma yüzünden
+   2. yükseltmenin süresini kullanıyordu; artık kendi süresi var.
+
    Market'teki "Hızlı İnşaat" yükseltmesi bu süreleri kısaltır. */
-const BUILD_TIMES = [4, 6, 8];
+const BUILD_TIMES = [4, 8, 13, 18];
 function buildDurationFor(levelAfter){
   const base = BUILD_TIMES[Math.max(0, Math.min(levelAfter, BUILD_TIMES.length-1))];
   // Yarım saniyenin katına yuvarla — arayüzde küsürlü sayı görünmesin

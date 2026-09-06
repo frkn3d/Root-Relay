@@ -440,6 +440,50 @@ canvas{
 .overlay h2.win{ color:#7fe3b4; }
 .overlay h2.lose{ color:var(--red); }
 .overlay p{ margin:0; line-height:1.4; color:var(--cream-dim); font-family:'JetBrains Mono', monospace; font-size:12.5px;}
+/* BÖLÜM SONU ELMAS ÖDÜLÜ
+   Elmasın kendi rengi var (HUD'daki .gem-bar ile aynı buzlu mavi),
+   böylece altından ve yıldızdan ayrışıyor. Üç durumu da aynı kutu
+   gösteriyor; değişen yalnızca renk ve metin (bkz. showGemReward,
+   engine-flow.js). */
+.overlay-reward{
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  padding:7px 16px; border-radius:12px;
+  border:2px solid rgba(120,210,245,0.45);
+  background:linear-gradient(180deg, rgba(90,180,220,0.20), rgba(40,90,120,0.20));
+  max-width:300px;
+}
+.overlay-reward .or-main{
+  font-family:'Baloo 2', sans-serif; font-weight:800; font-size:22px;
+  line-height:1.15; color:#cdefff;
+  text-shadow:0 2px 0 rgba(0,0,0,0.35);
+}
+.overlay-reward .or-note{
+  font-family:'JetBrains Mono', monospace; font-size:9.5px; line-height:1.35;
+  color:var(--cream-dim); text-wrap:balance;
+}
+.overlay-reward .or-total{
+  font-family:'JetBrains Mono', monospace; font-size:9px;
+  color:rgba(205,239,255,0.55); letter-spacing:0.04em;
+}
+/* Elmas kazanıldı — kutu canlansın */
+.overlay-reward.gain{
+  border-color:rgba(140,225,255,0.75);
+  box-shadow:0 0 16px rgba(120,210,245,0.22);
+}
+.overlay-reward.gain .or-main{ color:#eafaff; }
+/* Kazanılmadı ama hâlâ alınabilir — sakin */
+.overlay-reward.none{
+  border-color:rgba(120,210,245,0.28);
+  background:rgba(40,90,120,0.14);
+}
+.overlay-reward.none .or-main{ font-size:17px; color:#9dc4d6; }
+/* Bu bölümden alınacak elmas kalmadı — yeşile dönsün */
+.overlay-reward.done{
+  border-color:rgba(127,227,160,0.45);
+  background:rgba(60,120,80,0.16);
+}
+.overlay-reward.done .or-main{ font-size:17px; color:#a8e6bd; }
+
 /* BÖLÜM SONU DÜĞMELERİ
 
    Üçü de ince çerçeveli "ghost" düğmeydi: bölümü bitiren oyuncunun
