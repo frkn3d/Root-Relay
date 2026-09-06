@@ -1317,8 +1317,15 @@ body.in-menu .leaf-particles .leaf{ animation-play-state:running, running; }
   background:#2a4a58;
   -webkit-overflow-scrolling:touch;
   overscroll-behavior:contain;
+  touch-action:pan-y;
 }
-.adv-world canvas{ display:block; width:100%; }
+/* DİKKAT: yukarıdaki genel `canvas` kuralı touch-action:none veriyor —
+   oyun alanında doğru (kule sürüklerken sayfa kaymasın), ama burada
+   haritanın üstünde başlayan her parmak hareketini öldürüyordu.
+   Tabelaya denk gelmeyen dokunuşlarda harita kaymıyordu; oyuncuya
+   "bazen kayıyor bazen kaymıyor" gibi görünüyordu. Bu harita
+   kaydırılmak İÇİN var. */
+.adv-world canvas{ display:block; width:100%; touch-action:pan-y; }
 .adv-markers{ position:absolute; inset:0; pointer-events:none; }
 
 /* Bölge tabelası — canvas'ın üstünde gerçek bir buton. */
@@ -1406,6 +1413,7 @@ body.in-menu .leaf-particles .leaf{ animation-play-state:running, running; }
   background:linear-gradient(180deg, #16281c, #101d15);
   -webkit-overflow-scrolling:touch;
   overscroll-behavior:contain;
+  touch-action:pan-y;
 }
 .rg-inner{ position:relative; width:100%; }
 .rg-path{ position:absolute; left:0; top:0; pointer-events:none; }

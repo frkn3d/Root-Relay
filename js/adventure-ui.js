@@ -50,6 +50,31 @@ function advDrawWorld(){
   advCanvasCtx.drawImage(baked, 0, 0, advViewW, advViewH);
 }
 
+/* DOKUNUŞ MU, KAYDIRMA MI
+
+   Bu iki ekran da dikeyde kaydırılıyor ve kaydırılan yüzeyin üstü
+   baştan aşağı düğme dolu. Düz `pointerup` dinlersek parmağını bir
+   düğümün üstünden başlatıp haritayı kaydıran ve orada kaldıran
+   oyuncu, istemediği şeyi tetikler — bölge haritasında bu, yanlışlıkla
+   BÖLÜM BAŞLATMAK demek.
+
+   Bu yüzden dokunuş ancak parmak yerinde kaldıysa sayılıyor. Tarayıcı
+   kaydırmayı devraldığında (iOS) zaten pointercancel geliyor; slop
+   kontrolü onu göndermeyen tarayıcılar için. */
+const ADV_TAP_SLOP = 12;   // px — bunun ötesi kaydırmadır
+function advTap(el, fn){
+  let sx = 0, sy = 0, live = false;
+  el.addEventListener('pointerdown', (e)=>{ sx = e.clientX; sy = e.clientY; live = true; });
+  el.addEventListener('pointercancel', ()=>{ live = false; });
+  el.addEventListener('pointerup', (e)=>{
+    if(!live) return;
+    live = false;
+    if(Math.abs(e.clientX - sx) > ADV_TAP_SLOP) return;
+    if(Math.abs(e.clientY - sy) > ADV_TAP_SLOP) return;
+    fn(e);
+  });
+}
+
 /* Bölge tabelaları. Canvas'ın üstünde mutlak konumlu butonlar. */
 function advRenderMarkers(){
   const host = document.getElementById('advMarkers');
@@ -76,7 +101,7 @@ function advRenderMarkers(){
           '<span class="am-bar"><i style="width:' + Math.round(st.pct*100) + '%"></i></span>' +
           '<span class="am-count">' + st.done + ' / ' + st.total + '</span>' +
         '</span>';
-      el.addEventListener('pointerup', ()=>{ playMenuTap(); advOpenRegion(r.id); });
+      advTap(el, ()=>{ playMenuTap(); advOpenRegion(r.id); });
     } else {
       el.innerHTML =
         '<span class="am-ic">🔒</span>' +
@@ -84,7 +109,7 @@ function advRenderMarkers(){
           '<span class="am-name">' + r.name + '</span>' +
           '<span class="am-count">Bölüm ' + r.from + '\'de açılır</span>' +
         '</span>';
-      el.addEventListener('pointerup', ()=>{ playError(); });
+      advTap(el, ()=>{ playError(); });
     }
     host.appendChild(el);
   });
@@ -219,7 +244,7 @@ function advRenderRegion(){
       (boss ? '<span class="rn-tag">PATRON</span>' : '');
 
     if(state === 'locked'){
-      el.addEventListener('pointerup', ()=>{
+      advTap(el, ()=>{
         if(!ADV_TEST_UNLOCK){ playError(); return; }
         const now = Date.now();
         if(advForceLevel === n && (now - advForceAt) < ADV_FORCE_MS){
@@ -235,7 +260,7 @@ function advRenderRegion(){
         advArmNode(el, n);
       });
     } else {
-      el.addEventListener('pointerup', ()=>{
+      advTap(el, ()=>{
         playMenuTap();
         if(advPlay(n)) closeStartScreen();
       });
