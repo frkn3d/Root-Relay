@@ -9,9 +9,39 @@
    Yeni sürüm eklerken diziye BAŞA ekle — ekran sırayı olduğu gibi
    çiziyor, en yeni sürüm üstte görünsün.
    ============================================================ */
-const GAME_VERSION = '0.4.2';
+const GAME_VERSION = '0.5';
 
 const CHANGELOG = [
+  {
+    version: '0.5',
+    title: 'Üç yeni düşman',
+    note: 'Geç oyuna, dalgayı kalabalıklaştırmak yerine yeni sorular soran üç birim.',
+    groups: [
+      { head: '🎈 Gaz Balonu', items: [
+        "Şeffaftır — içinde dolan gazı görürsün. Vurdukça <b>şişer</b> ve yeterince hasar alınca patlayıp çevredeki kuleleri <b>4.5 saniye susturur</b> (130 px).",
+        "Sorduğu soru: <b>nerede öldüreceksin?</b> Öldürmek patlamayı tetiklemektir; patlama kaçınılmaz, yalnızca yeri seçilebilir. Savunmanın göbeğinde patlarsa hattın yarısı susar. Hiç vurmayıp bir can vermek bazen daha ucuzdur.",
+        "Kıvılcım Kozası sürprizdir, balon karardır: şişmesi patlamayı önceden okutur, etkisi de hem daha geniş hem daha uzun.",
+        "<b>100. bölümden</b> sonra nadiren, en fazla 2 tane; <b>500'den</b> sonra daha sık, en fazla 3 tane.",
+      ]},
+      { head: '🔺 Dördüz', items: [
+        "Dört üçgen prizma. <b>Birleşikken hiçbir hasar almaz</b>; yürürken belirli aralıklarla dört parçaya ayrılır ve o pencerede savunmasız kalır.",
+        "Sorduğu soru: <b>hasarını ne zaman harcayacaksın?</b> Sürekli ateş eden kuleler pencereyi doğal olarak yakalar; tek sert vuruş yapanlar kaçırırsa bir tur bekler. Zırhlı'nın tam tersi soru.",
+        "Pencere ekrana bakmadan da fark edilsin diye açılırken kısa bir ses çalar; parçalar ayrılıp kenarları altına döner.",
+        "<b>200. bölümden</b> sonra nadiren 1 tane; <b>600'den</b> sonra 3 taneye kadar.",
+      ]},
+      { head: '🪲 Salyalı Böcek', items: [
+        "Arkasında 5 saniye yaşayan bir salya izi bırakır; izin üstünden geçen <b>her düşman %20 hızlanır</b> — böcek öldükten sonra bile.",
+        "Sahaya girdikten <b>7 saniye sonra</b> ilk izini bırakır, sonra <b>15 saniyede bir</b>. Karnı dolduğunda parlar, yani müdahale şansın olur.",
+        "Sorduğu soru: <b>önce kimi öldürürsün?</b> Kendisi zayıf; tehlikesi arkasından gelenleri hızlandırması.",
+        "<b>300. bölümden</b> sonra nadiren 1 tane; <b>700'den</b> sonra 3 taneye kadar.",
+      ]},
+      { head: '📐 Ortak kurallar', items: [
+        "Üçü de <b>ilk 7 dalgada kesinlikle çıkmaz</b>: hepsi dalgayı yeniden düşünmeyi gerektiriyor, bölümün açılışında henüz kurulu bir savunma yok.",
+        "Üçü de havuz eşiğine değil <b>doğrudan bölüm numarasına</b> bağlı ve sayıları sert bir tavanla sınırlı. Aynı bölüm her oynanışta aynı birimleri verir — plan yapılabilsin diye rastgelelik yok.",
+        "Az sayıda geldikleri için ödülleri yüksek: Dördüz 26, Gaz Balonu 22, Salyalı Böcek 20 altın.",
+      ]},
+    ],
+  },
   {
     version: '0.4.2',
     title: 'Zırhlı dengesi',

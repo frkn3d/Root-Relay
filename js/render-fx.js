@@ -188,6 +188,45 @@ function drawBeams(){
 }
 
 /* Kırılan şişelerin bıraktığı iyileştirme birikintisi */
+/* SALYA BİRİKİNTİLERİ — Salyalı Böcek'in yola bıraktığı iz.
+   İyileştirme birikintisiyle karıştırılmamalı: o yeşil ve NABIZ
+   atarken, bu sarımsı-yeşil, düz ve AKAR — üstündeki parıltılar
+   yürüyüş yönünde kayıyor, yani "burada hızlanırsın" hareketle
+   söyleniyor. Ayrıca çok daha küçük ve kısa ömürlü. */
+function drawSlicks(){
+  if(!slicks || !slicks.length) return;
+  const t0 = performance.now()/1000;
+  ctx.save();
+  for(let i=0;i<slicks.length;i++){
+    const z = slicks[i];
+    const fade = Math.min(1, z.life / (z.maxLife*0.5));   // son yarısında sön
+    const R = z.r;
+
+    ctx.beginPath();
+    ctx.ellipse(z.x, z.y, R, R*0.62, 0, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(176,232,104,' + (0.20*fade).toFixed(3) + ')';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.ellipse(z.x, z.y, R*0.62, R*0.38, 0, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(206,252,140,' + (0.22*fade).toFixed(3) + ')';
+    ctx.fill();
+
+    // akan parıltılar — hızlanmayı anlatan tek işaret
+    ctx.strokeStyle = 'rgba(226,255,170,' + (0.45*fade).toFixed(3) + ')';
+    ctx.lineWidth = 1.6;
+    for(let k=0;k<3;k++){
+      const cyc = (t0*1.2 + k*0.33 + i*0.17) % 1;
+      const x = z.x - R*0.7 + cyc*R*1.4;
+      const y = z.y + (k-1)*R*0.26;
+      ctx.beginPath();
+      ctx.moveTo(x, y); ctx.lineTo(x + R*0.24, y);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
 function drawHealZones(){
   if(!healZones || !healZones.length) return;
   const t0 = performance.now()/1000;

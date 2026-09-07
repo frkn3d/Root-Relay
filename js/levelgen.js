@@ -888,6 +888,45 @@ function previewTypes(levelNo){
 }
 
 /* ============================================================
+   ÖZEL BİRİMLERİN DALGAYA GİRİŞİ
+
+   SPECIAL_UNITS (config.js) hangi bölümden itibaren, ne sıklıkta ve
+   en fazla kaç tane çıkacaklarını söylüyor; burada o kural belirli
+   bir dalgaya uygulanıyor.
+
+   RASTGELE SAYI ÜRETECİ KULLANILMIYOR. "Nadiren" bir çekilişle değil,
+   (bölüm, dalga, tür) üçlüsünün karmasıyla belirleniyor. İki sebep:
+   dalga üreticisinin rng dizisini kaydırmamak (bkz. pickTheme'deki
+   uyarı) ve aynı bölümün her oynanışta aynı dalgayı vermesi — oyuncu
+   "bu bölümde balon var" diye plan yapabilsin, her denemede sürpriz
+   yaşamasın.
+   ============================================================ */
+function specialRoll(levelNo, waveIndex, type, salt){
+  // hashSeed 32 bitlik bir tam sayı döner; 0..1 aralığına indiriyoruz
+  return (hashSeed(type + '#' + levelNo + '#' + waveIndex + '#' + (salt||'')) % 10000) / 10000;
+}
+
+function specialUnitCount(unit, levelNo, waveIndex){
+  if(waveIndex < SPECIAL_MIN_WAVE) return 0;      // ilk 7 dalga muaf
+  if(levelNo < unit.from) return 0;
+  const often  = levelNo >= unit.oftenFrom;
+  const chance = often ? unit.oftenChance : unit.rareChance;
+  if(specialRoll(levelNo, waveIndex, unit.type) >= chance) return 0;
+  const maxN = often ? unit.oftenMax : unit.rareMax;
+  return 1 + Math.floor(specialRoll(levelNo, waveIndex, unit.type, 'n') * maxN);
+}
+
+/* Bir dalgada çıkacak özel birimler — [{type, count}] */
+function specialUnitsFor(levelNo, waveIndex){
+  const out = [];
+  SPECIAL_UNITS.forEach(u=>{
+    const c = specialUnitCount(u, levelNo, waveIndex);
+    if(c > 0) out.push({ type:u.type, count:c });
+  });
+  return out;
+}
+
+/* ============================================================
    BÖLÜME ÖZEL KULE KOTASI
 
    TOWER_TYPES[id].maxCount her bölümde aynıydı: 7 okçu, 3 lazer,
@@ -1318,7 +1357,8 @@ function generateWaveForGenerated(level, waveIndex){
 
   // Arketip, hangi türün ağır basacağını ve ritmi belirler. KÜP artık
   // ayrı bir dalga değil — diğer türlerle birlikte normal havuzdan gelir.
-  const baseIntervals = { swarm:0.40, sprinter:0.75, spore:0.75, husk:1.20, brute:1.70, flask:1.50, cocoon:2.2, swarmqueen:1.8, cube:3.2, armor:1.60 };
+  const baseIntervals = { swarm:0.40, sprinter:0.75, spore:0.75, husk:1.20, brute:1.70, flask:1.50, cocoon:2.2, swarmqueen:1.8, cube:3.2, armor:1.60,
+                          balloon:3.0, quad:3.4, beetle:2.6 };
   // ZIRHLI arketip paylarına girmiyor: her dalgada birkaç tane olsun
   // istiyoruz, arketipe göre dalgayı domine etmesin.
   const ARMOR_SHARE = 0.10;
@@ -1342,6 +1382,15 @@ function generateWaveForGenerated(level, waveIndex){
     const c = Math.max(1, Math.round(count * share));
     const interval = (baseIntervals[type] || 0.8) * arch.pace;
     groups.push({type, count:c, interval:Math.round(interval*100)/100});
+  });
+
+  /* ÖZEL BİRİMLER (bkz. specialUnitsFor): Gaz Balonu, Dördüz ve
+     Salyalı Böcek havuzdan değil bölüm numarasından geliyor. Boss
+     dalgası yukarıda erken döndüğü için oraya karışmazlar. */
+  specialUnitsFor(level.levelNo, waveIndex).forEach(u=>{
+    if(groups.some(gr=>gr.type === u.type)) return;
+    const interval = (baseIntervals[u.type] || 2.4) * arch.pace;
+    groups.push({type:u.type, count:u.count, interval:Math.round(interval*100)/100});
   });
 
   /* KEŞİF KOLU (bkz. previewTypes): erken bölümlerin son iki dalgasına

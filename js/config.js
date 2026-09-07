@@ -154,7 +154,98 @@ const ENEMY_TYPES = {
   swarmqueen:{ hp:38, speed:0.6, radius:19, gold:14, dmgToLives:1, label:'Sürü Anası', shape:'blob',
               body:'#f0c419', body2:'#8a6510', eyes:2,
               auraRadius:120, allyBuffTypes:['spore','swarm'], allySpeedBuff:0.28, allyDmgResist:0.20 },
+
+  /* ============ GEÇ OYUN ÖZEL BİRİMLERİ ============
+     Üçü de bölüm NUMARASINA göre sahneye çıkar (bkz. SPECIAL_UNITS),
+     havuz eşiğine göre değil; sayıları sert bir tavanla sınırlı ve
+     ilk 7 dalgada kesinlikle görünmezler. Amaç dalgaları
+     kalabalıklaştırmak değil, oyuncuya çözmesi gereken YENİ BİR SORU
+     sormak — bu yüzden az sayıda ve pahalı ödüllüler. */
+
+  /* GAZ BALONU — vurdukça şişer, sonunda patlar ve çevredeki kuleleri
+     bir süre susturur.
+
+     Sorduğu soru: "bunu NEREDE öldüreceksin?" Öldürmek patlamayı
+     tetiklemektir; patlama kaçınılmaz, yalnızca yeri seçilebilir.
+     Savunmanın göbeğinde patlarsa hattın yarısı susar ve arkasından
+     gelen dalga bedava geçer; savunmanın önünde (henüz kule
+     menzillerinin dışındayken) patlatmak ise ancak uzun menzilli bir
+     kule ayırmakla olur. Hiç vurmamak da bir seçenek: bir can verip
+     patlamayı hiç yaşamamak bazen daha ucuzdur.
+
+     Kıvılcım Kozası'ndan farkı derece değil cins: koza ölünce KÖR
+     eder (2.5 sn, 100 px) ve normal bir düşman gibi öldürülür.
+     Balon ise şeffaftır — içindeki gazın dolduğunu görürsün, yani
+     patlama ÖNCEDEN okunur — ve etkisi hem daha geniş hem daha uzun.
+     Koza sürprizdir, balon karardır. */
+  balloon:  { hp:90, speed:0.55, radius:15, gold:22, dmgToLives:1, label:'Gaz Balonu', shape:'balloon',
+              body:'#bfe9ff', body2:'#5fa8c8', eyes:0,
+              /* Hasar aldıkça yarıçap 1x -> swellTo katına çıkar.
+                 Şişme oranı canın DÜŞÜŞÜNE bağlı, yani balonun ne
+                 kadar dolduğu ne kadar canı kaldığının birebir
+                 göstergesi: ayrı bir can çubuğuna bakmaya gerek yok. */
+              swellTo:1.9,
+              jamRadius:130, jamDuration:4.5 },
+
+  /* DÖRDÜZ — dört üçgen prizma. Birleşikken hiçbir hasar almaz;
+     yürürken belirli aralıklarla dört parçaya ayrılır ve o sırada
+     savunmasız kalır.
+
+     Sorduğu soru: "hasarını ne zaman harcayacaksın?" Kapalıyken
+     üzerine boşaltılan her mermi çöp. Sürekli ateş eden kuleler
+     (Zehir, Ateş, Okçu) doğal olarak açılma penceresini yakalar;
+     tek sert vuruş yapanlar (Havan, Lazer) pencereyi kaçırırsa
+     tur boyu bekler. Yani bu birim, DPS'i zamana yayan kulelerle
+     tek atışta sert vuranlar arasındaki dengeyi tersine çevirir —
+     Zırhlı'nın tam tersi soruyu sorar.
+
+     Tek varlık olarak yürür; dört parça bir görselleştirmedir, ayrı
+     düşman değildir. Böylece yol takibi, yavaşlatma ve altın
+     hesabı tek bir birim üzerinden yürür. */
+  quad:     { hp:150, speed:0.45, radius:19, gold:26, dmgToLives:1, label:'Dördüz', shape:'quad',
+              body:'#c9a6ff', body2:'#4b2f7a', eyes:0,
+              fusedSec:3.6, openSec:2.2 },
+
+  /* SALYALI BÖCEK — arkasında kısa ömürlü bir salya bırakır; salyanın
+     üstünden geçen HER düşman %20 hızlanır.
+
+     Sorduğu soru: "önce kimi öldürürsün?" Kendisi zayıf ve tek başına
+     zararsız; tehlikesi arkasından gelenleri hızlandırması. Onu geç
+     fark edersen dalganın tamamı hızlanmış olarak gelir. Sürü
+     Anası'yla akraba (ikisi de destek birimi) ama Anası ETRAFINDAKİNİ
+     güçlendirir, böcek ise GEÇTİĞİ YOLU — etkisi kendisi öldükten
+     sonra da 5 saniye yaşar. */
+  beetle:   { hp:110, speed:0.7, radius:15, gold:20, dmgToLives:1, label:'Salyalı Böcek', shape:'beetle',
+              body:'#9ad35c', body2:'#3c5a1e', eyes:2,
+              /* İlk salya sahaya girdikten 7 sn sonra; sonra 15 sn'de
+                 bir. Gecikme kasıtlı: böcek doğar doğmaz iz bırakmaz,
+                 oyuncunun onu görüp karar verecek vakti olur. */
+              slickFirst:7, slickEvery:15, slickLife:5,
+              slickRadius:34, slickSpeedMul:1.20 },
 };
+
+/* ÖZEL BİRİMLERİN SAHNEYE ÇIKIŞI
+
+   Bu üçü normal havuz eşiklerini (difficulty) kullanmaz. Sebebi:
+   havuz eşikleri zorluk eğrisine bağlı ve o eğri geç bölümlerde bile
+   dalgalanıyor — "300. bölümden sonra görünsün" demek istediğimizde
+   eşik bunu garanti etmiyor. Burada ölçü doğrudan BÖLÜM NUMARASI.
+
+     from       bu bölümden itibaren nadiren görünür
+     oftenFrom  bu bölümden itibaren daha sık ve daha kalabalık
+     rareMax    nadir dönemde bir dalgada en fazla kaç tane
+     oftenMax   sık dönemde bir dalgada en fazla kaç tane
+     *Chance    uygun bir dalgada görünme olasılığı
+
+   SPECIAL_MIN_WAVE: hiçbiri ilk 7 dalgada çıkmaz. Üçü de dalgayı
+   yeniden düşünmeyi gerektiren birimler; bölümün açılışında oyuncunun
+   henüz kurulu bir savunması yok. */
+const SPECIAL_MIN_WAVE = 8;
+const SPECIAL_UNITS = [
+  { type:'balloon', from:100, oftenFrom:500, rareMax:2, oftenMax:3, rareChance:0.22, oftenChance:0.55 },
+  { type:'quad',    from:200, oftenFrom:600, rareMax:1, oftenMax:3, rareChance:0.20, oftenChance:0.50 },
+  { type:'beetle',  from:300, oftenFrom:700, rareMax:1, oftenMax:3, rareChance:0.20, oftenChance:0.50 },
+];
 
 /* maxCount: bölüm başına bu kuleden en fazla kaç tane SATIN ALINABİLİR
    (satılsa bile hak geri gelmez — bkz. engine.js towerPurchaseCounts).

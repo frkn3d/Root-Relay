@@ -255,6 +255,37 @@ function playBlindBurst(){
   setTimeout(()=>blip(1600, 0.12, 'sawtooth', 0.06, 400), 20);
 }
 
+/* ---- GEÇ OYUN ÖZEL BİRİMLERİ ----
+   Üçünün de kendi ses dosyası YOK; sentezlenmiş sesle çalışıyorlar.
+   sfx() bir dosya bulursa onu kullanır, bulamazsa aşağıdaki blip'lere
+   düşer — yeni bir ses dosyası eklendiğinde kod değişmez. */
+
+/* Gaz Balonu patladı: önce tok bir "pof", ardından kaçan gazın tizi.
+   Kıvılcım Kozası'nın patlamasından bilerek FARKLI bir renkte —
+   ikisinin etkisi de farklı, oyuncu sesle ayırt edebilmeli. */
+function playBalloonPop(){
+  if(!throttleSound('balloonpop', 120)) return;
+  if(sfx('balloon_pop', { rate:sfxPch('balloon_pop', 0.05, 0.08) })) return;
+  blip(150, 0.20, 'sine', 0.18, 60);
+  setTimeout(()=>blip(900, 0.30, 'sawtooth', 0.07, 180), 40);
+}
+
+/* Dördüz açıldı — vurulabilir pencere başladı. Kısa ve tiz: oyuncu
+   ekrana bakmadan da pencereyi yakalayabilsin. */
+function playQuadOpen(){
+  if(!throttleSound('quadopen', 200)) return;
+  if(sfx('quad_open', { rate:sfxPch('quad_open', 0.04, 0.07), vol:0.5 })) return;
+  blip(660, 0.10, 'triangle', 0.05, 880);
+}
+
+/* Salyalı Böcek iz bıraktı — ıslak, alçak bir damla. Çok kısık:
+   15 saniyede bir çalıyor ama sahada birkaç böcek olabilir. */
+function playSlickDrop(){
+  if(!throttleSound('slickdrop', 150)) return;
+  if(sfx('slick_drop', { rate:sfxPch('slick_drop', 0.06, 0.10), vol:0.35 })) return;
+  blip(240, 0.14, 'sine', 0.04, 120);
+}
+
 /* Şimşek isabeti — Şimşek Direği'nin ilk vuruşu ve zincirin sıçradığı
    her hedef için: genel playHit() yerine zapSound() tabanlı, gerçekten
    elektriksel bir çıtırtı. Boyuta göre ölçekleniyor (playHit ile aynı

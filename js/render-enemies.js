@@ -423,6 +423,238 @@ function drawCocoonEnemy(e){
   ctx.restore();
 }
 
+/* GAZ BALONU — şeffaf zar, içinde dolan gaz.
+   Şeffaflık bu birimin kimliği: arkasındaki yol ve düşmanlar
+   görünüyor, yani balon "önünü kapatan" değil "içi dolan" bir nesne
+   olarak okunuyor. Doluluk (e.swell) hasarla birebir aynı. */
+function drawBalloonEnemy(e){
+  const t0 = performance.now()/1000;
+  const R = e.radius;
+  const bob = Math.sin(e.bounce)*2.5;
+  const flash = Math.max(0,e.flashT||0) > 0.05;
+  const fill = Math.max(0, Math.min(1, (e.swell - 1) / Math.max(0.001, (e.swellTo - 1))));
+
+  ctx.save();
+  ctx.translate(e.x, e.y + Math.abs(bob));
+
+  // gölge — balon şiştikçe büyür
+  ctx.beginPath(); ctx.ellipse(0, R+6, R*0.6, R*0.20, 0, 0, Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,0.22)'; ctx.fill();
+
+  /* Patlamaya yaklaşınca dışa vuran gerilim halkası. Kozanınkinden
+     farkı: nabız hızı DOLULUĞA bağlı, yani tehlike zamanla değil
+     hasarla artıyor. */
+  if(fill > 0.35){
+    const pr = 0.5 + 0.5*Math.sin(t0*(3 + fill*7) + e.bounce);
+    ctx.beginPath();
+    ctx.arc(0, 0, R*(1.12 + pr*0.16), 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(160,230,255,' + (0.05 + fill*pr*0.16).toFixed(3) + ')';
+    ctx.fill();
+  }
+
+  // zar — yarı saydam gövde
+  ctx.beginPath();
+  ctx.ellipse(0, 0, R*0.92, R, 0, 0, Math.PI*2);
+  ctx.fillStyle = flash ? 'rgba(255,255,255,0.85)'
+                        : 'rgba(190,235,255,' + (0.16 + fill*0.30).toFixed(3) + ')';
+  ctx.fill();
+  ctx.lineWidth = 1.8;
+  ctx.strokeStyle = flash ? '#ffffff'
+                          : 'rgba(120,205,235,' + (0.55 + fill*0.4).toFixed(3) + ')';
+  ctx.stroke();
+
+  // içindeki gaz — dolduğunu gösteren bulanık çekirdek
+  if(!flash){
+    ctx.beginPath();
+    ctx.arc(0, R*0.1, R*(0.22 + fill*0.5), 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(150,225,255,' + (0.18 + fill*0.35).toFixed(3) + ')';
+    ctx.fill();
+  }
+
+  // parlama — cam hissi veren tek nokta
+  ctx.beginPath();
+  ctx.ellipse(-R*0.32, -R*0.38, R*0.20, R*0.14, -0.5, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(255,255,255,0.62)'; ctx.fill();
+
+  // alttaki büzülme
+  ctx.beginPath();
+  ctx.moveTo(-R*0.16, R*0.94);
+  ctx.lineTo(0, R*1.20);
+  ctx.lineTo(R*0.16, R*0.94);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(95,168,200,0.75)'; ctx.fill();
+
+  ctx.restore();
+
+  const w=R*2.0;
+  ctx.save();
+  ctx.translate(e.x, e.y + Math.abs(bob));
+  ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.fillRect(-w/2,-R-13,w,4);
+  ctx.fillStyle=enemyHpColor(e); ctx.fillRect(-w/2,-R-13,w*(e.hp/e.maxHp),4);
+  ctx.restore();
+}
+
+/* DÖRDÜZ — dört üçgen prizma.
+   Birleşikken parçalar merkezde kilitli ve renk koyu: "buraya vurmanın
+   anlamı yok" görsel olarak okunmalı. Açılınca parçalar dışa kayıyor,
+   çekirdek parlıyor, kenarlar altına dönüyor. Pencere ekrana bakmadan
+   da fark edilsin diye ayrıca kısa bir ses çalıyor (playQuadOpen). */
+function drawQuadEnemy(e){
+  const R = e.radius;
+  const bob = Math.sin(e.bounce)*1.6;
+  const flash = Math.max(0,e.flashT||0) > 0.05;
+  const open = e.openAmt || 0;
+  const spin = (e.spin || 0) + (e.bounce || 0)*0.25;
+
+  ctx.save();
+  ctx.translate(e.x, e.y + Math.abs(bob));
+
+  ctx.beginPath(); ctx.ellipse(0, R+4, R*0.85, R*0.26, 0, 0, Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,0.28)'; ctx.fill();
+
+  // açıkken merkezde açığa çıkan çekirdek
+  if(open > 0.05){
+    ctx.beginPath();
+    ctx.arc(0, 0, R*0.42*open, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,196,110,' + (0.30*open).toFixed(3) + ')';
+    ctx.fill();
+  }
+
+  /* Dört prizma, merkez etrafında 90 derecelik açılarla. Açılma
+     miktarı hem uzaklığı hem kendi eksenindeki dönüşü sürüyor. */
+  for(let i=0;i<4;i++){
+    const a = spin + i*Math.PI/2;
+    const d = R*(0.30 + open*0.62);
+    const size = R*0.62;
+
+    ctx.save();
+    ctx.translate(Math.cos(a)*d, Math.sin(a)*d);
+    ctx.rotate(a + open*0.6);
+
+    ctx.beginPath();
+    ctx.moveTo(0, -size);
+    ctx.lineTo(size*0.88, size*0.55);
+    ctx.lineTo(-size*0.88, size*0.55);
+    ctx.closePath();
+    ctx.fillStyle = flash ? '#ffffff' : (e.fused ? e.body2 : e.body);
+    ctx.fill();
+
+    // prizma derinliği — sağ yüz koyu
+    ctx.beginPath();
+    ctx.moveTo(0, -size);
+    ctx.lineTo(size*0.88, size*0.55);
+    ctx.lineTo(size*0.52, size*0.72);
+    ctx.lineTo(-size*0.18, -size*0.82);
+    ctx.closePath();
+    ctx.fillStyle = flash ? '#e8e8ff' : 'rgba(0,0,0,0.26)';
+    ctx.fill();
+
+    ctx.lineWidth = 1.6;
+    ctx.strokeStyle = e.fused ? '#241640' : '#ffd489';
+    ctx.beginPath();
+    ctx.moveTo(0, -size);
+    ctx.lineTo(size*0.88, size*0.55);
+    ctx.lineTo(-size*0.88, size*0.55);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /* Birleşikken vurulunca "geçmedi" işareti. Hasar sayısı hiç
+     çıkmadığı için oyuncunun tek geri bildirimi bu. */
+  if(e.fused && (e.fusedFlash||0) > 0){
+    const k = Math.min(1, e.fusedFlash/0.3);
+    ctx.beginPath();
+    ctx.arc(0, 0, R*1.08, 0, Math.PI*2);
+    ctx.lineWidth = 2.6;
+    ctx.strokeStyle = 'rgba(190,205,240,' + (0.75*k).toFixed(3) + ')';
+    ctx.stroke();
+  }
+
+  ctx.restore();
+
+  // can barı yalnızca hasar almışsa (kapalıyken hep dolu durur)
+  if(e.hp < e.maxHp){
+    const w=R*2.1;
+    ctx.save();
+    ctx.translate(e.x, e.y + Math.abs(bob));
+    ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(-w/2,-R-14,w,4);
+    ctx.fillStyle=enemyHpColor(e); ctx.fillRect(-w/2,-R-14,w*(e.hp/e.maxHp),4);
+    ctx.restore();
+  }
+}
+
+/* SALYALI BÖCEK — alçak, geniş, kabuklu. Arkasındaki salyayı
+   drawSlicks (render-fx.js) zeminde çiziyor; burada yalnızca böcek
+   var. Bir sonraki damlaya yaklaştıkça karnı parlıyor: oyuncu iz
+   bırakmadan ÖNCE müdahale şansı olduğunu görsün. */
+function drawBeetleEnemy(e){
+  const R = e.radius;
+  const bob = Math.sin(e.bounce)*1.8;
+  const flash = Math.max(0,e.flashT||0) > 0.05;
+  const ready = e.slickEvery ? Math.max(0, 1 - (e.slickT / e.slickEvery)) : 0;
+
+  ctx.save();
+  ctx.translate(e.x, e.y + Math.abs(bob));
+
+  ctx.beginPath(); ctx.ellipse(0, R*0.75, R*0.95, R*0.28, 0, 0, Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,0.26)'; ctx.fill();
+
+  ctx.rotate(e.angle || 0);
+
+  // bacaklar — yürüyüşle sallanan üç çift
+  ctx.strokeStyle = flash ? '#ffffff' : e.body2;
+  ctx.lineWidth = 2.2;
+  for(let i=-1;i<=1;i++){
+    const sw = Math.sin(e.bounce*1.7 + i) * R*0.22;
+    ctx.beginPath();
+    ctx.moveTo(i*R*0.42, -R*0.30);
+    ctx.lineTo(i*R*0.42 + sw, -R*0.86);
+    ctx.moveTo(i*R*0.42, R*0.30);
+    ctx.lineTo(i*R*0.42 - sw, R*0.86);
+    ctx.stroke();
+  }
+
+  // kabuk
+  ctx.beginPath();
+  ctx.ellipse(0, 0, R*1.05, R*0.72, 0, 0, Math.PI*2);
+  ctx.fillStyle = flash ? '#ffffff' : e.body;
+  ctx.fill();
+  ctx.lineWidth = 1.8; ctx.strokeStyle = e.body2; ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(-R*0.85, 0); ctx.lineTo(R*0.75, 0);
+  ctx.lineWidth = 1.4; ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.stroke();
+
+  // salya kesesi — damlaya yaklaştıkça dolar
+  if(!flash && ready > 0.4){
+    const k = (ready - 0.4) / 0.6;
+    ctx.beginPath();
+    ctx.ellipse(-R*0.55, 0, R*0.32*k + 1.5, R*0.26*k + 1.5, 0, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(190,255,140,' + (0.35 + k*0.5).toFixed(3) + ')';
+    ctx.fill();
+  }
+
+  // baş ve duyargalar
+  ctx.beginPath();
+  ctx.arc(R*0.95, 0, R*0.34, 0, Math.PI*2);
+  ctx.fillStyle = flash ? '#ffffff' : e.body2; ctx.fill();
+  ctx.strokeStyle = e.body2; ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.moveTo(R*1.15, -R*0.15); ctx.lineTo(R*1.7, -R*0.5);
+  ctx.moveTo(R*1.15,  R*0.15); ctx.lineTo(R*1.7,  R*0.5);
+  ctx.stroke();
+
+  ctx.restore();
+
+  const w=R*2.0;
+  ctx.save();
+  ctx.translate(e.x, e.y + Math.abs(bob));
+  ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(-w/2,-R-12,w,4);
+  ctx.fillStyle=enemyHpColor(e); ctx.fillRect(-w/2,-R-12,w*(e.hp/e.maxHp),4);
+  ctx.restore();
+}
+
 /* ZIRHLI'nın göğüs plakası — gövdenin ÜSTÜNE, gözlerin ALTINA çizilir
    ki hem plaka baskın dursun hem düşman "yüzsüz bir kalkan" olmasın.
    Plaka aşındıkça çatlaklar çoğalır, kırılınca yerinde yalnızca kopmuş
@@ -532,6 +764,9 @@ function drawEnemy(e){
   if(e.shape==='cube'){ drawCubeEnemy(e); return; }
   if(e.shape==='flask'){ drawFlaskEnemy(e); return; }
   if(e.shape==='cocoon'){ drawCocoonEnemy(e); return; }
+  if(e.shape==='balloon'){ drawBalloonEnemy(e); return; }
+  if(e.shape==='quad'){ drawQuadEnemy(e); return; }
+  if(e.shape==='beetle'){ drawBeetleEnemy(e); return; }
   const bob = Math.sin(e.bounce)*3;
   const squash = 1 - Math.abs(Math.sin(e.bounce))*0.12;
   ctx.save();

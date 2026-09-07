@@ -101,6 +101,68 @@ function applyQueenAuras(){
   if(buffed) playQueenBuff();   // audio.js
 }
 
+/* Bu düşman bir salya birikintisinin üstünde mi? Birikintiler
+   TOPLANMAZ: kaç tanesinin üstünde olduğu fark etmez, çarpan tek. */
+function slickSpeedMul(e){
+  if(!slicks.length) return 1;
+  for(let i=0;i<slicks.length;i++){
+    const z = slicks[i];
+    if(Math.hypot(e.x-z.x, e.y-z.y) <= z.r) return z.speedMul;
+  }
+  return 1;
+}
+
+/* ÖZEL BİRİMLERİN KENDİ SAYAÇLARI
+
+   Üçü de zamana bağlı bir durum taşıyor ve üçü de aynı yerde
+   işleniyor — dağıtılsalar hangi sayacın nerede ilerlediğini bulmak
+   zorlaşırdı.
+     Gaz Balonu  : can düştükçe şişer (yarıçap büyür)
+     Dördüz      : birleşik <-> ayrık döngüsü
+     Salyalı Böcek: bir sonraki salyaya kalan süre               */
+function updateSpecialUnits(dt){
+  for(let i=0;i<enemies.length;i++){
+    const e = enemies[i];
+
+    // --- GAZ BALONU: şişme ---
+    if(e.swellTo > 0){
+      const filled = 1 - Math.max(0, e.hp) / e.maxHp;     // 0 = yeni, 1 = patlamak üzere
+      e.swell = 1 + (e.swellTo - 1) * filled;
+      e.radius = e.baseRadius * e.swell;
+    }
+
+    // --- DÖRDÜZ: birleşik/ayrık döngüsü ---
+    if(e.fusedSec > 0){
+      e.phaseT -= dt;
+      if(e.phaseT <= 0){
+        e.fused = !e.fused;
+        e.phaseT = e.fused ? e.fusedSec : e.openSec;
+        if(!e.fused) playQuadOpen();   // audio.js — pencere açıldı
+      }
+      /* openAmt: parçaların ne kadar ayrıldığı (0..1). Geçiş ani
+         değil yumuşak; oyuncu pencerenin açılıp kapandığını hareketten
+         okuyor, ayrı bir gösterge gerekmiyor. */
+      const want = e.fused ? 0 : 1;
+      e.openAmt += (want - e.openAmt) * Math.min(1, dt*7);
+      if(e.fusedFlash > 0) e.fusedFlash -= dt;
+    }
+
+    // --- SALYALI BÖCEK: iz bırakma ---
+    if(e.slickEvery > 0){
+      e.slickT -= dt;
+      if(e.slickT <= 0){
+        e.slickT = e.slickEvery;
+        slicks.push({
+          x:e.x, y:e.y, r:e.slickRadius,
+          life:e.slickLife, maxLife:e.slickLife,
+          speedMul:e.slickSpeedMul,
+        });
+        playSlickDrop();   // audio.js
+      }
+    }
+  }
+}
+
 /* Düşmanları yol boyunca ilerletir, salınım/yanma/yavaşlama sayaçlarını
    işler ve Kuluçka'nın bu karede bıraktığı yavruları geri döndürür
    (çağıran, onları doğru sırada diziye ekler). */
@@ -113,7 +175,13 @@ function updateEnemyMovement(dt){
     const slowMult = (e.slowT>0 ? e.slowFactor : 1) * woundedSlowMult(e);   // config.js
     const queenMult = 1 + (e.queenSpeedBuff||0);
     const pace = e.paceMult || 1;   // birime özel mikro hız farkı
-    e.dist += e.speed*slowMult*queenMult*pace*dt*60;
+    /* SALYA: üstünde durduğu birikinti varsa hızlanır. Birikintiler
+       toplanmaz — en fazla bir kez %20. Böceğin kendisi de kendi
+       salyasından faydalanır, bu kasıtlı: iz bırakan birim önde
+       gitsin, oyuncu onu ayırt edebilsin. */
+    const slick = slickSpeedMul(e);
+    e.dist += e.speed*slowMult*queenMult*pace*slick*dt*60;
+    e.onSlick = slick > 1;
     const myPath = levelPaths[e.pathIdx || 0] || levelPaths[0];
     const myLen  = pathLens[e.pathIdx || 0] || pathTotalLen;
     const p = pointAtDistance(myPath, myLen, e.dist);
@@ -226,6 +294,16 @@ function updateTransientEffects(dt){
     beams = beams.filter(b=>b.life > 0 && enemies.includes(b.target));
   }
 
+  /* SALYA BİRİKİNTİLERİ (Salyalı Böcek'in bıraktığı iz)
+     İyileştirme birikintilerinin aksine bunlar TOPLANMAZ ve en
+     güçlüsü de seçilmez: hızlanma ya vardır ya yoktur. Üst üste binen
+     salyalar bileşik bir hız çarpanı üretseydi birkaç böcek yan yana
+     yürüdüğünde dalga uçardı. */
+  if(slicks.length){
+    slicks.forEach(z=>{ z.life -= dt; });
+    slicks = slicks.filter(z=>z.life > 0);
+  }
+
   /* İYİLEŞTİRME BİRİKİNTİLERİ (kırılan şişelerden)
      Üst üste binen birikintiler toplanmaz; en güçlüsü uygulanır.
      Aksi halde birkaç şişe yan yana kırıldığında bölüm kilitlenir. */
@@ -313,6 +391,7 @@ function updateTowers(dt){
     t.cooldown = Math.max(0, t.cooldown-dt);
     if(t.overloadT > 0) t.overloadT -= dt;
     if(t.blindT > 0) t.blindT -= dt;
+    if(t.jamT > 0) t.jamT -= dt;      // Gaz Balonu susturması
 
     /* NİŞAN ALMA: kule, ateş etmese bile menzilindeki hedefe döner.
        Namlu/yay anlık zıplamasın diye açı yumuşatılarak takip edilir. */
@@ -434,6 +513,15 @@ function updateTowers(dt){
    ============================================================ */
 function applyDamage(e, dmg){
   if(!(dmg > 0)) return null;
+  /* DÖRDÜZ birleşikken hiçbir hasar almaz. Kontrol tam burada
+     duruyor çünkü oyundaki BÜTÜN hasar yolları — mermi, huzme,
+     patlama alanı, zincir sıçraması, zehir/yanma tikleri — sonunda
+     bu fonksiyona geliyor. Silah başına muafiyet yazmak, ilerideki
+     bir silahı unutmak demek olurdu. */
+  if(e.fused){
+    e.fusedFlash = 0.3;      // "vurdum ama geçmedi" görsel işareti
+    return 'fused';
+  }
   const resist = 1 - (e.queenDmgResist || 0);
   if(e.armor > 0){
     e.armor -= dmg;
@@ -931,6 +1019,33 @@ function resolveEnemyDeaths(){
             i%3===0 ? '#ffe08a' : (i%3===1 ? '#ff8a4a' : '#ffb35c'));
         }
         if(blinded>0) floatTexts.push({x:e.x,y:e.y-16,text:'KÖRLEŞTİ',life:0.9,vy:-26,color:'#ffb35c'});
+      }
+
+      /* GAZ BALONU PATLAMASI: kozadan farkı kör etmek değil TAMAMEN
+         SUSTURMAK — ve etkisi hem daha geniş hem daha uzun. Oyuncu
+         patlamayı öldürmeyi seçtiği anda tetikliyor, o yüzden asıl
+         karar "öldürüp öldürmemek" değil NEREDE öldürmek. */
+      if(e.jamRadius > 0){
+        let jammed = 0;
+        towers.forEach(tw=>{
+          if(tw.buildLeft > 0) return;   // inşa halindeki kule zaten ateş etmiyor
+          if(Math.hypot(tw.x-e.x, tw.y-e.y) <= e.jamRadius){
+            tw.cooldown = Math.max(tw.cooldown, e.jamDuration);
+            tw.jamT = e.jamDuration;
+            tw.flameOn = false;          // Ateş Kulesi'nin huzmesi de kesilsin
+            jammed++;
+          }
+        });
+        explosions.push({x:e.x, y:e.y, r:8, maxR:e.jamRadius, life:0.65});
+        shake = Math.min(shake+9, 18);
+        playBalloonPop();   // audio.js
+        const pbPop = particleBudget(30);
+        for(let i=0;i<pbPop;i++){
+          const ang=(i/pbPop)*Math.PI*2, sp=90+Math.random()*150;
+          corpseParticle(e.x, e.y, Math.cos(ang)*sp, Math.sin(ang)*sp, 0.6,
+            i%2 ? '#dff4ff' : '#8fd4ee');
+        }
+        if(jammed>0) floatTexts.push({x:e.x,y:e.y-16,text:jammed+' KULE SUSTU',life:1.1,vy:-26,color:'#9fe6ff'});
       }
 
       if(e.boss){

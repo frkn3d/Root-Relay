@@ -37,6 +37,7 @@ function update(dt){
   if(!updateWaveProgress(dt)) return;
 
   applyQueenAuras();
+  updateSpecialUnits(dt);      // balon şişmesi, Dördüz döngüsü, böcek salyası
   const newborns = updateEnemyMovement(dt);
   updateTransientEffects(dt);
   // Yavrular efekt adımından SONRA eklenir: doğdukları karede

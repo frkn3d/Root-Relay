@@ -26,6 +26,7 @@ function render(){
   enemies.forEach(drawBossAura);
   drawDebris();             // zeminde: küp enkazı düşmanların altında
   drawHealZones();          // zeminde: birikintiler düşmanların altında
+  drawSlicks();             // zeminde: salya izi de düşmanların altında
   drawCoins();              // zeminde: ganimet düşmanların ALTINDA kalmalı
   towers.forEach(drawTowerRange);
   enemies.forEach(drawEnemy);
@@ -33,6 +34,7 @@ function render(){
   towers.forEach(drawUpgradeBadge);   // yükseltmeye hazır kuleler
   towers.forEach(drawChillBadge);
   towers.forEach(drawBlindBadge);
+  towers.forEach(drawJamBadge);       // Gaz Balonu susturması
   projectiles.forEach(drawProjectile);
   drawArcs();
   drawLavaStreams();

@@ -98,6 +98,25 @@ function drawBlindBadge(t){
   ctx.restore();
 }
 
+/* Gaz Balonu patlaması bir kuleyi susturduğunda. Körlükten (💫)
+   bilerek farklı: mavi-beyaz, kesik kesik parlayan bir arıza işareti.
+   İki etki aynı anda gelebildiği için ikisi ayrı çizilir — oyuncu
+   hangi düşmanın ne yaptığını görebilmeli. */
+function drawJamBadge(t){
+  if(!(t.jamT > 0)) return;
+  const t0 = performance.now()/1000;
+  const flick = 0.35 + 0.45*Math.abs(Math.sin(t0*11));
+  ctx.save();
+  ctx.beginPath(); ctx.arc(t.x, t.y, 27, 0, Math.PI*2);
+  ctx.strokeStyle='rgba(150,225,255,'+flick.toFixed(3)+')';
+  ctx.lineWidth=2.4; ctx.setLineDash([2,5]); ctx.lineDashOffset=t0*20;
+  ctx.stroke(); ctx.setLineDash([]);
+  ctx.font='12px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.globalAlpha = flick + 0.2;
+  ctx.fillText('⚡', t.x, t.y-33);
+  ctx.restore();
+}
+
 /* Yükseltmeye hazır kulenin yanında nabız gibi atan yeşil düğme.
    Yalnızca kule gerçekten yükseltilebiliyorken çizilir: inşa bitmiş,
    son seviyede değil ve oyuncunun parası yetiyor (towerUpgradeReady,

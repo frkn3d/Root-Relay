@@ -103,7 +103,7 @@ function loadLevel(idx){
   resetSessionShop();            // progress.js — bölüm içi alımlar sıfırlanır
   waveIndex = 0;
   waveActive=false; gameOver=false; gameWon=false;
-  towers=[]; enemies=[]; projectiles=[]; particles=[]; floatTexts=[]; explosions=[]; arcs=[]; healZones=[]; debris=[]; beams=[]; coins=[];
+  towers=[]; enemies=[]; projectiles=[]; particles=[]; floatTexts=[]; explosions=[]; arcs=[]; healZones=[]; debris=[]; beams=[]; coins=[]; slicks=[];
   towerPurchaseCounts = {};
   spawnTimeline=[]; waveElapsed=0; shake=0;
   seenEnemyTypes = new Set();
@@ -256,6 +256,9 @@ function startWave(){
         // Kat, gövdeyi de büyütür: 1x -> 15, 2x -> 17, 3x -> 19 yarıçap.
         // Oyuncu hangi şişenin sert olduğunu vurmadan önce görsün.
         radius: Math.round(def.radius * (1 + (tier-1)*0.13)),
+        /* Şişen birimler (Gaz Balonu) yarıçaplarını değiştiriyor;
+           büyümenin nereden başladığını bilmek için taban saklanıyor. */
+        baseRadius: Math.round(def.radius * (1 + (tier-1)*0.13)),
         body:def.body, body2:def.body2, shape:def.shape, eyes:def.eyes,
         // Üç kat emek isteyen birim üç kat da ödesin
         gold: Math.max(1, Math.round(def.gold*m.goldMul*tier)), dmgToLives: def.dmgToLives,
@@ -271,6 +274,19 @@ function startWave(){
         armorMax: (def.armorHp || 0) * mult.hp * plateFactor,
         armorSoak: def.armorSoak || 0,
         broodEvery: def.broodEvery || 0, broodType: def.broodType || null, broodMax: def.broodMax || 0, broodT: 0, broodCount: 0,
+        /* GAZ BALONU — şişme oranı ve patlama etkisi */
+        swellTo: def.swellTo || 0, swell: 1,
+        jamRadius: def.jamRadius || 0, jamDuration: def.jamDuration || 0,
+        /* DÖRDÜZ — birleşik/ayrık döngüsü. Birleşik BAŞLAR: doğar
+           doğmaz vurulup erimesin, oyuncu önce döngüyü görsün. */
+        fusedSec: def.fusedSec || 0, openSec: def.openSec || 0,
+        fused: (def.fusedSec || 0) > 0,
+        phaseT: def.fusedSec || 0,
+        openAmt: 0,
+        /* SALYALI BÖCEK — ilk salya slickFirst saniye sonra */
+        slickEvery: def.slickEvery || 0, slickLife: def.slickLife || 0,
+        slickRadius: def.slickRadius || 0, slickSpeedMul: def.slickSpeedMul || 1,
+        slickT: def.slickEvery ? (def.slickFirst || 0) : 0,
         overloadSec: def.overloadSec || 0, overloadChance: def.overloadChance || 0,
         splitsLeft: def.splits || 0,
         splitsTotal: def.splits || 0,

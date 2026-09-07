@@ -60,7 +60,10 @@ let startLivesEffective = 10;
    Süsleme — oyun durumu taşımaz, altın ölüm anında zaten hesaba
    ekleniyor. Aynı anda en fazla COIN_MAX tanesi yaşar
    (bkz. spawnCoin, engine-update.js). */
-let towers, enemies, projectiles, particles, floatTexts, explosions, arcs, healZones, debris, beams, coins;
+/* slicks: Salyalı Böcek'in yola bıraktığı salya birikintileri.
+   Üstünden geçen HER düşmanı hızlandırır — böcek öldükten sonra bile
+   5 saniye yaşarlar (bkz. updateSlicks, engine-update.js). */
+let towers, enemies, projectiles, particles, floatTexts, explosions, arcs, healZones, debris, beams, coins, slicks;
 let spawnTimeline, waveElapsed;
 let shake = 0;
 let spots = [];
