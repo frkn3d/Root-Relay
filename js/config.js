@@ -493,6 +493,28 @@ function woundedSlowMult(e){
    yapabilmiş olması gereken bir noktaya alındı. */
 const ARMOR_FROM_WAVE = 8;
 
+/* ERKEN BÖLÜMLERDE PLAKA YARIM
+
+   Plaka iki turda 55'ten 220'ye çıktı ve bu, o zamanki bağlamda —
+   zırhlının ancak geç bölümlerde sahneye çıktığı bir oyunda — doğru
+   bir zamdı. Keşif kolu (bkz. previewTypes, levelgen.js) zırhlıyı
+   23. bölümden itibaren sahaya sokunca denge bozuldu: 220'lik plakayı
+   sökecek hasar o bölümlerde henüz yok, zırhlı pratikte ölmüyor ve
+   savunmanın önünde durup arkasından geleni geçiriyordu.
+
+   İlk 50 bölümde plaka yarım kapasiteyle doğuyor. Sızdırma oranına
+   dokunulmuyor: kural armorSoak * armorHp < hp idi ve yarım plakada
+   0.15 x 110 = 16.5 < 40, yani plaka yine kırılıyor, "plaka
+   parçalandı" aşaması korunuyor — hatta gövde aşamasına daha çok
+   ömür kalıyor. */
+const ARMOR_SOFT_UNTIL  = 50;    // bu bölüme kadar (dahil)
+const ARMOR_SOFT_FACTOR = 0.5;
+
+function armorPlateFactor(lv){
+  if(!lv || !lv.levelNo) return 1;                 // elle yazılmış bölümler
+  return lv.levelNo <= ARMOR_SOFT_UNTIL ? ARMOR_SOFT_FACTOR : 1;
+}
+
 function waveCountMultiplier(waveIndex){
   let m;
   if(waveIndex <= 1) m = 1.0;

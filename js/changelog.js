@@ -9,9 +9,20 @@
    Yeni sürüm eklerken diziye BAŞA ekle — ekran sırayı olduğu gibi
    çiziyor, en yeni sürüm üstte görünsün.
    ============================================================ */
-const GAME_VERSION = '0.4.1';
+const GAME_VERSION = '0.4.2';
 
 const CHANGELOG = [
+  {
+    version: '0.4.2',
+    title: 'Zırhlı dengesi',
+    note: 'Erken bölümlerde zırhlı düşman aşılmaz bir duvara dönüşüyordu.',
+    groups: [
+      { head: '🛡️ Zırhlı', items: [
+        "Zırhlının plakası <b>ilk 50 bölümde yarım kapasiteyle</b> geliyor. Plaka 220 birime çıkarıldığında zırhlı yalnızca geç bölümlerde sahneye çıkıyordu; keşif kolu onu 23. bölümden itibaren sahaya sokunca o plakayı sökecek hasar henüz olmadığı için zırhlı pratikte ölmüyor, savunmanın önünde durup arkasından geleni geçiriyordu.",
+        'Sızdırma oranına dokunulmadı: yarım plakada da "plaka parçalandı" aşaması korunuyor, hatta gövdeye daha çok ömür kalıyor.',
+      ]},
+    ],
+  },
   {
     version: '0.4.1',
     title: 'Değişken kadro',

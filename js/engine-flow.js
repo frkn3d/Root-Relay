@@ -217,6 +217,7 @@ function startWave(){
     ? generateWaveForGenerated(level, waveIndex)   // levelgen.js
     : generateWave(level, waveIndex);              // config.js
   const mult = statMultipliers(level, waveIndex);
+  const plateFactor = armorPlateFactor(level);   // config.js — ilk 50 bölümde 0.5
   const m = levelMods();
   // bunchIntervalMult (config.js): bölümün ikinci yarısından itibaren
   // düşmanlar birbirine daha yakın gelsin diye spawn aralığı kısaltılır.
@@ -263,10 +264,11 @@ function startWave(){
         allyBuffTypes: def.allyBuffTypes || null, allySpeedBuff: def.allySpeedBuff || 0, allyDmgResist: def.allyDmgResist || 0,
         healRadius: def.healRadius || 0, healPerSec: def.healPerSec || 0, healDuration: def.healDuration || 0,
         blockArc: def.blockArc || 0,
-        // ZIRHLI plakası — can gibi dalga çarpanıyla ölçeklenir,
-        // yoksa geç dalgalarda kâğıttan kalırdı.
-        armor: (def.armorHp || 0) * mult.hp,
-        armorMax: (def.armorHp || 0) * mult.hp,
+        /* ZIRHLI plakası — can gibi dalga çarpanıyla ölçeklenir,
+           yoksa geç dalgalarda kâğıttan kalırdı. İlk 50 bölümde
+           armorPlateFactor (config.js) yarıya indirir. */
+        armor: (def.armorHp || 0) * mult.hp * plateFactor,
+        armorMax: (def.armorHp || 0) * mult.hp * plateFactor,
         armorSoak: def.armorSoak || 0,
         broodEvery: def.broodEvery || 0, broodType: def.broodType || null, broodMax: def.broodMax || 0, broodT: 0, broodCount: 0,
         overloadSec: def.overloadSec || 0, overloadChance: def.overloadChance || 0,
