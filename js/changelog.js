@@ -9,9 +9,22 @@
    Yeni sürüm eklerken diziye BAŞA ekle — ekran sırayı olduğu gibi
    çiziyor, en yeni sürüm üstte görünsün.
    ============================================================ */
-const GAME_VERSION = '0.5';
+const GAME_VERSION = '0.5.1';
 
 const CHANGELOG = [
+  {
+    version: '0.5.1',
+    title: 'Yeni düşmanların sesi',
+    note: 'Üç yeni düşman sahaya sessiz gelmişti; artık duyuluyorlar.',
+    groups: [
+      { head: '🔊 Eksik sesler', items: [
+        "Gaz Balonu, Dördüz ve Salyalı Böcek <b>hiç ayak sesi çıkarmıyordu</b> — diğer bütün düşmanların yürüyüşü duyulurken bu üçü haritada sessizce ilerliyordu. Üçünün de kendi yürüyüş sesi var artık.",
+        "Balon süzülür: adım değil, yumuşak bir hava akımı ve zarın gıcırtısı duyulur. Dördüz ağırdır: kuru taş sürtünmesi ve tok bir darbe. Böcek kurudur: kitin bacakların tıkırtısı — salyanın ıslak sesiyle karışmasın diye bilinçli olarak öyle.",
+        "Üç olay sesi de gerçek kayıtlarıyla çalıyor: balonun patlaması artık basıncın boşalmasını ve <b>kuleleri susturan cızırtıyı</b> ayrı ayrı duyuruyor; Dördüz'ün açılışı yükselen bir tınıyla pencereyi haber veriyor; böceğin salyası inen ıslak bir damla olarak düşüyor.",
+        "Sesler oyunun geri kalanıyla aynı seviyede dengelendi: sık tekrar eden yürüyüşler kısık, tek seferlik patlama belirgin.",
+      ]},
+    ],
+  },
   {
     version: '0.5',
     title: 'Üç yeni düşman',

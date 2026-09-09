@@ -109,6 +109,9 @@ Tüm sesler profesyonel dijital ses işleme (DSP), frekans modülasyonu (FM sent
 | `walk_frostlord.mp3` | **Don Efendisi (Boss)** | Yavaş, devasa buzul çatlama ve sarsıcı bas adımı. |
 | `walk_cocoon.mp3` | **Kıvılcım Kozası** | Titrek, gergin fitil cızırtısı ve sarsak ilerleme. |
 | `walk_swarmqueen.mp3` | **Sürü Anası** | Havada süzülen hafif kanat çırpışı ve düşük uğultulu süzülme. |
+| `walk_balloon.mp3` | **Gaz Balonu** | Adım atmaz, süzülür: yumuşak hava akımı ve zarın hafif gıcırtısı. Kütüphanenin en yumuşak yürüyüşü. |
+| `walk_quad.mp3` | **Dördüz** | Dört taş prizmanın kuru sürtünmesi ve pes, tok yer değiştirme darbesi. |
+| `walk_beetle.mp3` | **Salyalı Böcek** | Kuru kitin bacak tıkırtıları; salya sesiyle karışmasın diye bilinçli olarak ıslaklıktan arındırılmıştır. |
 
 ---
 
@@ -124,6 +127,9 @@ Tüm sesler profesyonel dijital ses işleme (DSP), frekans modülasyonu (FM sent
 | `enemy_reflector_shock.mp3` | **Yansıtıcı** | Hasarı kuleye geri yansıtıp kuleyi kitleme cızırtısı. |
 | `enemy_queen_buff.mp3` | **Sürü Anası** | Yakındaki dostlarını hızlandıran ve coşturan aura tınısı. |
 | `enemy_frostlord_aura.mp3` | **Don Efendisi** | Kuleleri dondurup yavaşlatan soğuk fırtına aurası. |
+| `enemy_balloon_pop.mp3` | **Gaz Balonu** | Zarın patlaması, basıncın boşalması (190→55 Hz) ve kaçan gazın tıslaması; kuyrukta kuleleri susturan kesik kesik elektriksel cızırtı. |
+| `enemy_quad_open.mp3` | **Dördüz** | Dört prizmanın 11 ms arayla ayrılışı ve 660→880 Hz yükselen "vurulabilir pencere açıldı" tınısı. |
+| `enemy_beetle_slick.mp3` | **Salyalı Böcek** | Salyanın düşüp yayılması: 250→110 Hz inen ıslak damla, alçak splat ve sıvı rezonansı. |
 
 ---
 

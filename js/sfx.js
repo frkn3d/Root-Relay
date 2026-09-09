@@ -60,6 +60,15 @@ const SFX = {
   reflector_shock:{f:'enemy_reflector_shock.mp3', v:0.32 },
   queen_buff:    { f:'enemy_queen_buff.mp3',   v:0.26 },
   frostlord_aura:{ f:'enemy_frostlord_aura.mp3', v:0.24 },
+  /* v0.5 düşmanları. Çağrı yerlerindeki vol çarpanı bunun ÜSTÜNE
+     biniyor (bkz. audio.js), o yüzden efektif düzeyler:
+       balloon_pop  0.44 * 1.00 = 0.44  — koza patlamasıyla aynı ağırlık,
+                                          tek seferlik ve oyunu değiştiren olay
+       quad_open    0.36 * 0.50 = 0.18  — her Dördüz ~5.8sn'de bir çalıyor
+       slick_drop   0.32 * 0.35 = 0.11  — 15sn'de bir ama sahada 3 böcek olabilir */
+  balloon_pop:   { f:'enemy_balloon_pop.mp3',  v:0.44 },
+  quad_open:     { f:'enemy_quad_open.mp3',    v:0.36 },
+  slick_drop:    { f:'enemy_beetle_slick.mp3', v:0.32 },
 
   // --- düşman yürüyüşleri (kısık) ---
   walk_spore:        { f:'walk_spore.mp3',        v:0.10 },
@@ -76,6 +85,13 @@ const SFX = {
   walk_cocoon:       { f:'walk_cocoon.mp3',       v:0.12 },
   walk_swarmqueen:   { f:'walk_swarmqueen.mp3',   v:0.12 },
   walk_armor:        { f:'walk_armor.mp3',        v:0.14 },
+  /* v0.5 düşmanları. Bu tabloda kaydı olmayan türü yürüyüş döngüsü
+     SESSİZCE atlıyor (aşağıdaki walk_ zamanlayıcısındaki
+     `!SFX['walk_'+e.type]` kontrolü), yani kayıt eklenmeden önce üçü
+     de haritada tamamen sessiz yürüyordu. */
+  walk_balloon:      { f:'walk_balloon.mp3',      v:0.09 },  // süzülüyor: en yumuşağı
+  walk_quad:         { f:'walk_quad.mp3',         v:0.13 },  // ağır taş, tok darbe
+  walk_beetle:       { f:'walk_beetle.mp3',       v:0.11 },  // kuru bacak tıkırtısı
 
   // --- ekonomi / kule yönetimi ---
   coin:          { f:'coin_pickup.mp3',   v:0.22 },
